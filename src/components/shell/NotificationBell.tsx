@@ -25,18 +25,18 @@ import type { SupplierNotification } from "@/lib/mock/types";
 type NType = SupplierNotification["type"];
 
 const META: Record<NType, { icon: LucideIcon; ring: string; text: string }> = {
-  po_issued: { icon: Info, ring: "bg-info/15", text: "text-info" },
-  invoice_approved: { icon: CircleCheck, ring: "bg-ok/15", text: "text-ok" },
-  invoice_rejected: { icon: ShieldAlert, ring: "bg-danger/15", text: "text-danger" },
-  payment_received: { icon: CircleCheck, ring: "bg-ok/15", text: "text-ok" },
-  document_expiring: { icon: TriangleAlert, ring: "bg-warn/15", text: "text-warn" },
-  po_acknowledged: { icon: CircleCheck, ring: "bg-ok/15", text: "text-ok" },
-  grn_confirmed: { icon: CircleCheck, ring: "bg-ok/15", text: "text-ok" },
-  tender_published: { icon: Info, ring: "bg-info/15", text: "text-info" },
-  bid_clarification_requested: { icon: TriangleAlert, ring: "bg-warn/15", text: "text-warn" },
-  bid_shortlisted: { icon: CircleCheck, ring: "bg-ok/15", text: "text-ok" },
-  bid_awarded: { icon: CircleCheck, ring: "bg-ok/15", text: "text-ok" },
-  bid_not_awarded: { icon: ShieldAlert, ring: "bg-danger/15", text: "text-danger" },
+  po_issued: { icon: Info, ring: "bg-info/10", text: "text-info" },
+  invoice_approved: { icon: CircleCheck, ring: "bg-ok/10", text: "text-ok" },
+  invoice_rejected: { icon: ShieldAlert, ring: "bg-danger/10", text: "text-danger" },
+  payment_received: { icon: CircleCheck, ring: "bg-ok/10", text: "text-ok" },
+  document_expiring: { icon: TriangleAlert, ring: "bg-warn/10", text: "text-warn" },
+  po_acknowledged: { icon: CircleCheck, ring: "bg-ok/10", text: "text-ok" },
+  grn_confirmed: { icon: CircleCheck, ring: "bg-ok/10", text: "text-ok" },
+  tender_published: { icon: Info, ring: "bg-info/10", text: "text-info" },
+  bid_clarification_requested: { icon: TriangleAlert, ring: "bg-warn/10", text: "text-warn" },
+  bid_shortlisted: { icon: CircleCheck, ring: "bg-ok/10", text: "text-ok" },
+  bid_awarded: { icon: CircleCheck, ring: "bg-ok/10", text: "text-ok" },
+  bid_not_awarded: { icon: ShieldAlert, ring: "bg-danger/10", text: "text-danger" },
 };
 
 export function NotificationBell() {

@@ -35,9 +35,9 @@ export function KpiTile({
           className={cn(
             "grid size-10 place-items-center rounded-xl ring-1 ring-inset",
             warn
-              ? "bg-warn/15 text-warn ring-warn/30"
+              ? "bg-warn/10 text-warn ring-warn/30"
               : accent
-                ? "bg-primary/15 text-primary ring-primary/20 dark:text-brand-cream dark:ring-brand-cream/25"
+                ? "bg-primary/10 text-primary ring-primary/25 dark:text-brand-cream dark:ring-brand-cream/30"
                 : "bg-muted text-muted-foreground ring-transparent",
           )}
         >

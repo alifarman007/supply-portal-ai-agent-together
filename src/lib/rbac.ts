@@ -32,10 +32,10 @@ export const ROLE_PERMS: Record<SupplierRole, string[]> = {
 export const SUPPLIER_ROLES: SupplierRole[] = ["supplier_admin","finance_officer","logistics_officer","viewer"];
 
 export const ROLE_CHIP: Record<SupplierRole, string> = {
-  supplier_admin: "text-brand-red bg-[color-mix(in_oklab,var(--brand-red)_16%,transparent)] dark:text-brand-cream dark:bg-[color-mix(in_oklab,var(--brand-cream)_16%,transparent)]",
-  finance_officer: "text-ok bg-[color-mix(in_oklab,var(--ok)_16%,transparent)]",
-  logistics_officer: "text-info bg-[color-mix(in_oklab,var(--info)_16%,transparent)]",
-  viewer: "text-muted-foreground bg-[color-mix(in_oklab,var(--muted-foreground)_14%,transparent)]",
+  supplier_admin: "text-brand-red bg-[color-mix(in_oklab,var(--brand-red)_10%,transparent)] dark:text-brand-cream dark:bg-[color-mix(in_oklab,var(--brand-cream)_14%,transparent)]",
+  finance_officer: "text-ok bg-[color-mix(in_oklab,var(--ok)_10%,transparent)]",
+  logistics_officer: "text-info bg-[color-mix(in_oklab,var(--info)_10%,transparent)]",
+  viewer: "text-muted-foreground bg-[color-mix(in_oklab,var(--muted-foreground)_10%,transparent)]",
 };
 
 export const ROLE_LABELS: Record<SupplierRole, string> = {
