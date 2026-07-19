@@ -52,7 +52,7 @@ export default function NotificationsPage() {
   const groups = groupByDate(notifications ?? []);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Notifications"
         subtitle={`${unread} unread notification${unread !== 1 ? "s" : ""}`}

@@ -49,7 +49,7 @@ export default function ProfilePage() {
 
   if (isLoading || !profile) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-[1680px] space-y-6">
         <Skeleton className="h-10 w-64 rounded-lg" />
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-48 rounded-xl" />
@@ -59,7 +59,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Company Profile"
         subtitle="Your registered company information and bank details"

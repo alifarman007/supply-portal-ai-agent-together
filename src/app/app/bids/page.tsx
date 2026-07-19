@@ -37,7 +37,7 @@ export default function BidsPage() {
   const { data: bids, isLoading } = useBids({ status, search });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="My Bids"
         subtitle="Track the status of bids you've submitted against published tenders"

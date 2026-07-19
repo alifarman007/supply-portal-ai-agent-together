@@ -35,7 +35,7 @@ export default function PurchaseOrdersPage() {
   const { data: pos, isLoading } = usePurchaseOrders({ status, search });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Purchase Orders"
         subtitle="View and acknowledge purchase orders from Kazi Farms Group"

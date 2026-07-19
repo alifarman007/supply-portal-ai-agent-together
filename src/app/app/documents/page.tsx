@@ -36,7 +36,7 @@ export default function DocumentsPage() {
   const expiring = docs?.filter((d) => d.status === "expiring_soon") ?? [];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Compliance Documents"
         subtitle="Manage your company's compliance documents and certifications"

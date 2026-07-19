@@ -27,7 +27,7 @@ export default function PaymentsPage() {
   const totalGross = payments?.reduce((s, p) => s + p.grossAmount, 0) ?? 0;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Payment History"
         subtitle="Track all payments received from Kazi Farms Group"

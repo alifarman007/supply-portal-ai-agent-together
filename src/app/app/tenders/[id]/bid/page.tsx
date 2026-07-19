@@ -43,7 +43,7 @@ function SubmitBidLoader({ tenderId }: { tenderId: string }) {
 
   if (isLoading || !tender) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-[1680px] space-y-6">
         <Skeleton className="h-10 w-64 rounded-lg" />
         <Skeleton className="h-64 rounded-xl" />
       </div>
@@ -113,7 +113,7 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Submit Bid"
         subtitle={`${tender.tenderNumber} — ${tender.title}`}

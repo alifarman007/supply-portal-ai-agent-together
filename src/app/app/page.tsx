@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const latestTenders = (openTenders ?? []).slice(0, 5);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title={
           <span>

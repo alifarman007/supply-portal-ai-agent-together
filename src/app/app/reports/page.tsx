@@ -33,7 +33,7 @@ export default function ReportsPage() {
   ) ?? { grossTotal: 0, vatTotal: 0, aitTotal: 0, netTotal: 0 };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Reports"
         subtitle="Financial reports and analytics for your supplier account"

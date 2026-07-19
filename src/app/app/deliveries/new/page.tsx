@@ -67,7 +67,7 @@ function NewChallanForm() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Create Delivery Challan"
         subtitle="Create a delivery challan for goods dispatch"

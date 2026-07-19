@@ -36,7 +36,7 @@ export default function DeliveriesPage() {
   const { data: challans, isLoading } = useChallans({ status, search });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Deliveries"
         subtitle="Manage delivery challans and track shipment status"

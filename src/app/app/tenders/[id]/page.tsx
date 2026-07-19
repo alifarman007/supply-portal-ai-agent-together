@@ -37,7 +37,7 @@ export default function TenderDetailPage({ params }: { params: Promise<{ id: str
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-[1680px] space-y-6">
         <Skeleton className="h-10 w-64 rounded-lg" />
         <div className="grid gap-4 lg:grid-cols-2">
           <Skeleton className="h-64 rounded-xl" />
@@ -82,7 +82,7 @@ export default function TenderDetailPage({ params }: { params: Promise<{ id: str
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title={
           <span className="flex items-center gap-3">

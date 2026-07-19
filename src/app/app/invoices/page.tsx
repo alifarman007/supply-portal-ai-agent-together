@@ -39,7 +39,7 @@ export default function InvoicesPage() {
   const { data: invoices, isLoading } = useInvoices({ status, search });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Invoices"
         subtitle="Submit and track invoices against purchase orders"

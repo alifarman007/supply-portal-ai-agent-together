@@ -110,7 +110,7 @@ function NewInvoiceForm() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
         title="Create Invoice"
         subtitle="Submit a new invoice against a purchase order"
