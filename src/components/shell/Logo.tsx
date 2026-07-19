@@ -19,9 +19,9 @@ export function Logo({
         <div className="leading-none">
           <div className="font-heading text-[16px] font-bold tracking-tight text-foreground">
             <span>Kazi </span>
-            <span className="text-brand-red">Farms</span>
+            <span className="text-primary">Farms</span>
           </div>
-          <div className="mt-0.5 text-[9.5px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+          <div className="mt-0.5 text-[9.5px] font-bold tracking-[0.16em] text-primary uppercase">
             {t("brand_descriptor")}
           </div>
         </div>
