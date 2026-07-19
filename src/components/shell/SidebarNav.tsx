@@ -60,7 +60,7 @@ export function SidebarNav({
                 )}
               >
                 {active && (
-                  <span className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full bg-brand-cream" />
+                  <span className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full bg-sidebar-primary" />
                 )}
                 <Icon className="size-[18px] shrink-0" strokeWidth={1.75} />
                 {!collapsed && <span className="truncate">{t(item.label)}</span>}

@@ -1,16 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
 import { SidebarNav } from "./SidebarNav";
-import { useUi } from "@/store/ui";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export function Sidebar() {
-  const collapsed = useUi((s) => s.sidebarCollapsed);
-  const toggle = useUi((s) => s.toggleSidebar);
+export function Sidebar({ initialCollapsed }: { initialCollapsed: boolean }) {
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
+
+  const toggle = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      document.cookie = `sfms-sidebar=${next ? "1" : "0"}; path=/; max-age=31536000; SameSite=Lax`;
+      return next;
+    });
+  };
 
   return (
     <aside

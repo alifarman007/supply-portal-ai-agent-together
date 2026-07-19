@@ -45,7 +45,7 @@ export default function ReportsPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="glass">
+        <TabsList className="glass h-auto w-full flex-wrap justify-start">
           <TabsTrigger value="receivables">Outstanding Receivables</TabsTrigger>
           <TabsTrigger value="payments">Payment History</TabsTrigger>
           <TabsTrigger value="vat">VAT Summary</TabsTrigger>

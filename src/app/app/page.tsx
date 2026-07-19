@@ -324,7 +324,7 @@ export default function DashboardPage() {
               <div className="divide-y divide-border/60">
                 {data.recentActivity.slice(0, 5).map((a) => (
                   <div key={a.id} className="flex items-center gap-3 py-2.5">
-                    <span className="size-1.5 shrink-0 rounded-full bg-brand-cream" />
+                    <span className="size-1.5 shrink-0 rounded-full bg-primary dark:bg-brand-cream" />
                     <span className="flex-1 text-sm text-foreground">{a.description}</span>
                     <span className="tnum text-xs text-muted-foreground">
                       {formatDate(a.timestamp)}
