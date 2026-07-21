@@ -13,7 +13,7 @@ interface ThemeState {
   hydrate: () => void;
 }
 export const useTheme = create<ThemeState>((set, get) => ({
-  theme: "dark",
+  theme: "light",
   setTheme: (t) => { applyTheme(t); set({ theme: t }); },
   toggle: () => {
     const next: Theme = get().theme === "dark" ? "light" : "dark";
@@ -22,6 +22,6 @@ export const useTheme = create<ThemeState>((set, get) => ({
   hydrate: () => {
     if (typeof document === "undefined") return;
     const attr = document.documentElement.getAttribute("data-theme");
-    set({ theme: attr === "light" ? "light" : "dark" });
+    set({ theme: attr === "dark" ? "dark" : "light" });
   },
 }));

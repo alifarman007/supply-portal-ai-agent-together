@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   themeColor: "#dc2626",
 };
 
-const noFlashScript = `(function(){try{var d=document.documentElement;var t=localStorage.getItem("kazifarms-theme");d.setAttribute("data-theme",t==="light"?"light":"dark");var l=localStorage.getItem("kazifarms-lang");d.setAttribute("lang",l==="bn"?"bn":"en");}catch(e){}})();`;
+const noFlashScript = `(function(){try{var d=document.documentElement;var t=localStorage.getItem("kazifarms-theme");d.setAttribute("data-theme",t==="dark"?"dark":"light");var l=localStorage.getItem("kazifarms-lang");d.setAttribute("lang",l==="bn"?"bn":"en");}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -41,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="dark"
+      data-theme="light"
       suppressHydrationWarning
       className={`${jakarta.variable} ${hindSiliguri.variable} h-full`}
     >
