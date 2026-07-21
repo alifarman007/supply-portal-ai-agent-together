@@ -50,11 +50,11 @@ export const BANKS = [
 ];
 
 export const BUYER_CONTACTS = [
-  { name: "Md. Habibur Rahman", email: "habibur.rahman@sysnova.com.bd" },
-  { name: "Fatema Begum", email: "fatema.begum@sysnova.com.bd" },
-  { name: "Shafiqul Islam", email: "shafiqul.islam@sysnova.com.bd" },
-  { name: "Nusrat Jahan", email: "nusrat.jahan@sysnova.com.bd" },
-  { name: "Kamrul Hasan", email: "kamrul.hasan@sysnova.com.bd" },
+  { name: "Md. Habibur Rahman", email: "habibur.rahman@kazifarms.com" },
+  { name: "Fatema Begum", email: "fatema.begum@kazifarms.com" },
+  { name: "Shafiqul Islam", email: "shafiqul.islam@kazifarms.com" },
+  { name: "Nusrat Jahan", email: "nusrat.jahan@kazifarms.com" },
+  { name: "Kamrul Hasan", email: "kamrul.hasan@kazifarms.com" },
 ];
 
 export const TERMS = `1. Payment terms: Net 30 days from invoice date.

@@ -34,6 +34,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { Logo, LogoMark } from "@/components/shell/Logo";
+import { AnimatedChickenMark } from "@/components/shell/AnimatedChickenMark";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { LangToggle } from "@/components/shell/LangToggle";
 import { Button } from "@/components/ui/button";
@@ -331,12 +332,7 @@ export default function LoginPage() {
               className="relative"
             >
               <div className="absolute inset-0 -z-10 rounded-full bg-brand-cream/25 blur-2xl" />
-              <motion.div
-                animate={prefersReducedMotion ? undefined : { y: [0, -10, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <LogoMark className="size-28 text-3xl drop-shadow-2xl" />
-              </motion.div>
+              <AnimatedChickenMark className="size-28 text-3xl drop-shadow-2xl" />
             </motion.div>
           </div>
 
