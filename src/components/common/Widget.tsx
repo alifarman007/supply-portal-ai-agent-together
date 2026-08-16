@@ -14,11 +14,11 @@ export function Widget({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("glass flex h-full flex-col p-5", className)}>
+    <div className={cn("glass flex h-full flex-col p-6", className)}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-5 flex items-center justify-between gap-2">
           {title && (
-            <h3 className="font-heading text-sm font-semibold text-foreground">
+            <h3 className="font-heading text-[17px] font-bold tracking-tight text-foreground">
               {title}
             </h3>
           )}

@@ -271,6 +271,21 @@ export interface SupplierKpiSummary {
   invoiceStatusBreakdown: { status: InvoiceStatus; label: string; count: number; color: string }[];
   deliveryPerformance: { month: string; onTime: number; late: number }[];
   recentActivity: { id: string; type: string; description: string; timestamp: string; link?: string }[];
+  /** Open bids awaiting a buyer decision. */
+  openBids: number;
+  /** Total still owed to the supplier across unpaid invoices. */
+  duePaymentAmount: number;
+  /** Headline growth figure shown on the transactions card. */
+  growthPct: number;
+  /** Order vs delivery counts per month, for the Performance chart. */
+  monthlyOrderDelivery: { month: string; order: number; delivery: number }[];
+  /** Day-by-day ordered/delivered counts for the Delivery Statistics chart. */
+  dailyDeliveryStats: { day: string; ordered: number; delivered: number }[];
+  deliveriesThisMonth: number;
+  deliveryChangePct: number;
+  /** Trailing 7-day series behind each of the three summary tiles. */
+  weeklyBreakdown: { day: number; orders: number; deliveries: number; payments: number }[];
+  monthTotals: { orders: number; deliveries: number; payments: number };
 }
 
 export interface POFilters { status?: POStatus | "all"; search?: string; from?: string; to?: string; }

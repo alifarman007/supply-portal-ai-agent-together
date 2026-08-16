@@ -43,6 +43,8 @@ const STATUS_MAP: Record<string, StatusMeta> = {
   clarification_requested: { label: "Clarification Requested", color: "warn" },
   shortlisted: { label: "Shortlisted", color: "info" },
   not_awarded: { label: "Not Awarded", color: "neutral" },
+  // Derived in reports rather than stored: an unpaid invoice past its due date.
+  overdue: { label: "Overdue", color: "danger" },
 };
 
 const COLORS = {
@@ -61,24 +63,37 @@ const DOTS = {
   neutral: "bg-muted-foreground",
 };
 
+/** Filled treatment used in report tables, where rows need a stronger signal. */
+const SOLID = {
+  ok: "bg-ok text-white",
+  warn: "bg-warn text-white",
+  danger: "bg-danger text-white",
+  info: "bg-info text-white",
+  neutral: "bg-muted-foreground text-white",
+};
+
 export function StatusPill({
   status,
+  variant = "soft",
   className,
 }: {
   status: AnyStatus;
+  variant?: "soft" | "solid";
   className?: string;
 }) {
   const meta = STATUS_MAP[status] ?? { label: status, color: "neutral" as const };
+  const solid = variant === "solid";
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        COLORS[meta.color],
+        "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold",
+        solid ? "px-3 py-1" : "px-2.5 py-0.5",
+        solid ? SOLID[meta.color] : COLORS[meta.color],
         className,
       )}
     >
-      <span className={cn("size-1.5 rounded-full", DOTS[meta.color])} />
+      {!solid && <span className={cn("size-1.5 rounded-full", DOTS[meta.color])} />}
       {meta.label}
     </span>
   );

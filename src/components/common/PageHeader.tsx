@@ -19,7 +19,7 @@ export function PageHeader({
       )}
     >
       <div>
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="font-heading text-[28px] leading-tight font-bold tracking-tight text-foreground">
           {title}
         </h1>
         {subtitle && (

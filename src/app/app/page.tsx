@@ -1,28 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  ClipboardList,
-  FileText,
-  Banknote,
-  TriangleAlert,
   ArrowRight,
+  Banknote,
+  Gavel,
+  Receipt,
+  ShoppingCart,
+  Truck,
   TrendingUp,
+  type LucideIcon,
 } from "lucide-react";
-import { PageHeader } from "@/components/common/PageHeader";
 import { Widget } from "@/components/common/Widget";
-import { KpiTile } from "@/components/charts/KpiTile";
-import { TrendArea } from "@/components/charts/TrendArea";
-import { DonutChart } from "@/components/charts/DonutChart";
-import { Sparkline } from "@/components/charts/Sparkline";
+import { PeriodPill } from "@/components/common/PeriodPill";
 import { StatusPill } from "@/components/common/StatusPill";
+import { PerformanceBars } from "@/components/charts/PerformanceBars";
+import { DeliveryStats } from "@/components/charts/DeliveryStats";
+import { MiniBars } from "@/components/charts/MiniBars";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { useKpiSummary, usePurchaseOrders, useInvoices, useTenders } from "@/lib/query/hooks";
 import { useAuth } from "@/store/auth";
 import { useLabels } from "@/lib/i18n/labels";
-import { formatBDT, formatBDTCompact, formatNumber } from "@/lib/format/money";
+import { formatBDT, formatNumber } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+] as const;
+const YEARS = ["2026", "2025", "2024"] as const;
 
 const container = {
   hidden: {},
@@ -42,301 +51,390 @@ export default function DashboardPage() {
   const { t, lang } = useLabels();
   const reduce = useReducedMotion();
 
+  const [perfYear, setPerfYear] = useState<string>(YEARS[0]);
+  const [deliveryMonth, setDeliveryMonth] = useState<string>(MONTHS[0]);
+  const [orderMonth, setOrderMonth] = useState<string>(MONTHS[0]);
+  const [deliveryTileMonth, setDeliveryTileMonth] = useState<string>(MONTHS[0]);
+  const [paymentMonth, setPaymentMonth] = useState<string>(MONTHS[0]);
+
   const money = (n: number) => formatBDT(n, { lang });
   const num = (n: number) => formatNumber(n, lang);
   const loading = isLoading || !data;
 
-  const ytdDelta = data && data.totalReceivedLastMonth > 0
-    ? Math.round(((data.totalReceivedMTD - data.totalReceivedLastMonth) / data.totalReceivedLastMonth) * 100)
-    : 0;
-
-  const trendData = data?.monthlyPaymentTrend.map((d) => ({
-    month: d.month,
-    thisYear: d.paid,
-    lastYear: d.lastYear,
-  })) ?? [];
-
-  const donutData = data?.invoiceStatusBreakdown.map((d) => ({
-    name: d.label,
-    value: d.count,
-    color: d.color,
-  })) ?? [];
-
   const latestPOs = (recentPOs ?? []).slice(0, 5);
-  const latestInvoices = (recentInvoices ?? []).slice(0, 5);
+  // "Pending" means raised and awaiting settlement — drafts aren't billed yet
+  // and paid ones are done, so neither belongs in this list.
+  const latestInvoices = (recentInvoices ?? [])
+    .filter((i) => ["submitted", "under_review", "approved"].includes(i.status))
+    .slice(0, 5);
   const latestTenders = (openTenders ?? []).slice(0, 5);
 
-  return (
-    <div className="mx-auto max-w-[1680px] space-y-6">
-      <PageHeader
-        title={
-          <span>
-            {t("greeting")},{" "}
-            <span className="text-primary dark:text-brand-cream">
-              {user?.name?.split(" ")[0] ?? "there"}
-            </span>
-          </span>
-        }
-        subtitle={t("dash_subtitle")}
-      />
+  const weekly = data?.weeklyBreakdown ?? [];
 
+  return (
+    <div className="mx-auto max-w-[1680px]">
       <motion.div
         variants={container}
         initial={reduce ? false : "hidden"}
         animate="show"
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-12"
+        className="grid grid-cols-1 gap-4 lg:grid-cols-3"
       >
-        {/* KPI — Active POs */}
-        <motion.div variants={item} className="xl:col-span-3">
-          <KpiTile
-            icon={ClipboardList}
-            label="Active Purchase Orders"
-            value={data?.activePOs ?? 0}
-            format={num}
-            loading={loading}
-            accent
-            footer={
-              loading ? (
-                <Skeleton className="h-11 w-full rounded-md" />
-              ) : (
-                <Sparkline
-                  data={trendData.map((d) => d.thisYear)}
-                  color="var(--chart-1)"
-                />
-              )
-            }
-          />
+        {/* Welcome */}
+        <motion.div variants={item}>
+          <Widget className="justify-center">
+            <div className="text-[15px] font-semibold text-foreground">
+              {t("greeting")}
+            </div>
+            <div className="font-heading mt-1 text-[26px] leading-tight font-bold text-brand-sky">
+              {user?.name ?? "there"}
+            </div>
+            {loading ? (
+              <Skeleton className="mt-4 h-9 w-40 rounded-md" />
+            ) : (
+              <div className="tnum font-heading mt-4 text-[32px] leading-none font-bold text-primary">
+                {money(data.totalReceivedYTD)}
+              </div>
+            )}
+            <p className="mt-3 text-sm text-muted-foreground">
+              Keep up the great work! 💪
+            </p>
+          </Widget>
         </motion.div>
 
-        {/* KPI — Pending Invoices */}
-        <motion.div variants={item} className="xl:col-span-3">
-          <KpiTile
-            icon={FileText}
-            label="Pending Invoices"
-            value={data?.pendingInvoices ?? 0}
-            format={num}
-            loading={loading}
-            footer={
-              <span className="text-xs text-muted-foreground">
-                {loading ? "—" : `${data.overdueInvoices} overdue`}
-              </span>
-            }
-          />
+        {/* Transactions */}
+        <motion.div variants={item} className="lg:col-span-2">
+          <Widget title="Transactions">
+            <p className="-mt-3 mb-6 text-sm text-muted-foreground">
+              {loading ? "—" : `Total ${data.growthPct}% Growth 😎 this month`}
+            </p>
+            <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">
+              <StatItem
+                icon={Gavel}
+                tone="bg-primary"
+                label="Open Bid"
+                value={loading ? "—" : num(data.openBids)}
+              />
+              <StatItem
+                icon={ShoppingCart}
+                tone="bg-chart-2"
+                label="Active Purchase Order"
+                value={loading ? "—" : num(data.activePOs)}
+              />
+              <StatItem
+                icon={Receipt}
+                tone="bg-chart-3"
+                label="Due Invoice"
+                value={loading ? "—" : num(data.pendingInvoices)}
+              />
+              <StatItem
+                icon={Banknote}
+                tone="bg-chart-4"
+                label="Due Payment"
+                value={loading ? "—" : money(data.duePaymentAmount)}
+              />
+            </div>
+          </Widget>
         </motion.div>
 
-        {/* KPI — Total Received YTD */}
-        <motion.div variants={item} className="xl:col-span-3">
-          <KpiTile
+        {/* Performance */}
+        <motion.div variants={item} className="lg:col-span-1 xl:col-span-1">
+          <Widget
+            title="Performance"
+            action={<PeriodPill value={perfYear} options={YEARS} onChange={setPerfYear} />}
+          >
+            {loading ? (
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            ) : (
+              <>
+                <PerformanceBars data={data.monthlyOrderDelivery} />
+                <div className="mt-3 flex items-center justify-center gap-5 text-xs">
+                  <Legend color="var(--chart-1)" label="Order" />
+                  <Legend color="var(--chart-2)" label="Delivery" />
+                </div>
+              </>
+            )}
+          </Widget>
+        </motion.div>
+
+        {/* Delivery statistics */}
+        <motion.div variants={item} className="lg:col-span-2">
+          <Widget
+            title="Delivery Statistics"
+            action={
+              <PeriodPill value={deliveryMonth} options={MONTHS} onChange={setDeliveryMonth} />
+            }
+          >
+            {loading ? (
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            ) : (
+              <>
+                <p className="-mt-3 text-sm text-muted-foreground">
+                  Total number of deliveries this month: {num(data.deliveriesThisMonth)}
+                </p>
+                <div className="mt-3 mb-1 flex items-center gap-5 text-xs">
+                  <Legend color="var(--chart-3)" label="Ordered" />
+                  <Legend color="var(--chart-1)" label="Delivered" />
+                </div>
+                <DeliveryStats data={data.dailyDeliveryStats} />
+                <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="grid size-6 place-items-center rounded-md bg-chart-2/15 text-chart-2">
+                    <TrendingUp className="size-3.5" />
+                  </span>
+                  {data.deliveryChangePct}% increase in deliveries this month
+                </div>
+              </>
+            )}
+          </Widget>
+        </motion.div>
+
+        {/* Three summary tiles */}
+        <motion.div variants={item}>
+          <SummaryTile
+            icon={ShoppingCart}
+            tint="bg-chart-4/15 text-chart-4"
+            color="var(--chart-4)"
+            label="Total Order"
+            value={loading ? "—" : num(data.monthTotals.orders)}
+            series={weekly.map((d) => ({ day: d.day, value: d.orders }))}
+            month={orderMonth}
+            onMonthChange={setOrderMonth}
+            loading={loading}
+          />
+        </motion.div>
+        <motion.div variants={item}>
+          <SummaryTile
+            icon={Truck}
+            tint="bg-chart-2/15 text-chart-2"
+            color="var(--chart-2)"
+            label="Total Delivery"
+            value={loading ? "—" : num(data.monthTotals.deliveries)}
+            series={weekly.map((d) => ({ day: d.day, value: d.deliveries }))}
+            month={deliveryTileMonth}
+            onMonthChange={setDeliveryTileMonth}
+            loading={loading}
+          />
+        </motion.div>
+        <motion.div variants={item}>
+          <SummaryTile
             icon={Banknote}
-            label="Total Received (YTD)"
-            value={data?.totalReceivedYTD ?? 0}
+            tint="bg-chart-5/15 text-chart-5"
+            color="var(--chart-5)"
+            label="Total Payment"
+            value={loading ? "—" : money(data.monthTotals.payments)}
+            series={weekly.map((d) => ({ day: d.day, value: d.payments }))}
+            month={paymentMonth}
+            onMonthChange={setPaymentMonth}
+            loading={loading}
             format={money}
-            loading={loading}
-            accent
-            delta={ytdDelta}
-            footer={
-              <span className="text-xs text-muted-foreground">
-                {loading ? "—" : `MTD: ${money(data.totalReceivedMTD)}`}
-              </span>
-            }
           />
         </motion.div>
 
-        {/* KPI — Overdue Invoices */}
-        <motion.div variants={item} className="xl:col-span-3">
-          <KpiTile
-            icon={TriangleAlert}
-            label="Overdue Invoices"
-            value={data?.overdueInvoices ?? 0}
-            format={num}
-            loading={loading}
-            warn={!!data?.overdueInvoices}
-            footer={
-              <span className="text-xs text-muted-foreground">
-                Requires immediate action
-              </span>
-            }
-          />
+        {/* Open tenders */}
+        <motion.div variants={item}>
+          <Widget title="Open Tender" action={<ViewAll href="/app/tenders" label={t("view_all")} />}>
+            <ListBody
+              loading={!openTenders}
+              empty={latestTenders.length === 0}
+              emptyLabel="No open tenders right now."
+            >
+              {latestTenders.map((tender) => (
+                <Row
+                  key={tender.id}
+                  href={`/app/tenders/${tender.id}`}
+                  title={tender.tenderNumber}
+                  subtitle={tender.title}
+                  meta={formatDate(tender.submissionDeadline)}
+                  status={tender.status}
+                />
+              ))}
+            </ListBody>
+          </Widget>
         </motion.div>
 
-        {/* Payment Trend */}
-        <motion.div variants={item} className="sm:col-span-2 xl:col-span-8">
+        {/* Open purchase orders */}
+        <motion.div variants={item}>
           <Widget
-            title="Payment Trend"
-            action={
-              <div className="flex items-center gap-4 text-xs">
-                <Legend color="var(--chart-1)" label="This year" />
-                <Legend color="var(--chart-2)" label="Last year" />
-              </div>
-            }
+            title="Open Purchase Order"
+            action={<ViewAll href="/app/purchase-orders" label={t("view_all")} />}
           >
-            {loading ? (
-              <Skeleton className="h-[264px] w-full rounded-lg" />
-            ) : (
-              <TrendArea data={trendData} />
-            )}
+            <ListBody loading={!recentPOs} empty={latestPOs.length === 0} emptyLabel="No purchase orders yet.">
+              {latestPOs.map((po) => (
+                <Row
+                  key={po.id}
+                  href={`/app/purchase-orders/${po.id}`}
+                  title={po.poNumber}
+                  subtitle={po.buyerDepartment}
+                  meta={money(po.grandTotal)}
+                  status={po.status}
+                />
+              ))}
+            </ListBody>
           </Widget>
         </motion.div>
 
-        {/* Invoice Status Donut */}
-        <motion.div variants={item} className="sm:col-span-2 xl:col-span-4">
-          <Widget title="Invoice Status Mix">
-            {loading ? (
-              <Skeleton className="mx-auto h-[196px] w-[196px] rounded-full" />
-            ) : (
-              <DonutChart data={donutData} centerLabel="Invoices" />
-            )}
+        {/* Pending bills */}
+        <motion.div variants={item}>
+          <Widget title="Pending Bill" action={<ViewAll href="/app/invoices" label={t("view_all")} />}>
+            <ListBody loading={!recentInvoices} empty={latestInvoices.length === 0} emptyLabel="No bills yet.">
+              {latestInvoices.map((inv) => (
+                <Row
+                  key={inv.id}
+                  href={`/app/invoices/${inv.id}`}
+                  title={inv.invoiceNumber}
+                  subtitle={inv.poNumber}
+                  meta={money(inv.totalAmount)}
+                  status={inv.status}
+                />
+              ))}
+            </ListBody>
           </Widget>
         </motion.div>
-
-        {/* Open Tenders */}
-        <motion.div variants={item} className="sm:col-span-2 xl:col-span-4">
-          <Widget
-            title="Open Tenders"
-            action={
-              <Link
-                href="/app/tenders"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline dark:text-brand-cream"
-              >
-                {t("view_all")} <ArrowRight className="size-3" />
-              </Link>
-            }
-          >
-            {!openTenders ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : latestTenders.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No open tenders right now.</p>
-            ) : (
-              <div className="space-y-2">
-                {latestTenders.map((t) => (
-                  <Link
-                    key={t.id}
-                    href={`/app/tenders/${t.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5 transition-colors hover:bg-muted/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">{t.tenderNumber}</div>
-                      <div className="truncate text-xs text-muted-foreground">{t.title}</div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="tnum text-xs font-semibold text-foreground">{formatDate(t.submissionDeadline)}</div>
-                      <StatusPill status={t.status} className="mt-0.5" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Widget>
-        </motion.div>
-
-        {/* Recent POs */}
-        <motion.div variants={item} className="sm:col-span-2 xl:col-span-4">
-          <Widget
-            title="Recent Purchase Orders"
-            action={
-              <Link
-                href="/app/purchase-orders"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline dark:text-brand-cream"
-              >
-                {t("view_all")} <ArrowRight className="size-3" />
-              </Link>
-            }
-          >
-            {!recentPOs ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {latestPOs.map((po) => (
-                  <Link
-                    key={po.id}
-                    href={`/app/purchase-orders/${po.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5 transition-colors hover:bg-muted/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">{po.poNumber}</div>
-                      <div className="text-xs text-muted-foreground">{po.buyerDepartment}</div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="tnum text-xs font-semibold text-foreground">{money(po.grandTotal)}</div>
-                      <StatusPill status={po.status} className="mt-0.5" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Widget>
-        </motion.div>
-
-        {/* Recent Invoices */}
-        <motion.div variants={item} className="sm:col-span-2 xl:col-span-4">
-          <Widget
-            title="Recent Invoices"
-            action={
-              <Link
-                href="/app/invoices"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline dark:text-brand-cream"
-              >
-                {t("view_all")} <ArrowRight className="size-3" />
-              </Link>
-            }
-          >
-            {!recentInvoices ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {latestInvoices.map((inv) => (
-                  <Link
-                    key={inv.id}
-                    href={`/app/invoices/${inv.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5 transition-colors hover:bg-muted/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">{inv.invoiceNumber}</div>
-                      <div className="text-xs text-muted-foreground">{inv.poNumber} · {formatDate(inv.invoiceDate)}</div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="tnum text-xs font-semibold text-foreground">{money(inv.totalAmount)}</div>
-                      <StatusPill status={inv.status} className="mt-0.5" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Widget>
-        </motion.div>
-
-        {/* Recent Activity */}
-        {data?.recentActivity && data.recentActivity.length > 0 && (
-          <motion.div variants={item} className="sm:col-span-2 xl:col-span-12">
-            <Widget title="Recent Activity">
-              <div className="divide-y divide-border/60">
-                {data.recentActivity.slice(0, 5).map((a) => (
-                  <div key={a.id} className="flex items-center gap-3 py-2.5">
-                    <span className="size-1.5 shrink-0 rounded-full bg-primary dark:bg-brand-cream" />
-                    <span className="flex-1 text-sm text-foreground">{a.description}</span>
-                    <span className="tnum text-xs text-muted-foreground">
-                      {formatDate(a.timestamp)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Widget>
-          </motion.div>
-        )}
       </motion.div>
     </div>
+  );
+}
+
+function StatItem({
+  icon: Icon,
+  tone,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  tone: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl text-white", tone)}>
+        <Icon className="size-5" strokeWidth={2} />
+      </span>
+      <div className="min-w-0">
+        <div className="truncate text-sm text-muted-foreground">{label}</div>
+        {/* No truncation here — a clipped currency figure reads as wrong data. */}
+        <div className="tnum font-heading text-lg font-bold text-foreground">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryTile({
+  icon: Icon,
+  tint,
+  color,
+  label,
+  value,
+  series,
+  month,
+  onMonthChange,
+  loading,
+  format,
+}: {
+  icon: LucideIcon;
+  tint: string;
+  color: string;
+  label: string;
+  value: string;
+  series: { day: number; value: number }[];
+  month: string;
+  onMonthChange: (v: string) => void;
+  loading?: boolean;
+  format?: (n: number) => string;
+}) {
+  return (
+    <Widget>
+      <div className="flex items-start justify-between">
+        <span className={cn("grid size-11 place-items-center rounded-xl", tint)}>
+          <Icon className="size-5" strokeWidth={2} />
+        </span>
+        <PeriodPill value={month} options={MONTHS} onChange={onMonthChange} />
+      </div>
+      {loading ? (
+        <Skeleton className="mt-5 h-8 w-28 rounded-md" />
+      ) : (
+        <div className="tnum font-heading mt-5 text-[28px] leading-tight font-bold text-foreground">
+          {value}
+        </div>
+      )}
+      <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+      <div className="mt-3">
+        {loading ? (
+          <Skeleton className="h-[150px] w-full rounded-lg" />
+        ) : (
+          <MiniBars data={series} color={color} label={label} format={format} />
+        )}
+      </div>
+    </Widget>
+  );
+}
+
+function ListBody({
+  loading,
+  empty,
+  emptyLabel,
+  children,
+}: {
+  loading: boolean;
+  empty: boolean;
+  emptyLabel: string;
+  children: React.ReactNode;
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+  if (empty) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">{emptyLabel}</p>;
+  }
+  return <div className="space-y-2.5">{children}</div>;
+}
+
+function Row({
+  href,
+  title,
+  subtitle,
+  meta,
+  status,
+}: {
+  href: string;
+  title: string;
+  subtitle: string;
+  meta: string;
+  status: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-3 rounded-xl border border-border px-3.5 py-3 transition-colors hover:bg-muted/50"
+    >
+      <div className="min-w-0">
+        <div className="truncate text-sm font-semibold text-foreground">{title}</div>
+        <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <div className="tnum text-xs font-semibold text-foreground">{meta}</div>
+        <StatusPill status={status} />
+      </div>
+    </Link>
+  );
+}
+
+function ViewAll({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+    >
+      {label} <ArrowRight className="size-3.5" />
+    </Link>
   );
 }
 

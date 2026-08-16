@@ -34,12 +34,14 @@ export function SidebarNav({
     ),
   })).filter((group) => group.items.length > 0);
 
+  // Left edge stays flush in both states so the active pill keeps its shape
+  // when collapsing; only the right inset changes.
   return (
-    <nav className="flex flex-col gap-5 px-3">
+    <nav className={cn("flex flex-col gap-6", collapsed ? "pr-6" : "pr-4")}>
       {visibleGroups.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           {!collapsed && (
-            <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+            <div className="rule-label pb-2 pl-5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
               {t(group.label)}
             </div>
           )}
@@ -52,17 +54,18 @@ export function SidebarNav({
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                  collapsed && "justify-center px-0",
+                  // Flush to the rail's left edge with a rounded right cap, so
+                  // the active state reads as a tab pulled out of the canvas.
+                  "group relative flex items-center gap-3.5 py-3 text-[15px] font-medium transition-colors",
+                  collapsed
+                    ? "justify-center rounded-r-full px-0"
+                    : "rounded-r-full pr-4 pl-5",
                   active
-                    ? "bg-sidebar-accent text-foreground"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-foreground/75 hover:bg-muted hover:text-foreground",
                 )}
               >
-                {active && (
-                  <span className="absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full bg-sidebar-primary" />
-                )}
-                <Icon className="size-[18px] shrink-0" strokeWidth={1.75} />
+                <Icon className="size-[20px] shrink-0" strokeWidth={1.75} />
                 {!collapsed && <span className="truncate">{t(item.label)}</span>}
               </Link>
             );

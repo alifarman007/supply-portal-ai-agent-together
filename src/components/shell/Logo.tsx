@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useLabels } from "@/lib/i18n/labels";
+import { KaziFarmsLogo, KaziFarmsMarkBlock } from "./KaziFarmsLogo";
 
 export function Logo({
   collapsed = false,
@@ -12,20 +13,17 @@ export function Logo({
   className?: string;
 }) {
   const { t } = useLabels();
+
+  if (collapsed) {
+    return <KaziFarmsMarkBlock className={cn("w-11 shrink-0", className)} />;
+  }
+
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark className="size-10 shrink-0" />
-      {!collapsed && (
-        <div className="leading-none">
-          <div className="font-heading text-[16px] font-bold tracking-tight text-foreground">
-            <span>Kazi </span>
-            <span className="text-primary">Farms</span>
-          </div>
-          <div className="mt-0.5 text-[9.5px] font-bold tracking-[0.16em] text-primary uppercase">
-            {t("brand_descriptor")}
-          </div>
-        </div>
-      )}
+    <div className={cn("leading-none", className)}>
+      <KaziFarmsLogo className="w-[150px]" />
+      <div className="mt-1.5 text-[9.5px] font-bold tracking-[0.16em] text-primary uppercase">
+        {t("brand_descriptor")}
+      </div>
     </div>
   );
 }

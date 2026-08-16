@@ -97,7 +97,9 @@ function TabsTrigger({
       {isActive && (
         <motion.span
           layoutId="tabs-active-pill"
-          className="absolute inset-0 -z-0 rounded-lg bg-primary shadow-sm group-data-[variant=line]/tabs-list:bg-transparent"
+          // rounded-[inherit] so the pill follows whatever radius the trigger
+          // carries — lets a caller make the whole control fully rounded.
+          className="absolute inset-0 -z-0 rounded-[inherit] bg-primary shadow-sm group-data-[variant=line]/tabs-list:bg-transparent"
           transition={{ type: "spring", stiffness: 500, damping: 38, mass: 0.9 }}
         />
       )}

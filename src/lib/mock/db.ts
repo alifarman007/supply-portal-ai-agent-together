@@ -994,5 +994,66 @@ export function buildKpiSummary(): SupplierKpiSummary {
     { id: "ra-5", type: "grn_confirmed", description: "DC-2026-0061 GRN confirmed by Procurement", timestamp: daysAgo(30), link: "/app/deliveries" },
   ];
 
-  return { activePOs, pendingInvoices, totalReceivedYTD, totalReceivedMTD, totalReceivedLastMonth, overdueInvoices, monthlyPaymentTrend, invoiceStatusBreakdown, deliveryPerformance, recentActivity };
+  // Bids still sitting with the buyer — anything submitted but not yet resolved.
+  const openBids = bids.filter((b) =>
+    ["submitted", "under_evaluation", "clarification_requested", "shortlisted"].includes(b.status)
+  ).length;
+
+  // Everything invoiced but not yet settled.
+  const duePaymentAmount = invoices
+    .filter((i) => ["submitted", "under_review", "approved"].includes(i.status))
+    .reduce((s, i) => s + i.totalAmount, 0);
+
+  const growthPct = totalReceivedLastMonth > 0
+    ? Math.round(((totalReceivedMTD - totalReceivedLastMonth) / totalReceivedLastMonth) * 1000) / 10
+    : 48.5;
+
+  const monthlyOrderDelivery = [
+    { month: "Jan", order: 17, delivery: 11 },
+    { month: "Feb", order: 21, delivery: 13 },
+    { month: "Mar", order: 19, delivery: 12 },
+    { month: "Apr", order: 25, delivery: 15 },
+    { month: "May", order: 23, delivery: 14 },
+    { month: "Jun", order: 27, delivery: 16 },
+    { month: "Jul", order: 24, delivery: 14 },
+  ];
+
+  const dailyDeliveryStats = [
+    { day: "1 Jan", ordered: 4, delivered: 3 },
+    { day: "2 Jan", ordered: 5, delivered: 4 },
+    { day: "3 Jan", ordered: 4, delivered: 4 },
+    { day: "4 Jan", ordered: 6, delivered: 5 },
+    { day: "5 Jan", ordered: 5, delivered: 4 },
+    { day: "6 Jan", ordered: 7, delivered: 6 },
+    { day: "7 Jan", ordered: 6, delivered: 5 },
+    { day: "8 Jan", ordered: 5, delivered: 4 },
+    { day: "9 Jan", ordered: 7, delivered: 6 },
+    { day: "10 Jan", ordered: 6, delivered: 5 },
+  ];
+
+  const deliveriesThisMonth = dailyDeliveryStats.reduce((s, d) => s + d.ordered, 0);
+  const deliveryChangePct = 15;
+
+  const weeklyBreakdown = [
+    { day: 1, orders: 3, deliveries: 2, payments: 55000 },
+    { day: 2, orders: 4, deliveries: 3, payments: 70000 },
+    { day: 3, orders: 3, deliveries: 3, payments: 60000 },
+    { day: 4, orders: 5, deliveries: 4, payments: 85000 },
+    { day: 5, orders: 4, deliveries: 3, payments: 62000 },
+    { day: 6, orders: 6, deliveries: 5, payments: 98000 },
+    { day: 7, orders: 5, deliveries: 4, payments: 55000 },
+  ];
+
+  const monthTotals = {
+    orders: weeklyBreakdown.reduce((s, d) => s + d.orders, 0),
+    deliveries: weeklyBreakdown.reduce((s, d) => s + d.deliveries, 0),
+    payments: weeklyBreakdown.reduce((s, d) => s + d.payments, 0),
+  };
+
+  return {
+    activePOs, pendingInvoices, totalReceivedYTD, totalReceivedMTD, totalReceivedLastMonth,
+    overdueInvoices, monthlyPaymentTrend, invoiceStatusBreakdown, deliveryPerformance, recentActivity,
+    openBids, duePaymentAmount, growthPct, monthlyOrderDelivery, dailyDeliveryStats,
+    deliveriesThisMonth, deliveryChangePct, weeklyBreakdown, monthTotals,
+  };
 }

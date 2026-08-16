@@ -50,6 +50,8 @@
   --color-brand-red-050: var(--brand-red-050);
   --color-brand-cream: var(--brand-cream);
   --color-brand-cream-600: var(--brand-cream-600);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-sky: var(--brand-sky);
 
   --color-ok: var(--ok);
   --color-warn: var(--warn);
@@ -62,7 +64,7 @@
   --color-ink-muted: var(--text-muted);
   --color-hairline: var(--border);
 
-  --radius: 0.75rem;
+  --radius: 1rem;
   --radius-sm: calc(var(--radius) * 0.66);
   --radius-md: calc(var(--radius) * 0.85);
   --radius-lg: var(--radius);
@@ -72,28 +74,36 @@
 }
 
 :root {
-  --brand-red: #dc2626;
-  --brand-red-600: #b91c1c;
-  --brand-red-700: #991b1b;
-  --brand-red-900: #450a0a;
-  --brand-red-050: #fef2f2;
-  --brand-cream: #fef9c3;
-  --brand-cream-600: #ca8a04;
+  /* Pulled from the Kazi Farms mark: signal red on a chrome-yellow field. */
+  --brand-red: #ee3124;
+  --brand-red-600: #d62317;
+  --brand-red-700: #b01c12;
+  --brand-red-900: #4a0d08;
+  --brand-red-050: #fef3f1;
+  --brand-yellow: #ffe81a;
+  /* Ivory tint the whole surface sits on — the yellow desaturated to near-white. */
+  --brand-cream: #fafaec;
+  --brand-cream-600: #c69a06;
+  /* Accent used for names/links in the header block. */
+  --brand-sky: #00aeef;
 }
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f4f2;
-  --bg-grad-a: #fbfbf9;
-  --bg-grad-b: #ececea;
-  --surface: rgba(255, 255, 255, 0.86);
-  --surface-strong: rgba(255, 255, 255, 0.97);
+  --bg: #fafaec;
+  --bg-grad-a: #fbfbef;
+  --bg-grad-b: #f7f7e6;
+  /* Cards are opaque white on ivory — the contrast is the whole effect, so no
+     translucency here or the separation washes out. */
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
   --surface-solid: #ffffff;
-  --text: #201f1e;
-  --text-muted: #5c5854;
-  --shadow: 0 10px 34px rgba(30, 27, 24, 0.1);
-  --glow-red: rgba(220, 38, 38, 0.06);
-  --glow-cream: rgba(234, 179, 8, 0.1);
+  --text: #1c1b19;
+  --text-muted: #6f6b64;
+  --shadow: 0 1px 2px rgba(28, 27, 25, 0.04);
+  /* Only the login hero spotlight reads these now — not the app canvas. */
+  --glow-red: rgba(238, 49, 36, 0.06);
+  --glow-cream: rgba(255, 232, 26, 0.1);
 
   --background: var(--bg);
   --foreground: var(--text);
@@ -103,90 +113,90 @@
   --popover-foreground: var(--text);
   --primary: var(--brand-red);
   --primary-foreground: #ffffff;
-  --secondary: #eeece7;
+  --secondary: #f2f2e4;
   --secondary-foreground: var(--text);
-  --muted: #ececea;
+  --muted: #f2f2e4;
   --muted-foreground: var(--text-muted);
-  --accent: #eeece7;
+  --accent: #f2f2e4;
   --accent-foreground: var(--text);
   --destructive: var(--danger);
-  --border: rgba(32, 31, 30, 0.12);
-  --input: rgba(32, 31, 30, 0.16);
-  --ring: rgba(220, 38, 38, 0.4);
+  --border: rgba(28, 27, 25, 0.08);
+  --input: rgba(28, 27, 25, 0.12);
+  --ring: rgba(238, 49, 36, 0.35);
 
-  --ok: #15803d;
-  --warn: #b45309;
-  --danger: #c2410c;
-  --info: #0369a1;
+  --ok: #16a34a;
+  --warn: #ea9008;
+  --danger: #e0521f;
+  --info: #2f7fe4;
 
   --chart-1: var(--brand-red);
-  --chart-2: #0ea5e9;
-  --chart-3: #16a34a;
-  --chart-4: var(--brand-cream-600);
-  --chart-5: #6366f1;
+  --chart-2: #4ab84a;
+  --chart-3: #f5a623;
+  --chart-4: #4c8ff0;
+  --chart-5: #8b7ff0;
 
-  --sidebar: var(--surface-strong);
+  --sidebar: transparent;
   --sidebar-foreground: var(--text);
   --sidebar-primary: var(--brand-red);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eeece7;
+  --sidebar-accent: #f2f2e4;
   --sidebar-accent-foreground: var(--text);
-  --sidebar-border: rgba(32, 31, 30, 0.12);
-  --sidebar-ring: rgba(220, 38, 38, 0.4);
+  --sidebar-border: rgba(28, 27, 25, 0.08);
+  --sidebar-ring: rgba(238, 49, 36, 0.35);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #17181a;
-  --bg-grad-a: #1c1d20;
-  --bg-grad-b: #121315;
-  --surface: rgba(255, 255, 255, 0.08);
-  --surface-strong: rgba(255, 255, 255, 0.13);
-  --surface-solid: #26282b;
-  --text: #f4f4f2;
-  --text-muted: #b3b1ac;
-  --shadow: 0 10px 44px rgba(0, 0, 0, 0.55);
-  --glow-red: rgba(220, 38, 38, 0.16);
-  --glow-cream: rgba(234, 179, 8, 0.08);
+  --bg: #191917;
+  --bg-grad-a: #1e1e1b;
+  --bg-grad-b: #141412;
+  --surface: #232320;
+  --surface-strong: #2a2a26;
+  --surface-solid: #232320;
+  --text: #f6f6ee;
+  --text-muted: #b0ada4;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --glow-red: rgba(238, 49, 36, 0.16);
+  --glow-cream: rgba(255, 232, 26, 0.08);
 
   --background: var(--bg);
   --foreground: var(--text);
   --card: var(--surface-solid);
   --card-foreground: var(--text);
-  --popover: #2c2e31;
+  --popover: #2a2a26;
   --popover-foreground: var(--text);
   --primary: var(--brand-red);
   --primary-foreground: #ffffff;
-  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary: rgba(255, 255, 255, 0.08);
   --secondary-foreground: var(--text);
-  --muted: rgba(255, 255, 255, 0.08);
+  --muted: rgba(255, 255, 255, 0.07);
   --muted-foreground: var(--text-muted);
-  --accent: rgba(255, 255, 255, 0.12);
+  --accent: rgba(255, 255, 255, 0.1);
   --accent-foreground: var(--text);
-  --destructive: #fb923c;
-  --border: rgba(255, 255, 255, 0.14);
-  --input: rgba(255, 255, 255, 0.2);
-  --ring: rgba(220, 38, 38, 0.55);
+  --destructive: #f87144;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: rgba(238, 49, 36, 0.5);
 
-  --ok: #34d399;
+  --ok: #3ecf6a;
   --warn: #fbbf24;
-  --danger: #fb923c;
-  --info: #38bdf8;
+  --danger: #f87144;
+  --info: #5aa2f5;
 
-  --chart-1: #ef4444;
-  --chart-2: #2f8fff;
-  --chart-3: #22c55e;
-  --chart-4: var(--brand-cream-600);
-  --chart-5: #a78bfa;
+  --chart-1: #f5473a;
+  --chart-2: #5ecb5e;
+  --chart-3: #f7b03c;
+  --chart-4: #61a0f5;
+  --chart-5: #a397f5;
 
-  --sidebar: rgba(255, 255, 255, 0.05);
+  --sidebar: transparent;
   --sidebar-foreground: var(--text);
   --sidebar-primary: var(--brand-red);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
   --sidebar-accent-foreground: var(--text);
-  --sidebar-border: rgba(255, 255, 255, 0.14);
-  --sidebar-ring: rgba(220, 38, 38, 0.55);
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+  --sidebar-ring: rgba(238, 49, 36, 0.5);
 }
 
 @layer base {
@@ -203,12 +213,10 @@
   body {
     @apply text-foreground antialiased;
     min-height: 100dvh;
+    /* Flat fill on purpose. `background-attachment: fixed` here forced a
+       full-viewport repaint on every scroll frame, which made thin icon
+       strokes shimmer — and the new canvas is a solid ivory anyway. */
     background-color: var(--bg);
-    background-image:
-      radial-gradient(1100px 760px at 0% -5%, var(--glow-red), transparent 60%),
-      radial-gradient(1000px 720px at 100% 105%, var(--glow-cream), transparent 55%),
-      linear-gradient(180deg, var(--bg-grad-a), var(--bg-grad-b));
-    background-attachment: fixed;
   }
 
   [data-theme="dark"] body::before {
@@ -240,10 +248,10 @@
 }
 
 @layer components {
+  /* Kept the `.glass` name so every existing surface picks this up, but the
+     treatment is now a flat card: opaque fill, hairline edge, no blur. */
   .glass {
     background: var(--surface);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow);
@@ -251,17 +259,26 @@
 
   .glass-raised {
     background: var(--surface-strong);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
-    box-shadow:
-      0 18px 60px rgba(0, 0, 0, 0.32),
-      0 2px 0 rgba(255, 255, 255, 0.06) inset;
+    box-shadow: 0 12px 32px rgba(28, 27, 25, 0.1);
   }
 
   .hairline {
     border-color: var(--border);
+  }
+
+  /* Section label followed by a rule that eats the remaining width. */
+  .rule-label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+  .rule-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
   }
 
   @keyframes marquee {
