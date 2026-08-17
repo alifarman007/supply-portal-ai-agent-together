@@ -14,21 +14,47 @@ import {
 } from "@/components/common/ReportTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useInvoices, usePayments, usePurchaseOrders } from "@/lib/query/hooks";
+import {
+  useInvoices,
+  usePurchaseOrders,
+  useChallans,
+  useKpiSummary,
+} from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
-import { formatDate } from "@/lib/format/date";
-import type { Invoice, Payment, PurchaseOrder } from "@/lib/mock/types";
+import { formatDate, DEMO_NOW } from "@/lib/format/date";
+import type { Invoice, PurchaseOrder } from "@/lib/mock/types";
 
 /** Reports are cut against period end rather than "now" so totals stay stable. */
-const PERIOD_END = new Date("2026-06-30");
+const PERIOD_END = DEMO_NOW;
+
+/** Statuses that represent a billed invoice — drafts and rejections aren't. */
+const BILLED = ["submitted", "under_review", "approved", "paid"];
 
 type ReceivableRow = Invoice & { displayStatus: string };
+
+interface VatRow {
+  key: string;
+  month: string;
+  invoiced: number;
+  vatCollected: number;
+  aitDeducted: number;
+  net: number;
+}
+
+interface FulfilmentRow {
+  po: PurchaseOrder;
+  itemsOrdered: number;
+  itemsDelivered: number;
+  fulfilmentPct: number;
+  status: string;
+}
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("receivables");
   const { data: invoices } = useInvoices({});
-  const { data: payments } = usePayments({});
   const { data: pos } = usePurchaseOrders({});
+  const { data: challans } = useChallans({});
+  const { data: kpi } = useKpiSummary();
 
   const receivables: ReceivableRow[] = useMemo(
     () =>
@@ -40,26 +66,104 @@ export default function ReportsPage() {
         .map((inv) => ({
           ...inv,
           // Past due outranks the workflow status — that's what the report is for.
-          displayStatus:
-            new Date(inv.dueDate) < PERIOD_END ? "overdue" : inv.status,
+          displayStatus: new Date(inv.dueDate) < PERIOD_END ? "overdue" : inv.status,
         })),
     [invoices],
   );
 
-  const totals = useMemo(
-    () =>
-      (payments ?? []).reduce(
-        (acc, p) => ({
-          gross: acc.gross + p.grossAmount,
-          vat: acc.vat + p.vatDeductedAtSource,
-          ait: acc.ait + p.aitDeduction,
-          tds: acc.tds + p.tdsDeduction,
-          net: acc.net + p.netAmountPaid,
-        }),
-        { gross: 0, vat: 0, ait: 0, tds: 0, net: 0 },
-      ),
-    [payments],
+  const vatRows: VatRow[] = useMemo(() => {
+    const byMonth = new Map<string, VatRow>();
+    for (const inv of invoices ?? []) {
+      if (!BILLED.includes(inv.status)) continue;
+      const d = new Date(inv.invoiceDate);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const row =
+        byMonth.get(key) ??
+        {
+          key,
+          month: d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+          invoiced: 0,
+          vatCollected: 0,
+          aitDeducted: 0,
+          net: 0,
+        };
+      row.invoiced += inv.totalAmount;
+      row.vatCollected += inv.vatAmount;
+      row.aitDeducted += inv.aitAmount;
+      row.net = row.vatCollected - row.aitDeducted;
+      byMonth.set(key, row);
+    }
+    return [...byMonth.values()].sort((a, b) => a.key.localeCompare(b.key));
+  }, [invoices]);
+
+  const vatTotals = vatRows.reduce(
+    (acc, r) => ({
+      collected: acc.collected + r.vatCollected,
+      deducted: acc.deducted + r.aitDeducted,
+      net: acc.net + r.net,
+    }),
+    { collected: 0, deducted: 0, net: 0 },
   );
+
+  const fulfilment: FulfilmentRow[] = useMemo(() => {
+    // Goods in transit are not fulfilled, so only confirmed arrivals count
+    // towards the delivered quantity.
+    const deliveredQty = new Map<string, number>();
+    const inFlight = new Set<string>();
+    for (const c of challans ?? []) {
+      if (c.status === "delivered" || c.status === "grn_confirmed") {
+        for (const item of c.items) {
+          deliveredQty.set(
+            item.poLineItemId,
+            (deliveredQty.get(item.poLineItemId) ?? 0) + item.quantity,
+          );
+        }
+      } else {
+        inFlight.add(c.poId);
+      }
+    }
+
+    return (pos ?? []).map((po) => {
+      const orderedQty = po.items.reduce((s, i) => s + i.quantity, 0);
+      const doneQty = po.items.reduce(
+        (s, i) => s + Math.min(deliveredQty.get(i.id) ?? 0, i.quantity),
+        0,
+      );
+      const itemsDelivered = po.items.filter(
+        (i) => (deliveredQty.get(i.id) ?? 0) >= i.quantity,
+      ).length;
+      const fulfilmentPct = orderedQty === 0 ? 0 : Math.round((doneQty / orderedQty) * 100);
+
+      // Order matters: a cancelled or completed PO says so regardless of what
+      // is on the road, and an in-flight shipment outranks a partial count.
+      const status =
+        po.status === "cancelled"
+          ? "cancelled"
+          : fulfilmentPct >= 100
+            ? "fulfilled"
+            : inFlight.has(po.id)
+              ? "in_transit"
+              : fulfilmentPct > 0
+                ? "partial"
+                : "pending";
+
+      return { po, itemsOrdered: po.items.length, itemsDelivered, fulfilmentPct, status };
+    });
+  }, [pos, challans]);
+
+  const onTimeRate = useMemo(() => {
+    const perf = kpi?.deliveryPerformance ?? [];
+    const onTime = perf.reduce((s, m) => s + m.onTime, 0);
+    const late = perf.reduce((s, m) => s + m.late, 0);
+    return onTime + late === 0 ? 0 : Math.round((onTime / (onTime + late)) * 100);
+  }, [kpi]);
+
+  const avgFulfilment =
+    fulfilment.length === 0
+      ? 0
+      : Math.round(
+          fulfilment.reduce((s, r) => s + r.fulfilmentPct, 0) / fulfilment.length,
+        );
 
   const outstandingTotal = receivables.reduce((s, r) => s + r.totalAmount, 0);
 
@@ -103,87 +207,92 @@ export default function ReportsPage() {
     },
   ];
 
-  const paymentCols: ReportColumn<Payment>[] = [
+  const vatCols: ReportColumn<VatRow>[] = [
     {
-      key: "date",
-      header: "Date",
-      render: (p) => <span className="tnum">{formatDate(p.paymentDate)}</span>,
-      csv: (p) => p.paymentDate.slice(0, 10),
+      key: "month",
+      header: "Month",
+      cellClassName: "w-full min-w-[140px]",
+      render: (r) => <span className="font-medium text-foreground">{r.month}</span>,
+      csv: (r) => r.month,
     },
     {
-      key: "invoice",
-      header: "Invoice Ref",
-      render: (p) => <span className="font-semibold">{p.invoiceNumber}</span>,
-      csv: (p) => p.invoiceNumber,
-    },
-    {
-      key: "gross",
-      header: "Gross (BDT)",
-      align: "right",
-      render: (p) => <span className="tnum">{formatBDT(p.grossAmount)}</span>,
-      csv: (p) => p.grossAmount,
+      key: "invoiced",
+      header: "Invoiced (BDT)",
+      render: (r) => <span className="tnum whitespace-nowrap">{formatBDT(r.invoiced)}</span>,
+      csv: (r) => r.invoiced,
     },
     {
       key: "vat",
-      header: "VAT",
-      align: "right",
-      render: (p) => <span className="tnum text-danger">-{formatBDT(p.vatDeductedAtSource)}</span>,
-      csv: (p) => p.vatDeductedAtSource,
+      header: "VAT Collected (15%)",
+      render: (r) => <span className="tnum whitespace-nowrap">{formatBDT(r.vatCollected)}</span>,
+      csv: (r) => r.vatCollected,
     },
     {
       key: "ait",
-      header: "AIT",
-      align: "right",
-      render: (p) => <span className="tnum text-danger">-{formatBDT(p.aitDeduction)}</span>,
-      csv: (p) => p.aitDeduction,
+      header: "AIT Deducted (3%)",
+      render: (r) => (
+        <span className="tnum whitespace-nowrap text-danger">
+          {formatBDT(r.aitDeducted)}
+        </span>
+      ),
+      csv: (r) => r.aitDeducted,
     },
     {
       key: "net",
-      header: "Net Paid",
-      align: "right",
-      render: (p) => <span className="tnum font-bold text-ok">{formatBDT(p.netAmountPaid)}</span>,
-      csv: (p) => p.netAmountPaid,
+      header: "Net After Deduction",
+      render: (r) => (
+        <span className="tnum font-semibold whitespace-nowrap text-ok">{formatBDT(r.net)}</span>
+      ),
+      csv: (r) => r.net,
     },
   ];
 
-  const poCols: ReportColumn<PurchaseOrder>[] = [
+  const fulfilmentCols: ReportColumn<FulfilmentRow>[] = [
     {
       key: "po",
       header: "PO Number",
-      render: (po) => (
+      render: (r) => (
         <Link
-          href={`/app/purchase-orders/${po.id}`}
-          className="font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+          href={`/app/purchase-orders/${r.po.id}`}
+          className="font-semibold whitespace-nowrap text-primary underline underline-offset-4 hover:opacity-80"
         >
-          {po.poNumber}
+          {r.po.poNumber}
         </Link>
       ),
-      csv: (po) => po.poNumber,
+      csv: (r) => r.po.poNumber,
     },
     {
       key: "dept",
       header: "Buyer Dept",
-      render: (po) => <span className="text-muted-foreground">{po.buyerDepartment}</span>,
-      csv: (po) => po.buyerDepartment,
+      cellClassName: "w-full min-w-[160px]",
+      render: (r) => (
+        <span className="text-muted-foreground">{r.po.buyerDepartment}</span>
+      ),
+      csv: (r) => r.po.buyerDepartment,
     },
     {
-      key: "issued",
-      header: "Issue Date",
-      render: (po) => <span className="tnum">{formatDate(po.issuedDate)}</span>,
-      csv: (po) => po.issuedDate.slice(0, 10),
+      key: "ordered",
+      header: "Items Ordered",
+      render: (r) => <span className="tnum">{r.itemsOrdered}</span>,
+      csv: (r) => r.itemsOrdered,
     },
     {
-      key: "value",
-      header: "Value (BDT)",
-      align: "right",
-      render: (po) => <span className="tnum font-semibold">{formatBDT(po.grandTotal)}</span>,
-      csv: (po) => po.grandTotal,
+      key: "delivered",
+      header: "Items Delivered",
+      render: (r) => <span className="tnum">{r.itemsDelivered}</span>,
+      csv: (r) => r.itemsDelivered,
+    },
+    {
+      key: "pct",
+      header: "Fulfillment %",
+      render: (r) => <span className="tnum">{r.fulfilmentPct}%</span>,
+      csv: (r) => `${r.fulfilmentPct}%`,
     },
     {
       key: "status",
       header: "Status",
-      render: (po) => <StatusPill status={po.status} variant="solid" />,
-      csv: (po) => po.status,
+      render: (r) => <StatusPill status={r.status} variant="solid" />,
+      csv: (r) => r.status,
     },
   ];
 
@@ -191,9 +300,9 @@ export default function ReportsPage() {
     if (activeTab === "receivables") {
       downloadReportCsv("outstanding-receivables.csv", receivableCols, receivables);
     } else if (activeTab === "vat") {
-      downloadReportCsv("vat-tax-summary.csv", paymentCols, payments ?? []);
+      downloadReportCsv("vat-tax-summary.csv", vatCols, vatRows);
     } else {
-      downloadReportCsv("po-fulfillment.csv", poCols, pos ?? []);
+      downloadReportCsv("po-fulfillment.csv", fulfilmentCols, fulfilment);
     }
     toast.success("Report exported.");
   };
@@ -211,17 +320,21 @@ export default function ReportsPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="h-12 w-full rounded-full bg-muted p-1.5">
-          <TabsTrigger value="receivables" className="rounded-full">
-            Outstanding Receivables
-          </TabsTrigger>
-          <TabsTrigger value="vat" className="rounded-full">
-            VAT &amp; TAX Summary
-          </TabsTrigger>
-          <TabsTrigger value="fulfillment" className="rounded-full">
-            PO Fulfillment
-          </TabsTrigger>
-        </TabsList>
+        {/* Three long labels do not fit a phone, and the pills refuse to wrap —
+            so the strip scrolls sideways rather than bleeding off both edges. */}
+        <div className="tab-scroll -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="h-12 w-full min-w-max rounded-full bg-muted p-1.5">
+            <TabsTrigger value="receivables" className="rounded-full">
+              Outstanding Receivables
+            </TabsTrigger>
+            <TabsTrigger value="vat" className="rounded-full">
+              VAT &amp; TAX Summary
+            </TabsTrigger>
+            <TabsTrigger value="fulfillment" className="rounded-full">
+              PO Fulfillment
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Outstanding receivables */}
         <TabsContent value="receivables" className="mt-5 space-y-3">
@@ -239,45 +352,68 @@ export default function ReportsPage() {
 
         {/* VAT & TAX summary */}
         <TabsContent value="vat" className="mt-5 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <TotalCard label="Total Gross Invoiced" value={totals.gross} />
-            <TotalCard label="VAT Deducted at Source" value={totals.vat} tone="text-danger" />
-            <TotalCard label="AIT Deducted" value={totals.ait} tone="text-danger" />
-            <TotalCard label="Net Amount Received" value={totals.net} tone="text-ok" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard label="Total VAT Collected (15%)" value={formatBDT(vatTotals.collected)} />
+            <StatCard
+              label="Total AIT Deducted (3%)"
+              value={formatBDT(vatTotals.deducted)}
+              tone="text-danger"
+            />
+            <StatCard
+              label="Net After Deduction YTD"
+              value={formatBDT(vatTotals.net)}
+              tone="text-ok"
+            />
           </div>
 
-          <SectionTitle
-            title="Payment & Deduction Detail"
-            meta={`${(payments ?? []).length} payment${(payments ?? []).length === 1 ? "" : "s"}`}
-          />
           <ReportTable
-            columns={paymentCols}
-            rows={payments ?? []}
-            getRowKey={(p) => p.id}
-            emptyLabel="No payments received yet."
+            columns={vatCols}
+            rows={vatRows}
+            getRowKey={(r) => r.key}
+            emptyLabel="No invoices raised in this period."
           />
 
           <Widget title="VAT Notes">
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>• Standard VAT rate: <strong className="text-foreground">15%</strong> (per NBR Bangladesh)</p>
-              <p>• AIT (Advance Income Tax): <strong className="text-foreground">3%</strong> deducted at source</p>
+              <p>
+                • Standard VAT rate: <strong className="text-foreground">15%</strong> (per NBR
+                Bangladesh)
+              </p>
+              <p>
+                • AIT (Advance Income Tax): <strong className="text-foreground">3%</strong>{" "}
+                deducted at source
+              </p>
               <p>• All payments are subject to TDS per NBR schedule</p>
-              <p>• Supplier TIN: <strong className="text-foreground">123456789012</strong></p>
-              <p>• BIN (VAT Reg.): <strong className="text-foreground">000123456-0301</strong></p>
+              <p>
+                • Supplier TIN: <strong className="text-foreground">123456789012</strong>
+              </p>
+              <p>
+                • BIN (VAT Reg.): <strong className="text-foreground">000123456-0301</strong>
+              </p>
             </div>
           </Widget>
         </TabsContent>
 
         {/* PO fulfilment */}
-        <TabsContent value="fulfillment" className="mt-5 space-y-3">
-          <SectionTitle
-            title="Purchase Order Fulfillment Status"
-            meta={`${(pos ?? []).length} purchase order${(pos ?? []).length === 1 ? "" : "s"}`}
-          />
+        <TabsContent value="fulfillment" className="mt-5 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard label="Total Purchase Orders" value={String(fulfilment.length)} />
+            <StatCard
+              label="On-Time Delivery Rate"
+              value={`${onTimeRate}%`}
+              tone="text-ok"
+            />
+            <StatCard
+              label="Avg. Fulfillment Rate"
+              value={`${avgFulfilment}%`}
+              tone="text-warn"
+            />
+          </div>
+
           <ReportTable
-            columns={poCols}
-            rows={pos ?? []}
-            getRowKey={(po) => po.id}
+            columns={fulfilmentCols}
+            rows={fulfilment}
+            getRowKey={(r) => r.po.id}
             emptyLabel="No purchase orders yet."
           />
         </TabsContent>
@@ -295,21 +431,21 @@ function SectionTitle({ title, meta }: { title: string; meta?: string }) {
   );
 }
 
-function TotalCard({
+function StatCard({
   label,
   value,
   tone = "text-foreground",
 }: {
   label: string;
-  value: number;
+  value: string;
   tone?: string;
 }) {
   return (
     <div className="glass p-5">
-      <div className="text-sm text-muted-foreground">{label}</div>
-      <div className={`tnum font-heading mt-2 text-2xl font-bold ${tone}`}>
-        {formatBDT(value)}
+      <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
+        {label}
       </div>
+      <div className={`tnum font-heading mt-2 text-2xl font-bold ${tone}`}>{value}</div>
     </div>
   );
 }

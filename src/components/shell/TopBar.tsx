@@ -4,7 +4,6 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Logo } from "./Logo";
 import { MobileNav } from "./MobileNav";
-import { LangToggle } from "./LangToggle";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
@@ -34,9 +33,6 @@ export function TopBar() {
         <div className="flex-1 md:hidden" />
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
-          <div className="hidden sm:block">
-            <LangToggle />
-          </div>
           <ThemeToggle />
           <NotificationBell />
           <UserMenu />

@@ -3,18 +3,20 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trophy, ShieldX, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Trophy, ShieldX, Send, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusPill } from "@/components/common/StatusPill";
 import { Widget } from "@/components/common/Widget";
+import { Field, ValueChip } from "@/components/common/DetailField";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useBid, useRespondToBidClarification } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
-import { formatDateTime } from "@/lib/format/date";
+import { formatDate, formatDateTime, daysUntil } from "@/lib/format/date";
 import { usePermission } from "@/lib/rbac";
+import type { Bid } from "@/lib/mock/types";
 
 export default function BidDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -28,10 +30,11 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
     return (
       <div className="mx-auto max-w-[1680px] space-y-6">
         <Skeleton className="h-10 w-64 rounded-lg" />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-64 rounded-xl" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-64 rounded-xl lg:col-span-2" />
           <Skeleton className="h-64 rounded-xl" />
         </div>
+        <Skeleton className="h-72 rounded-xl" />
       </div>
     );
   }
@@ -56,8 +59,14 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
       return;
     }
     try {
-      await respond.mutateAsync({ bidId: bid.id, clarificationId: openClarification.id, response: response.trim() });
-      toast.success("Response submitted", { description: "Your bid has been returned for evaluation." });
+      await respond.mutateAsync({
+        bidId: bid.id,
+        clarificationId: openClarification.id,
+        response: response.trim(),
+      });
+      toast.success("Response submitted", {
+        description: "Your bid has been returned for evaluation.",
+      });
       setResponse("");
     } catch {
       toast.error("Failed to submit response");
@@ -65,22 +74,24 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
   };
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-6">
+    <div className="mx-auto max-w-[1680px] space-y-5">
       <PageHeader
         title={
-          <span className="flex items-center gap-3">
+          <span className="flex flex-wrap items-center gap-3">
             {bid.bidNumber}
-            <StatusPill status={bid.status} />
+            <StatusPill status={bid.status} variant="solid" />
           </span>
         }
-        subtitle={`${bid.tenderNumber} — ${bid.tenderTitle}`}
+        subtitle={`Submitted: ${formatDate(bid.submittedAt)}  ·  Tender: ${bid.tenderNumber}  ·  Validity: ${bid.bidValidityDays} days`}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="size-4" /> Back
+              <ArrowLeft className="size-4" /> Back to Bids
             </Button>
-            <Button asChild variant="outline">
-              <Link href={`/app/tenders/${bid.tenderId}`}>View Tender</Link>
+            <Button asChild className="gap-2">
+              <Link href={`/app/tenders/${bid.tenderId}`}>
+                <FileText className="size-4" /> View Tender
+              </Link>
             </Button>
           </div>
         }
@@ -90,7 +101,8 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
         <div className="glass flex items-center gap-3 border-ok/30 bg-ok/10 p-4 text-sm text-ok">
           <Trophy className="size-5 shrink-0" />
           <div>
-            <strong>Congratulations — this bid was awarded!</strong> A Purchase Order will follow via the Procurement team.
+            <strong>Congratulations — this bid was awarded!</strong> A Purchase Order will
+            follow via the Procurement team.
           </div>
         </div>
       )}
@@ -98,164 +110,249 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
       {bid.status === "not_awarded" && (
         <div className="glass flex items-center gap-3 border-border p-4 text-sm text-muted-foreground">
           <ShieldX className="size-5 shrink-0" />
-          <div>This bid was not awarded. See evaluation feedback below.</div>
+          <div>This bid was not awarded. See the evaluation result below.</div>
         </div>
       )}
 
-      {(bid.technicalScore !== undefined || bid.evaluationRemarks) && (
-        <Widget title="Evaluation Feedback">
-          {(bid.technicalScore !== undefined || bid.financialScore !== undefined) && (
-            <div className="mb-3 flex gap-6 text-sm">
-              {bid.technicalScore !== undefined && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Technical Score</div>
-                  <div className="tnum text-lg font-bold text-foreground">{bid.technicalScore}/100</div>
-                </div>
-              )}
-              {bid.financialScore !== undefined && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Financial Score</div>
-                  <div className="tnum text-lg font-bold text-foreground">{bid.financialScore}/100</div>
-                </div>
-              )}
-            </div>
-          )}
-          {bid.evaluationRemarks && (
-            <p className="text-sm leading-relaxed text-muted-foreground">{bid.evaluationRemarks}</p>
-          )}
-        </Widget>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Widget title="Bid Details">
-          <dl className="space-y-3 text-sm">
-            {[
-              ["Tender Reference", bid.tenderNumber],
-              ["Submitted", formatDateTime(bid.submittedAt)],
-              ["Bid Validity", `${bid.bidValidityDays} days`],
-            ].map(([label, value]) => (
-              <div key={label} className="flex gap-2">
-                <dt className="w-36 shrink-0 text-muted-foreground">{label}</dt>
-                <dd className="font-medium text-foreground">{value}</dd>
-              </div>
-            ))}
-          </dl>
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <Widget title="Bid Details" className="lg:col-span-2">
+          <Link
+            href={`/app/tenders/${bid.tenderId}`}
+            className="font-heading text-base font-bold text-foreground hover:text-primary"
+          >
+            {bid.tenderTitle}
+          </Link>
           {bid.technicalNotes && (
-            <div className="mt-4 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Technical Notes: </span>{bid.technicalNotes}
-            </div>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              {bid.technicalNotes}
+            </p>
           )}
-        </Widget>
 
-        <Widget title="Financial Summary">
-          <dl className="space-y-3 text-sm">
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="tnum font-semibold text-foreground">{formatBDT(bid.subtotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">VAT (15%)</dt>
-              <dd className="tnum text-foreground">{formatBDT(bid.vatAmount)}</dd>
-            </div>
-            <div className="flex justify-between border-t border-border pt-2 text-base">
-              <dt className="font-bold text-foreground">Total Bid Amount</dt>
-              <dd className="tnum font-bold text-foreground">{formatBDT(bid.totalBidAmount)}</dd>
-            </div>
+          <dl className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            <Field label="Tender Reference" value={bid.tenderNumber} />
+            <Field label="Bid Number" value={bid.bidNumber} />
+            <Field label="Submitted" value={formatDateTime(bid.submittedAt)} />
+            <Field label="Bid Validity" value={`${bid.bidValidityDays} days`} />
+            <Field label="Line Items" value={String(bid.items.length)} />
+            <Field label="Total Bid Amount" value={formatBDT(bid.totalBidAmount)} />
           </dl>
         </Widget>
+
+        <EvaluationCard bid={bid} />
       </div>
 
-      {/* Proposal Items */}
-      <Widget title={`Technical & Financial Proposal (${bid.items.length})`}>
+      {/* Body bleeds to the card edges so the header band spans the full width. */}
+      <Widget
+        title={`Technical & Financial Proposal (${bid.items.length})`}
+        className="overflow-hidden"
+        bodyClassName="-mx-6 -mb-6"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border">
-                <th className="py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description</th>
-                <th className="py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Specification Offered</th>
-                <th className="py-2 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unit</th>
-                <th className="py-2 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qty</th>
-                <th className="py-2 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unit Price</th>
-                <th className="py-2 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total</th>
+              <tr className="bg-[color-mix(in_oklab,var(--brand-yellow)_22%,transparent)] text-xs font-semibold tracking-[0.08em] whitespace-nowrap text-foreground/70 uppercase">
+                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">#</th>
+                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">Description</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">Unit</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">Qty</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">Unit Price</th>
+                <th scope="col" className="py-3.5 pr-6 text-right">Line Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60">
-              {bid.items.map((item) => (
+            <tbody className="divide-y divide-border">
+              {bid.items.map((item, idx) => (
                 <tr key={item.id}>
-                  <td className="py-2.5 pr-4 font-medium text-foreground">{item.description}</td>
-                  <td className="py-2.5 pr-4 text-muted-foreground">{item.specificationOffered}</td>
-                  <td className="py-2.5 pr-4 text-center text-muted-foreground">{item.unit}</td>
-                  <td className="tnum py-2.5 pr-4 text-right text-foreground">{item.quantity.toLocaleString("en-IN")}</td>
-                  <td className="tnum py-2.5 pr-4 text-right text-muted-foreground">{formatBDT(item.unitPrice)}</td>
-                  <td className="tnum py-2.5 text-right font-semibold text-foreground">{formatBDT(item.totalPrice)}</td>
+                  <td className="py-4 pr-4 pl-6 align-middle text-muted-foreground">
+                    {idx + 1}
+                  </td>
+                  <td className="py-4 pr-4 align-middle">
+                    <span className="font-medium text-foreground">{item.description}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {item.specificationOffered}
+                    </span>
+                  </td>
+                  <td className="py-4 pr-4 align-middle whitespace-nowrap text-muted-foreground">
+                    {item.unit}
+                  </td>
+                  <td className="py-4 pr-4 align-middle">
+                    <ValueChip>{item.quantity.toLocaleString("en-IN")}</ValueChip>
+                  </td>
+                  <td className="py-4 pr-4 align-middle">
+                    <ValueChip>{formatBDT(item.unitPrice, { decimals: 2 })}</ValueChip>
+                  </td>
+                  <td className="tnum py-4 pr-6 text-right align-middle font-semibold whitespace-nowrap text-foreground">
+                    {formatBDT(item.totalPrice)}
+                  </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="border-t border-border">
-                <td colSpan={5} className="py-2.5 pr-4 text-right text-sm font-semibold text-muted-foreground">Subtotal</td>
-                <td className="tnum py-2.5 text-right font-bold text-foreground">{formatBDT(bid.subtotal)}</td>
-              </tr>
-            </tfoot>
           </table>
         </div>
+
+        <dl className="space-y-2.5 border-t border-border px-6 py-4 text-sm">
+          <div className="flex items-center justify-end gap-6">
+            <dt className="text-muted-foreground">Subtotal</dt>
+            <dd className="tnum w-40 text-right font-medium text-foreground">
+              {formatBDT(bid.subtotal)}
+            </dd>
+          </div>
+          <div className="flex items-center justify-end gap-6">
+            <dt className="text-muted-foreground">VAT (15%)</dt>
+            <dd className="tnum w-40 text-right font-medium text-foreground">
+              {formatBDT(bid.vatAmount)}
+            </dd>
+          </div>
+          <div className="flex items-center justify-end gap-6 border-t border-border pt-2.5">
+            <dt className="font-medium text-muted-foreground">Total Bid Amount</dt>
+            <dd className="tnum font-heading w-40 text-right text-lg font-bold text-foreground">
+              {formatBDT(bid.totalBidAmount)}
+            </dd>
+          </div>
+        </dl>
       </Widget>
 
-      {/* Negotiation / Clarification */}
-      {bid.clarifications.length > 0 && (
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <Widget title="Negotiation & Clarification">
-          <div className="space-y-4">
-            {bid.clarifications.map((c) => (
-              <div key={c.id} className="rounded-xl border border-border p-3">
-                <div className="text-sm font-medium text-foreground">Buyer: {c.question}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{c.askedBy} · {formatDateTime(c.askedAt)}</div>
-                {c.response ? (
-                  <div className="mt-3 rounded-lg bg-muted/40 p-2.5">
-                    <div className="text-sm text-foreground">You: {c.response}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{c.respondedAt && formatDateTime(c.respondedAt)}</div>
+          {bid.clarifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              The buyer has not raised any clarification on this bid.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {bid.clarifications.map((c) => (
+                <div key={c.id} className="rounded-xl border border-border p-3">
+                  <div className="text-sm font-medium text-foreground">Buyer: {c.question}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {c.askedBy} · {formatDateTime(c.askedAt)}
                   </div>
-                ) : (
-                  canRespond && (
-                    <div className="mt-3 space-y-2">
-                      <Textarea
-                        placeholder="Type your response to the buyer's question…"
-                        value={response}
-                        onChange={(e) => setResponse(e.target.value)}
-                        rows={3}
-                      />
-                      <div className="flex justify-end">
-                        <Button size="sm" onClick={onRespond} disabled={respond.isPending} className="gap-2 bg-brand-red text-white hover:bg-brand-red-600">
-                          {respond.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
-                          Send Response
-                        </Button>
+                  {c.response ? (
+                    <div className="mt-3 rounded-lg bg-muted/40 p-2.5">
+                      <div className="text-sm text-foreground">You: {c.response}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {c.respondedAt && formatDateTime(c.respondedAt)}
                       </div>
                     </div>
-                  )
-                )}
-              </div>
-            ))}
-          </div>
+                  ) : (
+                    canRespond && (
+                      <div className="mt-3 space-y-2">
+                        <Textarea
+                          placeholder="Type your response to the buyer's question…"
+                          value={response}
+                          onChange={(e) => setResponse(e.target.value)}
+                          rows={3}
+                        />
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={onRespond}
+                            disabled={respond.isPending}
+                            className="gap-2"
+                          >
+                            {respond.isPending ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Send className="size-3.5" />
+                            )}
+                            Send Response
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </Widget>
+
+        <Widget title="Bid Status Timeline">
+          {bid.timeline.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+          ) : (
+            <ol className="relative space-y-4 border-l border-border pl-6">
+              {bid.timeline.map((event, idx) => (
+                <li key={idx} className="relative">
+                  <span className="absolute top-0.5 -left-[27px] flex size-3.5 items-center justify-center rounded-full bg-primary ring-2 ring-card" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusPill status={event.status} />
+                    <span className="tnum text-xs text-muted-foreground">
+                      {formatDateTime(event.timestamp)}
+                    </span>
+                  </div>
+                  {event.actor && (
+                    <p className="mt-1 text-xs text-muted-foreground">by {event.actor}</p>
+                  )}
+                  {event.note && <p className="mt-0.5 text-xs text-foreground">{event.note}</p>}
+                </li>
+              ))}
+            </ol>
+          )}
+        </Widget>
+      </div>
+    </div>
+  );
+}
+
+/** Right-hand rail mirroring the tender page's "Your Bid Status" card. */
+function EvaluationCard({ bid }: { bid: Bid }) {
+  const hasScores = bid.technicalScore !== undefined || bid.financialScore !== undefined;
+  // submittedAt is in the past, so daysUntil is negative — flip it.
+  const daysSince = Math.max(0, -daysUntil(bid.submittedAt));
+  const decided = ["awarded", "not_awarded", "rejected"].includes(bid.status);
+
+  const note =
+    bid.status === "clarification_requested"
+      ? "The buyer is waiting on your response before evaluation can resume."
+      : bid.status === "awarded"
+        ? "This bid won. A Purchase Order will follow from Procurement."
+        : bid.status === "not_awarded"
+          ? "The tender was awarded to another supplier."
+          : bid.status === "rejected"
+            ? "This bid was rejected and will not proceed to evaluation."
+            : "Your bid is with the evaluation committee. You'll be notified of any change.";
+
+  return (
+    <Widget title="Evaluation Status">
+      <StatusPill status={bid.status} variant="solid" />
+
+      {hasScores ? (
+        <div className="mt-5 grid grid-cols-2 gap-4">
+          <Field
+            label="Technical Score"
+            value={
+              bid.technicalScore !== undefined ? `${bid.technicalScore}/100` : "Not scored"
+            }
+          />
+          <Field
+            label="Financial Score"
+            value={
+              bid.financialScore !== undefined ? `${bid.financialScore}/100` : "Not scored"
+            }
+          />
+        </div>
+      ) : (
+        <div className="mt-5">
+          <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
+            {decided
+              ? "Decided"
+              : bid.status === "clarification_requested"
+                ? "Awaiting your response"
+                : "In evaluation"}
+          </div>
+          <div className="font-heading mt-1 text-lg font-bold text-foreground">
+            {daysSince} day{daysSince === 1 ? "" : "s"} since submission
+          </div>
+        </div>
       )}
 
-      {/* Timeline */}
-      {bid.timeline.length > 0 && (
-        <Widget title="Bid Status Timeline">
-          <ol className="relative space-y-4 border-l border-border pl-6">
-            {bid.timeline.map((event, idx) => (
-              <li key={idx} className="relative">
-                <span className="absolute -left-[21px] top-0.5 flex size-3.5 items-center justify-center rounded-full bg-brand-red ring-2 ring-background" />
-                <div className="flex items-center gap-2">
-                  <StatusPill status={event.status} />
-                  <span className="tnum text-xs text-muted-foreground">{formatDateTime(event.timestamp)}</span>
-                </div>
-                {event.actor && <p className="mt-1 text-xs text-muted-foreground">by {event.actor}</p>}
-                {event.note && <p className="mt-0.5 text-xs text-foreground">{event.note}</p>}
-              </li>
-            ))}
-          </ol>
-        </Widget>
+      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{note}</p>
+
+      {bid.evaluationRemarks && (
+        <div className="mt-4 rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">Remarks: </span>
+          {bid.evaluationRemarks}
+        </div>
       )}
-    </div>
+    </Widget>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,8 @@ export interface ReportColumn<T> {
   key: string;
   header: string;
   align?: "left" | "right";
+  /** Applied to both the header and body cells — use for widths. */
+  cellClassName?: string;
   /** Cell contents. */
   render: (row: T) => React.ReactNode;
   /** Plain-text value for CSV export; falls back to omitting the cell. */
@@ -32,13 +35,22 @@ export function ReportTable<T>({
   rows,
   getRowKey,
   emptyLabel = "Nothing to show",
+  loading = false,
   className,
+  stickyFirstColumn = false,
 }: {
   columns: ReportColumn<T>[];
   rows: T[];
   getRowKey: (row: T) => string;
   emptyLabel?: string;
+  loading?: boolean;
   className?: string;
+  /**
+   * Freezes column one while the rest scrolls. Worth it on the wide reports —
+   * on a phone the identifier would otherwise scroll away and leave a wall of
+   * numbers with nothing to attach them to.
+   */
+  stickyFirstColumn?: boolean;
 }) {
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
   const [page, setPage] = useState(0);
@@ -58,19 +70,28 @@ export function ReportTable<T>({
   const first = rows.length === 0 ? 0 : page * pageSize + 1;
   const last = Math.min(rows.length, (page + 1) * pageSize);
 
+  // A frozen cell must be opaque or the scrolling columns show through it, so
+  // the header band is mixed against the card instead of transparent.
+  const stickyHead = stickyFirstColumn
+    ? "sticky left-0 z-10 bg-[color-mix(in_oklab,var(--brand-yellow)_22%,var(--card))]"
+    : "";
+  const stickyCell = stickyFirstColumn ? "sticky left-0 z-10 bg-card" : "";
+
   return (
     <div className={cn("glass overflow-hidden p-0", className)}>
-      <div className="overflow-x-auto">
+      <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[color-mix(in_oklab,var(--brand-yellow)_22%,transparent)]">
-              {columns.map((col) => (
+              {columns.map((col, i) => (
                 <th
                   key={col.key}
                   scope="col"
                   className={cn(
-                    "px-5 py-4 text-xs font-semibold tracking-[0.08em] whitespace-nowrap text-foreground/70 uppercase",
+                    "px-4 py-4 text-xs font-semibold tracking-[0.08em] whitespace-nowrap text-foreground/70 uppercase sm:px-5",
                     col.align === "right" ? "text-right" : "text-left",
+                    col.cellClassName,
+                    i === 0 && stickyHead,
                   )}
                 >
                   {col.header}
@@ -79,7 +100,17 @@ export function ReportTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {rows.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-5 py-4">
+                      <Skeleton className="h-4 w-full rounded" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
@@ -91,12 +122,18 @@ export function ReportTable<T>({
             ) : (
               visible.map((row) => (
                 <tr key={getRowKey(row)} className="transition-colors hover:bg-muted/40">
-                  {columns.map((col) => (
+                  {columns.map((col, i) => (
                     <td
                       key={col.key}
                       className={cn(
-                        "px-5 py-4 align-middle",
+                        // Report data — ids, dates, amounts, pills — is never
+                        // improved by wrapping; on a phone it just turns an
+                        // invoice number into three lines. Prose columns opt
+                        // back in with `whitespace-normal`.
+                        "px-4 py-4 align-middle whitespace-nowrap sm:px-5",
                         col.align === "right" ? "text-right" : "text-left",
+                        col.cellClassName,
+                        i === 0 && stickyCell,
                       )}
                     >
                       {col.render(row)}

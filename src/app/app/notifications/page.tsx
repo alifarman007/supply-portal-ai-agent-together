@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import {
   CircleCheck,
   Info,
@@ -33,6 +34,15 @@ const META: Record<NType, { icon: LucideIcon; ring: string; text: string }> = {
   bid_not_awarded: { icon: ShieldAlert, ring: "bg-danger/10", text: "text-danger" },
 };
 
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.04 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+};
+
 function groupByDate(notifications: SupplierNotification[]) {
   const groups: Record<string, SupplierNotification[]> = {};
   for (const n of notifications) {
@@ -47,6 +57,7 @@ export default function NotificationsPage() {
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
+  const reduce = useReducedMotion();
 
   const unread = notifications?.filter((n) => !n.read).length ?? 0;
   const groups = groupByDate(notifications ?? []);
@@ -83,7 +94,12 @@ export default function NotificationsPage() {
           <p className="mt-1 text-sm text-muted-foreground">No notifications to show.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <motion.div
+          variants={container}
+          initial={reduce ? false : "hidden"}
+          animate="show"
+          className="space-y-6"
+        >
           {Object.entries(groups).map(([date, items]) => (
             <div key={date}>
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{date}</h3>
@@ -92,13 +108,15 @@ export default function NotificationsPage() {
                   const m = META[n.type] ?? META.po_issued;
                   const Icon = m.icon;
                   return (
-                    <button
+                    <motion.button
                       key={n.id}
+                      variants={item}
                       type="button"
                       onClick={() => !n.read && markRead.mutate(n.id)}
                       className={cn(
                         "glass w-full text-left transition-all hover:shadow-md",
-                        !n.read && "ring-1 ring-primary/20 dark:ring-brand-cream/20",
+                        !n.read &&
+                          "border-transparent bg-[color-mix(in_oklab,var(--brand-yellow)_14%,var(--surface))]",
                       )}
                     >
                       <div className="flex items-start gap-3 p-4">
@@ -118,13 +136,13 @@ export default function NotificationsPage() {
                         </div>
                         <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(n.timestamp)}</span>
                       </div>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

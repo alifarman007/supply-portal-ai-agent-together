@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, Settings, User as UserIcon, UserCog } from "lucide-react";
+import { Languages, LogOut, Settings, User as UserIcon, UserCog } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,10 +17,17 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/auth";
+import { useLang } from "@/store/lang";
 import { useLabels } from "@/lib/i18n/labels";
 import type { SupplierRole } from "@/lib/mock/types";
 
 const ROLES: SupplierRole[] = ["supplier_admin", "finance_officer", "logistics_officer", "viewer"];
+
+/** Each language is named in itself — a Bengali reader looks for "বাংলা". */
+const LANGUAGES: { value: "en" | "bn"; label: string }[] = [
+  { value: "en", label: "English" },
+  { value: "bn", label: "বাংলা" },
+];
 
 const ROLE_LABELS: Record<SupplierRole, string> = {
   supplier_admin: "Admin",
@@ -35,6 +42,8 @@ export function UserMenu() {
   const activeRole = useAuth((s) => s.activeRole);
   const setActiveRole = useAuth((s) => s.setActiveRole);
   const logout = useAuth((s) => s.logout);
+  const lang = useLang((s) => s.lang);
+  const setLang = useLang((s) => s.setLang);
   const { t } = useLabels();
 
   if (!user) return null;
@@ -90,6 +99,29 @@ export function UserMenu() {
               {ROLES.map((r) => (
                 <DropdownMenuRadioItem key={r} value={r}>
                   {ROLE_LABELS[r]}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Languages />
+            <span>
+              {t("language")}:{" "}
+              <span className="font-medium">
+                {LANGUAGES.find((l) => l.value === lang)?.label}
+              </span>
+            </span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={lang}
+              onValueChange={(v) => setLang(v as "en" | "bn")}
+            >
+              {LANGUAGES.map((l) => (
+                <DropdownMenuRadioItem key={l.value} value={l.value}>
+                  {l.label}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>

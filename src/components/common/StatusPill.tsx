@@ -45,6 +45,16 @@ const STATUS_MAP: Record<string, StatusMeta> = {
   not_awarded: { label: "Not Awarded", color: "neutral" },
   // Derived in reports rather than stored: an unpaid invoice past its due date.
   overdue: { label: "Overdue", color: "danger" },
+  // Derived in the PO fulfilment report: acknowledged but nothing shipped yet.
+  pending: { label: "Pending", color: "neutral" },
+  partial: { label: "Partial", color: "warn" },
+  // Order Information reads PO progress from the supplier's side, so an
+  // acknowledged order is one the buyer is waiting on.
+  waiting_for_delivery: { label: "Waiting for Delivery", color: "warn" },
+  partially_delivered: { label: "Partially Delivered", color: "warn" },
+  // Settlement state of a submitted bill, derived from payments against it.
+  partially_paid: { label: "Partially Paid", color: "warn" },
+  unpaid: { label: "Unpaid", color: "neutral" },
 };
 
 const COLORS = {
@@ -75,19 +85,24 @@ const SOLID = {
 export function StatusPill({
   status,
   variant = "soft",
+  label,
   className,
 }: {
   status: AnyStatus;
   variant?: "soft" | "solid";
+  /** Overrides the mapped label — for tables too narrow for the full wording. */
+  label?: string;
   className?: string;
 }) {
-  const meta = STATUS_MAP[status] ?? { label: status, color: "neutral" as const };
+  const mapped = STATUS_MAP[status] ?? { label: status, color: "neutral" as const };
+  const meta = label ? { ...mapped, label } : mapped;
   const solid = variant === "solid";
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold",
+        // A pill that wraps mid-label reads as two statuses — never let it.
+        "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold whitespace-nowrap",
         solid ? "px-3 py-1" : "px-2.5 py-0.5",
         solid ? SOLID[meta.color] : COLORS[meta.color],
         className,

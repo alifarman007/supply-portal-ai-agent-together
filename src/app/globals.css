@@ -268,6 +268,37 @@
     border-color: var(--border);
   }
 
+  /* Wide tables scroll sideways, so the bar is part of the design rather than
+     an OS overlay that fades away — users need to see there is more to the
+     right. Forced visible on WebKit; Firefox gets the colours only. */
+  .table-scroll {
+    overflow-x: auto;
+    scrollbar-color: var(--brand-red) var(--muted);
+    scrollbar-width: thin;
+  }
+  .table-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: var(--muted);
+    border-radius: 999px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: var(--brand-red);
+    border-radius: 999px;
+  }
+
+  /* Pill rows (tabs, filter chips) that outgrow a phone. Unlike the tables the
+     bar is hidden here — a rule sitting under a pill group reads as a border on
+     the control itself. */
+  .tab-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Section label followed by a rule that eats the remaining width. */
   .rule-label {
     display: flex;

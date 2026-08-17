@@ -19,6 +19,10 @@ export interface POLineItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  /** Filled from the product catalogue — see `enrichPOItems` in the mock db. */
+  itemName?: string;
+  itemCode?: string;
+  specification?: string;
 }
 
 export interface PurchaseOrder {
@@ -144,6 +148,12 @@ export interface TenderLineItem {
   specification: string;
   unit: string;
   quantity: number;
+  /** Buyer's indicative rate. Bidders quote their own price against it. */
+  estimatedUnitPrice: number;
+  /** Whether VAT is deducted at source on this line, per the NBR schedule. */
+  vdsApplicable: boolean;
+  /** Whether tax is deducted at source on this line. */
+  tdsApplicable: boolean;
 }
 
 export interface TenderClarification {
@@ -171,6 +181,7 @@ export interface Tender {
   estimatedValue: number;
   items: TenderLineItem[];
   eligibilityCriteria: string[];
+  termsAndConditions: string[];
   requiredDocuments: DocumentType[];
   status: TenderStatus;
   clarifications: TenderClarification[];
@@ -238,6 +249,16 @@ export interface SupplierNotification {
   link?: string;
 }
 
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  bankBranch: string;
+  accountNumber: string;
+  routingNumber: string;
+  accountHolderName: string;
+  isPrimary: boolean;
+}
+
 export interface SupplierProfile {
   id: string;
   companyName: string;
@@ -255,6 +276,7 @@ export interface SupplierProfile {
   accountNumber: string;
   routingNumber: string;
   accountHolderName: string;
+  bankAccounts: BankAccount[];
   primaryContactName: string;
   primaryContactPhone: string;
   primaryContactEmail: string;

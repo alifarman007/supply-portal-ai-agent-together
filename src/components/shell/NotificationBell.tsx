@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useNotifications } from "@/lib/query/hooks";
+import { useLabels } from "@/lib/i18n/labels";
 import { relativeTime } from "@/lib/format/date";
 import { cn } from "@/lib/utils";
 import type { SupplierNotification } from "@/lib/mock/types";
@@ -41,6 +42,7 @@ const META: Record<NType, { icon: LucideIcon; ring: string; text: string }> = {
 
 export function NotificationBell() {
   const { data } = useNotifications();
+  const { t } = useLabels();
   const [open, setOpen] = useState(false);
   const items = data ?? [];
   const unread = items.filter((n) => !n.read).length;
@@ -65,14 +67,21 @@ export function NotificationBell() {
         </button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" sideOffset={10} className="w-[360px] overflow-hidden p-0">
+      {/* Insets from both edges on a phone rather than sitting flush against
+          the left one — a fixed 360px leaves no margin at 375px. */}
+      <PopoverContent
+        align="end"
+        sideOffset={10}
+        collisionPadding={12}
+        className="w-[min(22.5rem,calc(100vw-1.5rem))] overflow-hidden p-0"
+      >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <span className="font-heading text-sm font-semibold text-foreground">
-            Notifications
+            {t("nav_notifications")}
           </span>
           {unread > 0 && (
             <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">
-              {unread} unread
+              {unread} {t("unread")}
             </span>
           )}
         </div>
@@ -83,7 +92,7 @@ export function NotificationBell() {
               <span className="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
                 <BellOff className="size-5" strokeWidth={1.75} />
               </span>
-              <span className="text-sm text-muted-foreground">You&apos;re all caught up</span>
+              <span className="text-sm text-muted-foreground">{t("all_caught_up")}</span>
             </li>
           ) : (
             preview.map((n) => {
@@ -145,7 +154,7 @@ export function NotificationBell() {
             onClick={() => setOpen(false)}
             className="group inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 dark:text-brand-cream"
           >
-            View all notifications
+            {t("view_all_notifications")}
             <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>

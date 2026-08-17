@@ -2,9 +2,8 @@ import {
   LayoutDashboard,
   Gavel,
   FileSignature,
-  ClipboardList,
-  Truck,
-  FileText,
+  ShoppingCart,
+  ReceiptText,
   Banknote,
   FolderOpen,
   FileBarChart2,
@@ -45,14 +44,16 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "grp_procurement",
     items: [
-      { href: "/app/purchase-orders", icon: ClipboardList, label: "nav_purchase_orders", permission: "view_purchase_orders" },
-      { href: "/app/deliveries", icon: Truck, label: "nav_deliveries", permission: "view_purchase_orders" },
+      { href: "/app/purchase-orders", icon: ShoppingCart, label: "nav_purchase_orders", permission: "view_purchase_orders" },
+      { href: "/app/bills", icon: ReceiptText, label: "nav_bill_submission", permission: "view_purchase_orders" },
     ],
   },
   {
     label: "grp_finance",
     items: [
-      { href: "/app/invoices", icon: FileText, label: "nav_invoices", permission: "manage_invoices" },
+      // Invoices are hidden for now — Bill Submission is the way in. The routes
+      // still exist and are linked from Order Information and Reports, so
+      // restoring this line is all that's needed to bring the section back.
       { href: "/app/payments", icon: Banknote, label: "nav_payments", permission: "view_payments" },
     ],
   },

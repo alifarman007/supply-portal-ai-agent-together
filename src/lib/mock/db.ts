@@ -5,7 +5,7 @@ import type {
 } from "./types";
 import {
   BUYER_DEPARTMENTS, BUYER_CONTACTS, DELIVERY_ADDRESSES, PRODUCTS, TERMS,
-  BANKS, mulberry32, pick,
+  TENDER_TERMS, BANKS, mulberry32, pick,
 } from "./supplier-data";
 
 export const NOW = new Date("2026-06-30T10:00:00+06:00");
@@ -213,10 +213,26 @@ export const purchaseOrders: PurchaseOrder[] = [
       { id: "poi-014-1", description: "Kraft Paper Bag (Multi-wall, 5-ply)", unit: "pcs", quantity: 10000, unitPrice: 85, totalPrice: 850000 },
     ],
     subtotal: 850000, vatAmount: 127500, grandTotal: 977500,
-    status: "draft", termsAndConditions: TERMS,
+    status: "issued", termsAndConditions: TERMS,
     deliveryAddress: "Distribution Hub, Savar EPZ, Savar-1340",
   },
 ];
+
+/**
+ * Line items reference the catalogue by description, so the display name, item
+ * code and specification are resolved from it rather than repeated on every
+ * order. Mutating in place keeps the exported array identity stable.
+ */
+const CATALOGUE = new Map(PRODUCTS.map((p) => [p.desc, p]));
+for (const po of purchaseOrders) {
+  for (const item of po.items) {
+    const product = CATALOGUE.get(item.description);
+    if (!product) continue;
+    item.itemName = product.name;
+    item.itemCode = product.code;
+    item.specification = product.spec;
+  }
+}
 
 // --- Tenders ---
 export const tenders: Tender[] = [
@@ -231,8 +247,8 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(6), submissionDeadline: daysFromNow(12), bidOpeningDate: daysFromNow(13),
     estimatedValue: 4500000,
     items: [
-      { id: "tli-001-1", description: "Corrugated Carton Box (30×20×15 cm)", specification: "5-ply, burst strength ≥ 18 kg/cm²", unit: "pcs", quantity: 60000 },
-      { id: "tli-001-2", description: "Stretch Wrap Film (500mm × 300m roll)", specification: "23 micron, pre-stretch ≥ 150%", unit: "roll", quantity: 1200 },
+      { id: "tli-001-1", description: "Corrugated Carton Box (30×20×15 cm)", specification: "5-ply, burst strength ≥ 18 kg/cm²", unit: "pcs", quantity: 60000, estimatedUnitPrice: 55, vdsApplicable: true, tdsApplicable: true },
+      { id: "tli-001-2", description: "Stretch Wrap Film (500mm × 300m roll)", specification: "23 micron, pre-stretch ≥ 150%", unit: "roll", quantity: 1200, estimatedUnitPrice: 1000, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: [
       "Minimum 3 years of continuous operation in packaging manufacturing",
@@ -240,7 +256,8 @@ export const tenders: Tender[] = [
       "Valid trade license and VAT registration (BIN)",
       "ISO 9001:2015 certification preferred",
     ],
-    requiredDocuments: ["trade_license", "tin_certificate", "vat_registration"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "tin_certificate", "vat_registration"],
     status: "published",
     clarifications: [
       {
@@ -263,14 +280,15 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(20), submissionDeadline: daysFromNow(2), bidOpeningDate: daysFromNow(3),
     estimatedValue: 620000,
     items: [
-      { id: "tli-002-1", description: "Moisture-Proof Poly Bag (Large)", specification: "0.08mm LDPE, heat-sealable", unit: "box", quantity: 800 },
-      { id: "tli-002-2", description: "PVC Shrink Wrap Film (19 micron)", specification: "Clear, shrink ratio ≥ 45%", unit: "kg", quantity: 1500 },
+      { id: "tli-002-1", description: "Moisture-Proof Poly Bag (Large)", specification: "0.08mm LDPE, heat-sealable", unit: "box", quantity: 800, estimatedUnitPrice: 250, vdsApplicable: true, tdsApplicable: true },
+      { id: "tli-002-2", description: "PVC Shrink Wrap Film (19 micron)", specification: "Clear, shrink ratio ≥ 45%", unit: "kg", quantity: 1500, estimatedUnitPrice: 280, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: [
       "Valid trade license and VAT registration (BIN)",
       "Prior supply record with Kazi Farms Group preferred",
     ],
-    requiredDocuments: ["trade_license", "vat_registration"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "vat_registration"],
     status: "published",
     clarifications: [],
   },
@@ -285,14 +303,15 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(35), submissionDeadline: daysAgo(15), bidOpeningDate: daysAgo(14),
     estimatedValue: 980000,
     items: [
-      { id: "tli-003-1", description: "Thermal Transfer Label (100×150 mm)", specification: "Semi-gloss, permanent adhesive", unit: "ream", quantity: 2000 },
-      { id: "tli-003-2", description: "Cello Tape (48mm × 65m, 6-pack)", specification: "BOPP, transparent", unit: "box", quantity: 600 },
+      { id: "tli-003-1", description: "Thermal Transfer Label (100×150 mm)", specification: "Semi-gloss, permanent adhesive", unit: "ream", quantity: 2000, estimatedUnitPrice: 370, vdsApplicable: true, tdsApplicable: true },
+      { id: "tli-003-2", description: "Cello Tape (48mm × 65m, 6-pack)", specification: "BOPP, transparent", unit: "box", quantity: 600, estimatedUnitPrice: 400, vdsApplicable: true, tdsApplicable: false },
     ],
     eligibilityCriteria: [
       "Valid trade license and TIN certificate",
       "Ability to deliver within 7 days of purchase order across all sites",
     ],
-    requiredDocuments: ["trade_license", "tin_certificate"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "tin_certificate"],
     status: "negotiation",
     clarifications: [],
   },
@@ -307,14 +326,15 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(150), submissionDeadline: daysAgo(120), bidOpeningDate: daysAgo(119),
     estimatedValue: 350000,
     items: [
-      { id: "tli-004-1", description: "Foam Corner Protector Set", specification: "High-density EPE foam, 90° corner", unit: "set", quantity: 1200 },
-      { id: "tli-004-2", description: "Bubble Wrap Roll (1.2m × 50m)", specification: "Anti-static, 2-layer", unit: "roll", quantity: 250 },
+      { id: "tli-004-1", description: "Foam Corner Protector Set", specification: "High-density EPE foam, 90° corner", unit: "set", quantity: 1200, estimatedUnitPrice: 200, vdsApplicable: true, tdsApplicable: true },
+      { id: "tli-004-2", description: "Bubble Wrap Roll (1.2m × 50m)", specification: "Anti-static, 2-layer", unit: "roll", quantity: 250, estimatedUnitPrice: 440, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: [
       "Valid trade license and VAT registration (BIN)",
       "Site installation capability within Dhaka division",
     ],
-    requiredDocuments: ["trade_license", "vat_registration"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "vat_registration"],
     status: "awarded",
     clarifications: [],
     awardedSupplierName: "Dhaka Packaging Industries Ltd.",
@@ -331,13 +351,14 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(170), submissionDeadline: daysAgo(140), bidOpeningDate: daysAgo(139),
     estimatedValue: 410000,
     items: [
-      { id: "tli-005-1", description: "Bubble Wrap Roll (1.2m × 50m)", specification: "Anti-static, 2-layer", unit: "roll", quantity: 300 },
-      { id: "tli-005-2", description: "Foam Corner Protector Set", specification: "High-density EPE foam, 90° corner", unit: "set", quantity: 800 },
+      { id: "tli-005-1", description: "Bubble Wrap Roll (1.2m × 50m)", specification: "Anti-static, 2-layer", unit: "roll", quantity: 300, estimatedUnitPrice: 700, vdsApplicable: true, tdsApplicable: true },
+      { id: "tli-005-2", description: "Foam Corner Protector Set", specification: "High-density EPE foam, 90° corner", unit: "set", quantity: 800, estimatedUnitPrice: 250, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: [
       "Valid trade license and VAT registration (BIN)",
     ],
-    requiredDocuments: ["trade_license", "vat_registration"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "vat_registration"],
     status: "awarded",
     clarifications: [],
     awardedSupplierName: "Bengal Poly Industries Ltd.",
@@ -354,13 +375,14 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(200), submissionDeadline: daysAgo(170), bidOpeningDate: daysAgo(169),
     estimatedValue: 6200000,
     items: [
-      { id: "tli-006-1", description: "Corrugated Carton Box (30×20×15 cm)", specification: "5-ply, ISO 9001 manufactured", unit: "pcs", quantity: 150000 },
+      { id: "tli-006-1", description: "Corrugated Carton Box (30×20×15 cm)", specification: "5-ply, ISO 9001 manufactured", unit: "pcs", quantity: 155000, estimatedUnitPrice: 40, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: [
       "ISO 9001:2015 certification mandatory",
       "Minimum 5 years of continuous operation",
     ],
-    requiredDocuments: ["trade_license", "vat_registration", "iso_certification"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "vat_registration", "iso_certification"],
     status: "closed",
     clarifications: [],
   },
@@ -375,13 +397,15 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(3), submissionDeadline: daysFromNow(20), bidOpeningDate: daysFromNow(21),
     estimatedValue: 780000,
     items: [
-      { id: "tli-007-1", description: "Thermal Transfer Label (100×150 mm)", specification: "Semi-gloss, permanent adhesive", unit: "ream", quantity: 1800 },
+      { id: "tli-007-1", description: "Thermal Transfer Label (100×150 mm)", specification: "Semi-gloss, permanent adhesive", unit: "pcs", quantity: 500000, estimatedUnitPrice: 1.2, vdsApplicable: true, tdsApplicable: true },
+      { id: "tli-007-2", description: "Barcode Ribbon Rolls (Wax, 110mm)", specification: "110mm × 300m, wax grade, 1-inch core", unit: "rolls", quantity: 3000, estimatedUnitPrice: 60, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: [
       "Valid trade license and VAT registration (BIN)",
       "Valid bank solvency certificate required for financial capability assessment",
     ],
-    requiredDocuments: ["trade_license", "vat_registration", "bank_solvency"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license", "vat_registration", "bank_solvency"],
     status: "published",
     clarifications: [],
   },
@@ -396,10 +420,11 @@ export const tenders: Tender[] = [
     publishedDate: daysAgo(45), submissionDeadline: daysAgo(30), bidOpeningDate: daysAgo(29),
     estimatedValue: 190000,
     items: [
-      { id: "tli-008-1", description: "Foam Corner Protector Set", specification: "N/A — placeholder line item", unit: "set", quantity: 100 },
+      { id: "tli-008-1", description: "Foam Corner Protector Set", specification: "N/A — placeholder line item", unit: "set", quantity: 100, estimatedUnitPrice: 1900, vdsApplicable: true, tdsApplicable: true },
     ],
     eligibilityCriteria: ["Valid trade license"],
-    requiredDocuments: ["trade_license"],
+    termsAndConditions: TENDER_TERMS,
+    requiredDocuments:["trade_license"],
     status: "cancelled",
     clarifications: [],
     cancelReason: "Procurement requirement withdrawn by Finance & Accounts department due to budget reallocation.",
@@ -896,7 +921,7 @@ export const notifications: SupplierNotification[] = [
   {
     id: "notif-008", type: "grn_confirmed", title: "GRN Confirmed",
     body: "Goods Receipt Note GRN-2026-0078 confirmed for DC-2026-0061 (PO-2026-0031). You may now submit your invoice.",
-    timestamp: daysAgo(30), read: true, link: "/app/deliveries",
+    timestamp: daysAgo(30), read: true, link: "/app/purchase-orders",
   },
   {
     id: "notif-009", type: "po_acknowledged", title: "PO Acknowledgment Confirmed",
@@ -928,6 +953,26 @@ export const supplierProfile: SupplierProfile = {
   accountNumber: "1091234567890",
   routingNumber: "090261482",
   accountHolderName: "Dhaka Packaging Industries Ltd.",
+  bankAccounts: [
+    {
+      id: "bank-001",
+      bankName: "Dutch-Bangla Bank Ltd.",
+      bankBranch: "Tejgaon Branch, Dhaka",
+      accountNumber: "1091234567890",
+      routingNumber: "090261482",
+      accountHolderName: "Dhaka Packaging Industries Ltd.",
+      isPrimary: true,
+    },
+    {
+      id: "bank-002",
+      bankName: "City Bank Ltd.",
+      bankBranch: "Gulshan Branch, Dhaka",
+      accountNumber: "2205671234890",
+      routingNumber: "125270004",
+      accountHolderName: "Dhaka Packaging Industries Ltd.",
+      isPrimary: false,
+    },
+  ],
   primaryContactName: "Ahsan Kabir",
   primaryContactPhone: "+880 1711-234567",
   primaryContactEmail: "ahsan.kabir@dhakapackaging.com.bd",
@@ -991,7 +1036,7 @@ export function buildKpiSummary(): SupplierKpiSummary {
     { id: "ra-2", type: "invoice_approved", description: "INV-2026-0118 approved — payment scheduled", timestamp: daysAgo(30), link: "/app/invoices/inv-006" },
     { id: "ra-3", type: "payment_received", description: "Payment ৳ 2,95,200 credited for INV-2026-0107", timestamp: daysAgo(20), link: "/app/payments" },
     { id: "ra-4", type: "document_expiring", description: "BIN certificate expiring in 45 days", timestamp: daysAgo(2), link: "/app/documents" },
-    { id: "ra-5", type: "grn_confirmed", description: "DC-2026-0061 GRN confirmed by Procurement", timestamp: daysAgo(30), link: "/app/deliveries" },
+    { id: "ra-5", type: "grn_confirmed", description: "DC-2026-0061 GRN confirmed by Procurement", timestamp: daysAgo(30), link: "/app/purchase-orders" },
   ];
 
   // Bids still sitting with the buyer — anything submitted but not yet resolved.

@@ -113,20 +113,41 @@ export default function ProfilePage() {
 
       {/* Bank Details */}
       <Widget title="Bank Account Details">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[
-            ["Bank Name", profile.bankName],
-            ["Branch", profile.bankBranch],
-            ["Account Holder", profile.accountHolderName],
-            ["Account Number", profile.accountNumber],
-            ["Routing Number", profile.routingNumber],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
-              <dd className="tnum mt-0.5 font-semibold text-foreground">{value}</dd>
+        <div className="divide-y divide-border">
+          {profile.bankAccounts.map((account) => (
+            <div key={account.id} className="py-5 first:pt-0 last:pb-0">
+              <div className="mb-4 flex items-center gap-2.5">
+                <h4 className="font-heading text-sm font-bold text-foreground">{account.bankName}</h4>
+                {account.isPrimary && (
+                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-primary uppercase">
+                    Primary
+                  </span>
+                )}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  ["Bank Name", account.bankName],
+                  ["Branch", account.bankBranch],
+                  ["Account Holder", account.accountHolderName],
+                  ["Account Number", account.accountNumber],
+                  ["Routing Number", account.routingNumber],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+                    <dd className="tnum mt-0.5 font-semibold text-foreground">{value}</dd>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => toast.info("Adding a new bank account is coming soon.")}
+          className="mt-4 text-sm font-semibold text-primary hover:opacity-80"
+        >
+          + Add Another Bank Account
+        </button>
         <p className="mt-4 text-xs text-muted-foreground">
           Bank details are managed by Kazi Farms Group procurement. Contact your account manager to update banking information.
         </p>
