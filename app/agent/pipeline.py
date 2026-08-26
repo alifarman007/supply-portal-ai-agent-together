@@ -399,6 +399,7 @@ def check_bill(
         vat_lines,
         ruleset,
         has_return_proof=bool(supplier.has_return_submission_proof),
+        is_natural_person=bool(supplier.is_natural_person),
     )
     exceptions.extend(tds_exceptions)
 

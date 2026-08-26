@@ -64,8 +64,20 @@ class TdsRule(BaseModel):
     slabs: list[TdsSlab]
     uplift_if_no_return_proof: Decimal = Decimal(1)
     effective_from: date
+    # Services, Rule 4(1) serials 1-3: a different rate applies when the payee
+    # is a natural person rather than a company.
+    rate_natural_person: Decimal | None = None
+    # Services, Rule 4(1) proviso (kha), serials 4/12/13/18: the tax is the
+    # GREATER of (this rate x commission) and (the table rate x total bill),
+    # but only where BOTH are disclosed. We cannot see a commission split, so
+    # the engine computes on the total bill and raises a REVIEW exception
+    # rather than silently taking the lower of the two.
+    higher_of_commission_rate: Decimal | None = None
 
-    _dec = field_validator("uplift_if_no_return_proof", mode="before")(_to_decimal)
+    _dec = field_validator(
+        "uplift_if_no_return_proof", "rate_natural_person",
+        "higher_of_commission_rate", mode="before",
+    )(_to_decimal)
     _cite = field_validator("source_doc")(_require_citation)
 
     @model_validator(mode="after")

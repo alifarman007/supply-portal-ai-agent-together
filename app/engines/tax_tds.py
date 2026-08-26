@@ -30,6 +30,10 @@ class TdsDeduction:
     uplift_applied: bool
     amount: Decimal
     line_nos: list[int]
+    # set when Rule 4(1) proviso (kha) applies: the deduction shown is computed
+    # on the total bill, but the law requires the GREATER of that and a rate on
+    # the commission, which this system cannot see.
+    higher_of_unresolved: bool = False
 
 
 def _slab_rate(rule: TdsRule, base: Decimal) -> Decimal:
@@ -45,6 +49,7 @@ def compute_tds(
     vat_lines: list[VatLine],
     ruleset: RuleSet,
     has_return_proof: bool,
+    is_natural_person: bool = False,
 ) -> tuple[list[TdsDeduction], list[CheckException]]:
     deductions: list[TdsDeduction] = []
     exceptions: list[CheckException] = []
@@ -74,10 +79,35 @@ def compute_tds(
                 (vat_by_line.get(line.bill_line_no, Decimal(0)) for line in category_lines),
                 Decimal(0),
             )
-        rate = _slab_rate(rule, base)
+        # Rule 4(1) serials 1-3 rate a natural person differently from a company.
+        if is_natural_person and rule.rate_natural_person is not None:
+            rate = rule.rate_natural_person
+        else:
+            rate = _slab_rate(rule, base)
+
         uplift_applied = not has_return_proof and rule.uplift_if_no_return_proof != 1
         uplift = rule.uplift_if_no_return_proof if uplift_applied else Decimal(1)
         amount = quantize_taka(base * rate * uplift)
+
+        # Rule 4(1) proviso (kha): where BOTH a commission and a total bill are
+        # disclosed, the tax is the GREATER of the two computations. Bill lines
+        # carry no commission split, so computing only the total-bill figure
+        # could UNDER-deduct. Surface it instead of quietly choosing.
+        higher_of_unresolved = rule.higher_of_commission_rate is not None
+        if higher_of_unresolved:
+            exceptions.append(
+                CheckException(
+                    code="tds_higher_of_commission_unresolved",
+                    message=(
+                        f"TDS category {category_id!r}: the rules require the GREATER of "
+                        f"{rule.higher_of_commission_rate} x commission and {rate} x total "
+                        f"bill. Only the total-bill figure ({amount} Tk) could be computed "
+                        "because the bill shows no commission split — confirm no commission "
+                        "element applies, or compute the deduction manually"
+                    ),
+                    rule_id=category_id,
+                )
+            )
         deductions.append(
             TdsDeduction(
                 category_id=category_id,
@@ -90,6 +120,7 @@ def compute_tds(
                 uplift_applied=uplift_applied,
                 amount=amount,
                 line_nos=[line.bill_line_no for line in category_lines],
+                higher_of_unresolved=higher_of_unresolved,
             )
         )
     return deductions, exceptions

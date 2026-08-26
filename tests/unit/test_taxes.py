@@ -10,7 +10,7 @@ from app.engines.matching import LineComputation
 from app.engines.tax_tds import compute_tds
 from app.engines.tax_vat import compute_vat
 from app.engines.tax_vds import evaluate_vds
-from app.rules.loader import UNVERIFIED_MARKERS, load_ruleset
+from app.rules.loader import UNVERIFIED_MARKERS, TdsSlab, load_ruleset
 
 
 @pytest.fixture(scope="module")
@@ -94,14 +94,27 @@ def test_tds_uplift_without_return_proof(rules):
 
 
 def test_tds_slab_boundary_exact_edge(rules):
+    """Slab selection is engine logic, so it is tested against a SYNTHETIC rule.
+    The real FY2026-27 tables are commodity-keyed with a single open slab and
+    no amount bands at all — the old amount slabs were removed by the 2026
+    Rules — so no live rule can exercise a boundary."""
+    banded = rules.model_copy(deep=True)
+    rule = banded.tds_rules["tds.services.s90"]
+    rule.slabs = [
+        TdsSlab(min=Decimal(0), max=Decimal("5000000"), rate=Decimal("0.03")),
+        TdsSlab(min=Decimal("5000001"), max=None, rate=Decimal("0.05")),
+    ]
+
     on_edge, _ = compute_tds(
-        [comp(amount="5000000.00", tds="tds.services.s90")], [], rules, has_return_proof=True
+        [comp(amount="5000000.00", tds="tds.services.s90")], [], banded,
+        has_return_proof=True,
     )
     assert on_edge[0].slab_rate == Decimal("0.03")
     assert on_edge[0].amount == Decimal("150000.00")
 
     over_edge, _ = compute_tds(
-        [comp(amount="5000001.00", tds="tds.services.s90")], [], rules, has_return_proof=True
+        [comp(amount="5000001.00", tds="tds.services.s90")], [], banded,
+        has_return_proof=True,
     )
     assert over_edge[0].slab_rate == Decimal("0.05")
     assert over_edge[0].amount == Decimal("250000.05")

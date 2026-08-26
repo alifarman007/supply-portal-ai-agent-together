@@ -131,6 +131,29 @@
   explicitly labelled a carried-over GUESS, not a sourced figure.
   Loader now treats PLACEHOLDER, DRAFT and UNVERIFIED citation prefixes alike,
   so `show-policy` keeps warning until a human signs each entry off.
+- **Services support added 2026-08-26 (closes a real under-deduction hole).**
+  Before this, a SERVICE bill hit a placeholder `tds.services.s90` carrying a
+  3%/5% amount band that exists nowhere in the 2026 Rules — it computed a
+  confidently wrong deduction. Replaced with the real Rule 4(1) table (19
+  serials) plus the two structural features services need:
+  * **serials 1-3 rate a NATURAL PERSON differently** (15% vs 7.5%/10%) —
+    new `Supplier.is_natural_person` (default False = company) and
+    `TdsRule.rate_natural_person`.
+  * **serials 4/12/13/18 charge the GREATER of a rate on the commission and a
+    rate on the total bill** (proviso (kha)). A bill line has no commission
+    split, so the engine computes the total-bill figure — a number the CFO can
+    act on — and raises `tds_higher_of_commission_unresolved` (REVIEW) rather
+    than silently taking what may be the lower of the two.
+  * serial 19 residual 10% keeps the id `tds.services.s90`, so existing PO
+    lines resolve.
+  Amount slabs are GONE from the real tables (the company's 2021 workbook shows
+  the old 3/5/7% cumulative bands; the 2026 Rules are purely commodity/service
+  keyed), so `test_tds_slab_boundary_exact_edge` now exercises the engine's
+  slab logic against a SYNTHETIC rule rather than table data.
+  Still NOT modelled and flagged in the YAML: proviso (ka) financial-sector
+  carve-out; serial 19's "not deductible under any other section" condition;
+  and the VDS services override (Rule 3(1)'s ~44 service codes must be deducted
+  whether or not a Mushak 6.3 exists) — VDS remains goods-only.
 - **Phase 6 — DONE 2026-08-26.** Eval harness in `app/eval/` + CLI
   `python -m app.cli eval [--llm] [--persist]` → markdown in `eval_reports/`.
   Dataset: `seeds/eval_cases.json`, 28 cases (E01–E28) covering 3-way-match

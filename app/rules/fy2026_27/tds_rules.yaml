@@ -268,12 +268,239 @@
   uplift_if_no_return_proof: "1.5"
   effective_from: 2026-07-01
 
+# =============================================================================
+# SERVICES - Rule 4(1) under Income Tax Act 2023 s.90
+#
+# Three differences from the goods table above, each of which changes money:
+#
+# 1. Rule 4 does NOT charge on "base value" (bhittimulyo). Rule 3 does, and the
+#    term is defined by ITA s.140(5); Rule 4 names its own base per row -
+#    "on the commission", "on the total bill", "on the gross bill", or simply
+#    the named fee. `base: excl_vat` below records OUR treatment (consistent
+#    with the goods table and the company working paper), not a statutory
+#    instruction.
+# 2. Serials 1-3 are rated differently for a NATURAL PERSON than for a company
+#    -> `rate_natural_person`, driven by supplier.is_natural_person.
+# 3. Serials 4, 12, 13 and 18 charge the GREATER of a rate on the commission
+#    and a rate on the total bill, where BOTH are disclosed (proviso (kha)).
+#    A bill line carries no commission split, so the engine computes the
+#    total-bill figure and raises `tds_higher_of_commission_unresolved`
+#    (REVIEW) rather than silently taking the lower number.
+#
+# NOT MODELLED: proviso (ka) - no deduction on a serial-19 service rendered by
+# a bank, insurer, financial institution or MFS provider. Serial 19 also
+# requires the service not be deductible under ANY other section, which is a
+# judgement call rather than a lookup.
+# =============================================================================
+
+- id: tds.services.s90.serial_01
+  # Adviser or consultancy fee
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 1, PDF p.5. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.075"}
+  rate_natural_person: "0.15"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_02
+  # Professional service fee
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 2, PDF p.5. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.075"}
+  rate_natural_person: "0.15"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_03
+  # Technical services fee / know-how / technical assistance fee
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 3, PDF p.5. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.10"}
+  rate_natural_person: "0.15"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_04
+  # Cleaning; private-personal security; manpower supply; creative media;
+  # print and electronic media agency. HIGHER OF 10 pct commission / 1 pct
+  # total bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 4, PDF p.5-7. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}
+  higher_of_commission_rate: "0.10"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_05
+  # Catering; public relations; event management; training and workshops;
+  # courier; packing and shifting; collection and recovery agency. NOTE 2
+  # pct is the SRO 273 figure - the superseded SRO 210 said 4 pct, so a
+  # chart built from the June PDF deducts DOUBLE. No higher-of variant on
+  # this serial
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 5, PDF p.5-6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.02"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_06
+  # Indenting commission
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 6, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.075"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_07
+  # Meeting fee, training fee or honorarium
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 7, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.20"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_08
+  # Service bill of a mobile network operator
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 8, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.10"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_09
+  # Credit rating agency bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 9, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.10"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_10
+  # Motor garage or workshop
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 10, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.05"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_11
+  # Private container port or dockyard bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 11, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.05"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_12
+  # Shipping agency. HIGHER OF 10 pct commission / 1 pct total bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 12, PDF p.6-7. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}
+  higher_of_commission_rate: "0.10"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_13
+  # Stevedoring, berth operator, terminal operator, ship handling operator.
+  # HIGHER OF 10 pct commission / 5 pct total bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 13, PDF p.6-7. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.05"}
+  higher_of_commission_rate: "0.10"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_14
+  # Transport service, vehicle rental, carrying, repair and maintenance;
+  # ride-sharing, working-space and accommodation sharing-economy platforms
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 14, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.02"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_15
+  # Wheeling charge for electricity transmission
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 15, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.03"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_16
+  # Internet service bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 16, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.05"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_17
+  # Commission of an agent, distributor, agency or channel partner of a
+  # mobile financial services provider
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 17, PDF p.6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.10"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.services.s90.serial_18
+  # Freight forward, on the gross bill with or without commission. HIGHER OF
+  # 10 pct commission / 1 pct total bill
+  law: "Income Tax Act 2023, s.90 (rate prescribed by rule, capped at 20% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 18, PDF p.6-7. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}
+  higher_of_commission_rate: "0.10"
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+# ---------------------------------------------------------------------------
+# SERIAL 19 - THE SERVICES RESIDUAL. Keeps the id the engines already use.
+# Applies only where the service is BOTH (i) not in serials 1-18 AND (ii) not
+# deductible under any other section of the Act. Condition (ii) is a judgement
+# call, so a bill landing here deserves a human glance.
+# ---------------------------------------------------------------------------
 - id: tds.services.s90
   law: "Income Tax Act 2023, s.90"
-  source_doc: "PLACEHOLDER — Income Tax Paripatra FY2026-27, p.__"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026, S.R.O. 273-Ain/Aykar-5/2026, Rule 4(1) serial 19 (residual), PDF p.7. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
   base: excl_vat
-  slabs:                                      # slab boundary kept for edge-case tests
-    - {min: 0, max: 5000000, rate: "0.03"}
-    - {min: 5000001, max: null, rate: "0.05"}
+  slabs:
+    - {min: 0, max: null, rate: "0.10"}
   uplift_if_no_return_proof: "1.5"
   effective_from: 2026-07-01

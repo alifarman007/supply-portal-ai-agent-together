@@ -136,6 +136,11 @@ exception_severities:
   missing_mushak_6_3: REVIEW
   line_amount_mismatch: REVIEW
   vds_rule_unsupported_action: REVIEW
+  # Services, Rule 4(1) proviso (kha): the law wants the GREATER of a rate on
+  # the commission and a rate on the total bill, but a bill line carries no
+  # commission split. The engine computes the total-bill figure, which could
+  # UNDER-deduct, so a human must confirm no commission element applies.
+  tds_higher_of_commission_unresolved: REVIEW
   # A PAYMENT on this PO that is not linked to a bill: it may already have
   # settled part of what we are about to pay, so a human must look.
   ledger_payment_not_applied: REVIEW

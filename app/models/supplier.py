@@ -26,6 +26,9 @@ class Supplier(Base):
     bin_no: Mapped[str | None] = mapped_column(String(40))  # VAT registration number
     etin: Mapped[str | None] = mapped_column(String(40))
     has_return_submission_proof: Mapped[bool] = mapped_column(Boolean, default=False)
+    # TDS on services (Rule 4(1) serials 1-3) is rated differently for a
+    # natural person than for a company. Default False = a company/firm.
+    is_natural_person: Mapped[bool] = mapped_column(Boolean, default=False)
     bank_account_name: Mapped[str | None] = mapped_column(String(200))
     bank_account_no: Mapped[str | None] = mapped_column(String(60))
     bank_name: Mapped[str | None] = mapped_column(String(120))
@@ -45,6 +48,7 @@ class SupplierIn(BaseModel):
     bin_no: str | None = None
     etin: str | None = None
     has_return_submission_proof: bool = False
+    is_natural_person: bool = False
     bank_account_name: str | None = None
     bank_account_no: str | None = None
     bank_name: str | None = None
