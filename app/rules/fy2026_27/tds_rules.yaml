@@ -1,0 +1,25 @@
+# ============================================================================
+# PLACEHOLDER TABLE — every number below is a stand-in, NOT authoritative.
+# Real slabs/rates come from the Income Tax Paripatra FY2026-27 (owner-provided,
+# PLAN.md §8/§14) in Phase 5. Rates are strings -> exact Decimal.
+# tds.supply_of_goods.s89 is a flat 5% placeholder so golden scenarios S1/S2
+# (whiteboard: TDS 5%) compute cleanly until real slabs are ingested.
+# ============================================================================
+- id: tds.supply_of_goods.s89
+  law: "Income Tax Act 2023, s.89"
+  source_doc: "PLACEHOLDER — Income Tax Paripatra FY2026-27, p.__"
+  base: excl_vat                              # confirm from paripatra
+  slabs:
+    - {min: 0, max: null, rate: "0.05"}
+  uplift_if_no_return_proof: "1.5"            # confirm exact provision (S7)
+  effective_from: 2026-07-01
+
+- id: tds.services.s90
+  law: "Income Tax Act 2023, s.90"
+  source_doc: "PLACEHOLDER — Income Tax Paripatra FY2026-27, p.__"
+  base: excl_vat
+  slabs:                                      # slab boundary kept for edge-case tests
+    - {min: 0, max: 5000000, rate: "0.03"}
+    - {min: 5000001, max: null, rate: "0.05"}
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01

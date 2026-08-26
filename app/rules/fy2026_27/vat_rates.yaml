@@ -1,0 +1,21 @@
+# ============================================================================
+# PLACEHOLDER TABLE — every rate below is a stand-in, NOT authoritative.
+# Real values come from the current VAT schedule + SROs (owner-provided NBR
+# documents, PLAN.md §8/§14) in Phase 5. Rates are strings so they load as
+# exact Decimal, never float.
+# ============================================================================
+vat.standard_15:
+  rate: "0.15"
+  description_en: "Standard-rate goods and services"
+  description_bn: "স্ট্যান্ডার্ড হারের পণ্য ও সেবা"
+  source_doc: "PLACEHOLDER — VAT & SD Act 2012 standard rate; FY2026-27 schedule, p.__"
+vat.reduced_10:
+  rate: "0.10"
+  description_en: "Reduced-rate goods and services (illustrative)"
+  description_bn: "হ্রাসকৃত হারের পণ্য ও সেবা"
+  source_doc: "PLACEHOLDER — FY2026-27 reduced-rate VAT schedule / SRO, p.__"
+vat.exempt:
+  rate: "0"
+  description_en: "VAT-exempt items"
+  description_bn: "ভ্যাট অব্যাহতিপ্রাপ্ত"
+  source_doc: "PLACEHOLDER — VAT & SD Act 2012 First Schedule, p.__"

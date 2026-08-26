@@ -1,0 +1,15 @@
+# ============================================================================
+# PLACEHOLDER TABLE — stand-in entries, NOT authoritative.
+# Real entries come from the annual NBR VDS guideline (owner-provided,
+# PLAN.md §8/§14) in Phase 5. Rates are strings -> exact Decimal.
+# ============================================================================
+- id: vds.standard_goods
+  source_doc: "PLACEHOLDER — NBR VDS Guideline FY2026-27, para __"
+  applies_if: {we_are_withholding_entity: true, mushak_6_3_present: true}
+  action: no_deduction
+
+- id: vds.standard_goods.missing_mushak
+  source_doc: "PLACEHOLDER — NBR VDS Guideline FY2026-27, para __"
+  applies_if: {we_are_withholding_entity: true, mushak_6_3_present: false}
+  action: {deduct_rate: "0.075"}
+  severity_if_triggered: REVIEW    # S12: missing Mushak 6.3 => flag + withhold per guideline

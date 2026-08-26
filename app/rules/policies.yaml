@@ -1,0 +1,153 @@
+# ============================================================================
+# ACCOUNTS POLICY — OWNER-TUNABLE. Every value here is DATA, not code.
+#
+# HOW TO CHANGE ANY VALUE:
+#   1. edit this file          2. `python -m uv run pytest`   3. re-check bills
+# No code change is ever needed. Changing a value changes the ruleset
+# version_hash, so every CheckingRun records exactly which policy it used and
+# past runs stay explainable. `python -m app.cli show-policy` prints the values
+# currently in force.
+#
+# Money/rate values are QUOTED STRINGS so they parse as exact Decimal, never
+# float. Rates are fractions: "0.05" = 5%.
+#
+# The values below are the RECOMMENDED DEFAULTS (chosen 2026-08-25, see
+# "why" notes). They are deliberately conservative: they never pay more than
+# the PO supports and never auto-clear anything questionable. Adjust freely
+# once Accounts confirms the house policy.
+# ============================================================================
+source_doc: "Recommended defaults — pending owner/accountant sign-off (PLAN.md §14.4)"
+
+# --- 3-way match tolerances (§6.4) ------------------------------------------
+# "0" = zero tolerance: ANY over-billing above the PO unit price is cut back to
+# the PO price, and any qty above the GRN-accepted quantity is not paid.
+# WHY 0: for goods on a fixed-price PO, a price difference is an error or an
+# overcharge, not rounding — the whiteboard S2 case (120 vs 100 Tk) must be cut.
+# RAISE IT if suppliers legitimately bill small freight/rounding differences,
+# e.g. price_tolerance_tk: "1.00" tolerates up to 1 Tk per unit silently.
+price_tolerance_tk: "0"
+qty_tolerance: "0"
+
+# --- Advance recovery (§6.6, §14.4: "full offset vs proportional") ----------
+# Fraction of the running payable a single open advance may consume.
+#   "1.00" = FULL OFFSET  — recover the advance as fast as possible (recommended)
+#   "0.25" = PROPORTIONAL — recover at most 25% per bill, so the supplier still
+#                           receives cash while the advance winds down
+# Any remainder stays open on the ledger and is flagged, never silently dropped.
+# WHY 1.00: fastest recovery of company cash; the supplier already holds it.
+advance_max_offset_pct: "1.00"
+
+# WHICH advances may be recovered from this bill? PLAN.md §6.6 says "open
+# advances on this PO/supplier PER POLICY" — the scope is deliberately a policy
+# choice, and the two readings produce different payments:
+#   po_only         = ONLY advances tied to this bill's PO (recommended default).
+#                     A general supplier advance is left alone and DISCLOSED as
+#                     ledger_entry_not_applied, so the CFO decides.
+#   po_and_supplier = also auto-recovers general supplier advances carrying no
+#                     PO reference. Recovers cash faster, but can short-pay a
+#                     supplier whose advance was earmarked for another contract.
+# Advances tied to a DIFFERENT PO are never touched under either setting.
+# WHY po_only: two independent readings of §6.6 during the Phase 6 eval both
+# took advances to be PO-scoped, and nothing is lost by the conservative choice
+# — the untied advance stays on the ledger and is surfaced, not forgotten.
+advance_scope: po_only
+
+# --- Retention / security deposit (§6.6) ------------------------------------
+# Withheld from every approved bill as a fraction of the approved base.
+# WHY 0: retention is a WORKS-CONTRACT device (typically 5-10%, released after
+# the defect-liability period). Plain goods supply normally has none, and
+# withholding money with no release process would strand supplier cash.
+# SET e.g. "0.05" only once there is a documented release procedure.
+retention_pct: "0"
+
+# --- VAT / VDS treatment ----------------------------------------------------
+# Are PO unit prices VAT-INCLUSIVE or VAT-EXCLUSIVE? (PLAN.md §15 open question)
+# false = exclusive: VAT is computed ON TOP of the approved base.
+# OWNER DECISION 2026-08-25: "do what most people do" -> false (industry
+# convention: POs negotiated ex-VAT, supplier adds VAT on the Mushak 6.3).
+#
+# 🔴 OPEN LEGAL RISK, NOT A SETTLED QUESTION. The FY2026-27 research
+# (nbr_documents/research_notes.md §3d) read ITA 2023 ss.89, 90 and 140(5) and
+# the whole operative part of উৎসে কর বিধিমালা ২০২৬: NONE of them mentions VAT
+# when defining the withholding "base value". The ex-VAT treatment is
+# PRACTITIONER CONVENTION, not statute — and s.152 expressly says gross-minus-
+# VAT for cigarette manufacturers, which argues against reading a silent
+# carve-out into s.140(5). If this is wrong, EVERY TDS figure is wrong.
+# Put it to the accountant before real payments run. One-line fix if it flips.
+po_prices_include_vat: false
+
+# Are we a VAT withholding entity (উৎসে কর কর্তনকারী সত্তা) for VDS? (§14.2)
+# WHY true: limited companies are withholding entities under the VAT & SD Act
+# 2012 regime. If true, VDS rules in the FY tables apply to our payments.
+we_are_withholding_entity: true
+
+# --- LLM proposal acceptance (§6.3) -----------------------------------------
+# Minimum confidence for an LLM Node A line mapping / Node B tax category to be
+# used at all. Below this the line is EXCLUDED from computation and raised as a
+# REVIEW exception — never guessed.
+# WHY 0.75: high enough that only clearly-supported mappings compute silently;
+# raise toward 0.9 to push more borderline lines to a human.
+mapping_confidence_min: 0.75
+
+# --- Duplicate detection (§6.2) ---------------------------------------------
+# Exact duplicates (same supplier + invoice no) are always a BLOCKER.
+# These parameters only govern the FUZZY near-duplicate warning.
+duplicate_fuzzy:
+  amount_pct: "0.01"    # totals within 1% of each other
+  days_window: 7        # invoice dates within 7 days
+                        # WIDEN (e.g. 30) if resubmissions are common; each hit
+                        # is only a REVIEW flag, so false positives cost a click.
+
+# --- Auto-clear delegation (§6.7) -------------------------------------------
+# RESERVED. null = v1 behavior: EVERY bill goes to the CFO, preserving
+# maker/checker (§2.4). Setting an amount would let small clean bills skip
+# human approval — do not enable without an explicit delegation-of-authority
+# decision, and note the pipeline does not yet act on this value.
+auto_clear_max_amount_tk: null
+
+# --- Exception severity policy (§6.7) ---------------------------------------
+# BLOCKER => recommendation BLOCKED (no payable computed)
+# REVIEW  => REVIEW_REQUIRED       INFO => visible, cannot escalate on its own
+# Any exception code NOT listed here defaults to REVIEW (fail safe).
+exception_severities:
+  missing_grn: BLOCKER
+  duplicate_exact: BLOCKER
+  supplier_on_hold: BLOCKER
+  supplier_blacklisted: BLOCKER
+  supplier_not_found: BLOCKER
+  po_not_found: BLOCKER
+  po_not_open: BLOCKER
+  invalid_bill: BLOCKER
+  duplicate_fuzzy: REVIEW
+  qty_over_grn: REVIEW
+  unmapped_line: REVIEW
+  mapping_low_confidence: REVIEW
+  ambiguous_mapping: REVIEW
+  # An LLM-proposed mapping whose line then needs price/qty adjustment: the
+  # discrepancy is evidence the mapping itself may be wrong — never auto-clear.
+  proposal_mapping_suspect: REVIEW
+  unclassified_item: REVIEW
+  missing_mushak_6_3: REVIEW
+  line_amount_mismatch: REVIEW
+  vds_rule_unsupported_action: REVIEW
+  # A PAYMENT on this PO that is not linked to a bill: it may already have
+  # settled part of what we are about to pay, so a human must look.
+  ledger_payment_not_applied: REVIEW
+  # price_over_po is INFO: the over-billed amount is CUT automatically (the
+  # adjustment itself drives CLEAR_WITH_ADJUSTMENTS per §10 S2); the flag is
+  # informational for the CFO breakdown.
+  price_over_po: INFO
+  price_under_po: INFO
+  advance_partially_offset: INFO
+  advance_not_fully_offset: INFO
+  # Any other in-scope ledger entry the netting did not consume (a general
+  # supplier advance held back by advance_scope, a retention or adjustment
+  # entry). The computation is complete and correct; the entry is disclosed so
+  # it cannot be silently forgotten.
+  ledger_entry_not_applied: INFO
+  # LLM-node telemetry: INFO because the deterministic degradation already
+  # escalates on its own (unmapped_line / unclassified_item are REVIEW, and
+  # a template report is always a safe fallback).
+  llm_node_failed: INFO
+  report_numeric_guard_failed: INFO
+  tax_category_proposed: INFO

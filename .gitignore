@@ -1,0 +1,24 @@
+# Secrets — never commit real keys
+.env
+
+# Local data / artifacts
+billcheck.db
+*.db
+outbox/
+audit_log/
+
+# Source tax documents: often large and marked for internal use. The YAML
+# citations that reference them ARE committed; the PDFs themselves are not.
+nbr_documents/*.pdf
+nbr_documents/*.PDF
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# OS cruft
+Thumbs.db
+.DS_Store
