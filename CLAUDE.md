@@ -241,13 +241,28 @@ come only from env (`GEMINI_MODEL`, `MISTRAL_MODEL`) — never from code.
 
 1. **No Alembic** — not on the approved dependency list, so "SQLite migrations" =
    `Base.metadata.create_all` (greenfield DB). Revisit only with explicit approval.
-2. **`po_prices_include_vat: false`** — OWNER DECISION 2026-08-25 ("do what most
-   people do"): industry convention, POs ex-VAT with VAT added on the Mushak 6.3.
-   🔴 **Still an OPEN LEGAL RISK, not a settled question**: the FY2026-27 research
-   found that ITA ss.89/90/140(5) and the 2026 Withholding Rules never mention VAT
-   when defining base value — the ex-VAT treatment is practitioner convention, not
-   statute. If it flips, every TDS figure changes. One-line config fix; must be put
-   to the accountant before real payments run. See `nbr_documents/research_notes.md` §3d.
+2. **`po_prices_include_vat: false` and TDS `base: excl_vat` — RESOLVED
+   2026-08-26 by the company's own working paper.** The owner supplied
+   `application_example/Application of withholding tax and VAt-19.10.2021.xls`
+   (Kazi Farms Group, Finance Act 2021). Its Cement sheet computes:
+   invoice 5,750,000 (1.15) − VAT 750,000 (0.15) = purchase price 5,000,000
+   (1.00) − withholding 150,000 (3% of the EX-VAT price) = payable 5,600,000.
+   That settles both questions: the PO price is ex-VAT with VAT added to reach
+   the invoice, and withholding is computed on the VAT-EXCLUSIVE price.
+   Our engine reproduces those figures exactly —
+   `tests/golden/test_company_worked_example.py`, which also fails if anyone
+   flips the base (incl_vat would deduct 172,500, a 15% overstatement).
+   ⚠️ Residual caveat only: the workbook is FY2021-22 under the OLD Ordinance
+   1984 (ss.52/52AA/52U). Under the current ITA 2023, s.140(5) is silent on VAT,
+   so the treatment rests on continuous practice rather than the words of the
+   current Act. Worth one confirmation that the practice carried over.
+   The workbook also corroborates two other findings: for SERVICES the company
+   withholds VDS even where a VAT challan exists (matching the Rule 3(1)
+   services override we have NOT modelled), and the old law's amount slabs
+   (3%/5%/7% by cumulative value) were removed by the 2026 Rules, which are
+   purely commodity-keyed — so our per-bill aggregation is safe under the new
+   law. NOTE: `application_example/` is gitignored — it is an internal company
+   document and should not be pushed to a code host.
 3. **`we_are_withholding_entity: true`** (§14.2) — owner-delegated recommended
    default; limited companies are withholding entities under the VAT & SD Act
    2012 regime.

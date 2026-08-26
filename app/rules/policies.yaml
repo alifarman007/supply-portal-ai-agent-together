@@ -63,17 +63,23 @@ retention_pct: "0"
 # --- VAT / VDS treatment ----------------------------------------------------
 # Are PO unit prices VAT-INCLUSIVE or VAT-EXCLUSIVE? (PLAN.md §15 open question)
 # false = exclusive: VAT is computed ON TOP of the approved base.
-# OWNER DECISION 2026-08-25: "do what most people do" -> false (industry
-# convention: POs negotiated ex-VAT, supplier adds VAT on the Mushak 6.3).
+# CONFIRMED 2026-08-26 by the company's OWN withholding working
+# (application_example/Application of withholding tax and VAt-19.10.2021.xls,
+# Kazi Farms Group). Its Cement sheet reads:
+#     Invoice value 5,750,000 (1.15) / Less VAT 750,000 (0.15)
+#     Purchase price 5,000,000 (1.00) / Less WT 150,000 (0.03)
+#     Payable 5,600,000 (1.12)
+# The negotiated purchase price is EX-VAT and VAT is added to reach the
+# invoice -> false is correct. Reproduced end-to-end by
+# tests/golden/test_company_worked_example.py.
 #
-# 🔴 OPEN LEGAL RISK, NOT A SETTLED QUESTION. The FY2026-27 research
-# (nbr_documents/research_notes.md §3d) read ITA 2023 ss.89, 90 and 140(5) and
-# the whole operative part of উৎসে কর বিধিমালা ২০২৬: NONE of them mentions VAT
-# when defining the withholding "base value". The ex-VAT treatment is
-# PRACTITIONER CONVENTION, not statute — and s.152 expressly says gross-minus-
-# VAT for cigarette manufacturers, which argues against reading a silent
-# carve-out into s.140(5). If this is wrong, EVERY TDS figure is wrong.
-# Put it to the accountant before real payments run. One-line fix if it flips.
+# ⚠️ Residual caveat: that workbook is FY2021-22 under the OLD Income Tax
+# Ordinance 1984 (ss. 52/52AA/52U). Under the CURRENT Income Tax Act 2023,
+# s.140(5) defines base value as the highest of contract value, bill/invoice
+# amount and payment, and never mentions VAT (all 287 pages swept; s.152(3)
+# shows the drafter DID write "minus VAT and SD" where intended). So the
+# ex-VAT treatment rests on continuous practice, not on the words of the
+# current Act. Ask the accountant to confirm the practice carried over.
 po_prices_include_vat: false
 
 # Are we a VAT withholding entity (উৎসে কর কর্তনকারী সত্তা) for VDS? (§14.2)

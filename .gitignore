@@ -22,3 +22,8 @@ __pycache__/
 # OS cruft
 Thumbs.db
 .DS_Store
+
+# Company-internal working papers. Kept local by default: these are real
+# internal tax workings, not something to publish to a code host. Remove this
+# line deliberately if the repo is private and you want them versioned.
+application_example/

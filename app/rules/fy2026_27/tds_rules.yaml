@@ -16,17 +16,23 @@
 # ("je-kono poriman bhittimulyer upor") - there is NO de-minimis floor. Each
 # entry below therefore has ONE open slab.
 #
-# 🔴 BASE DEFINITION IS THE OPEN RISK. `base: excl_vat` below follows
-# PRACTITIONER CONVENTION, chosen by the owner ("do what most people do").
-# It is NOT what the statute says. ITA 2023 s.140(5) defines base value as the
-# HIGHEST of (i) contract value, (ii) the amount in the bill or invoice,
-# (iii) payment - and is COMPLETELY SILENT on VAT. A sweep of all 287 pages of
-# the Act found only three VAT references, none of them a withholding base
-# rule; and s.152(3) shows the drafter DID say "minus VAT and SD" when that was
-# intended. Read literally, "the amount in the bill or invoice" is a Mushak 6.3
-# total, which is VAT-INCLUSIVE. If this flips to incl_vat every TDS figure
-# rises by the VAT fraction (~15%), and under-deduction carries a 2%/month
-# charge under s.143(3). ASK THE ACCOUNTANT THIS FIRST.
+# BASE DEFINITION: `base: excl_vat` is CONFIRMED BY COMPANY PRACTICE.
+# The company's own withholding working
+# (application_example/Application of withholding tax and VAt-19.10.2021.xls,
+# Kazi Farms Group) computes the deduction on the VAT-EXCLUSIVE purchase price:
+# invoice 5,750,000 less VAT 750,000 = 5,000,000, withholding 3% x 5,000,000 =
+# 150,000, payable 5,600,000. Reproduced by
+# tests/golden/test_company_worked_example.py, which also fails if anyone flips
+# the base (incl_vat would deduct 172,500 - a 15% overstatement).
+#
+# ⚠️ Residual caveat, worth one question to the accountant: that workbook is
+# FY2021-22 under the OLD Income Tax Ordinance 1984 (it cites ss. 52/52AA/52U).
+# Under the CURRENT Income Tax Act 2023, s.140(5) defines base value as the
+# highest of contract value, bill/invoice amount and payment, and is SILENT on
+# VAT - a sweep of all 287 pages found no withholding-base VAT rule, while
+# s.152(3) shows the drafter did write "minus VAT and SD" where intended. So
+# the ex-VAT treatment rests on continuous practice, not on the words of the
+# current Act. Confirm the practice carried over to the 2023 Act.
 #
 # NOT YET MODELLED (needs engine work, not just data):
 #   - Rule 3(1) proviso: NO deduction at all on oil/gas supplied by a petrol
