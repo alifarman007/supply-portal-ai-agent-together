@@ -212,7 +212,9 @@ def cmd_show_policy(args: argparse.Namespace) -> int:
     print(f"Rules version : {rules.version_hash[:16]}  (recorded on every run)")
     print(f"Source        : {policies.source_doc}")
     if rules.is_placeholder:
-        print("STATUS        : *** PLACEHOLDER TABLES — not authoritative ***")
+        print("STATUS        : *** UNVERIFIED RATES - NOT AUTHORITATIVE ***")
+        print("                Entries whose citation starts with PLACEHOLDER or")
+        print("                DRAFT have not been confirmed by an accountant.")
     print("\n-- Accounts policy (edit app/rules/policies.yaml) --")
     for label, value in (
         ("price_tolerance_tk", policies.price_tolerance_tk),

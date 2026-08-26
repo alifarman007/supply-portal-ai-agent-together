@@ -1,21 +1,42 @@
-# ============================================================================
-# PLACEHOLDER TABLE — every rate below is a stand-in, NOT authoritative.
-# Real values come from the current VAT schedule + SROs (owner-provided NBR
-# documents, PLAN.md §8/§14) in Phase 5. Rates are strings so they load as
-# exact Decimal, never float.
-# ============================================================================
+# =============================================================================
+# VAT rates - FY2026-27
+#
+# STATUS: DRAFT. Read from the official PDFs in nbr_documents/ on 2026-08-26.
+# NOT yet confirmed by an accountant, so `show-policy` still warns.
+#
+# Bangladesh VAT is not a single rate: the standard rate is 15%, and a long
+# list of goods and services sit on reduced bands (10%, 7.5%, 5%, 2%) or are
+# exempt, set by annual SROs. Only the categories this system actually uses are
+# modelled here. A PO line pointing at a category id absent from this file
+# yields `unclassified_item` (REVIEW) and NO invented VAT - which is the safe
+# behaviour for suppliers selling varied goods.
+# =============================================================================
 vat.standard_15:
   rate: "0.15"
-  description_en: "Standard-rate goods and services"
-  description_bn: "স্ট্যান্ডার্ড হারের পণ্য ও সেবা"
-  source_doc: "PLACEHOLDER — VAT & SD Act 2012 standard rate; FY2026-27 schedule, p.__"
+  description_en: "Standard rate - the default for goods and services with no reduced rate or exemption"
+  description_bn: "স্ট্যান্ডার্ড হার"
+  source_doc: "DRAFT (UNVERIFIED) - VAT & SD Act 2012 standard rate, unchanged for FY2026-27; corroborated by NBR VAT Instruction FY2026-27 (nbr_documents/fy2026_27_vat_instruction.pdf, incl. the newly substituted s.20 applying 15% to imported services) and by SRO 127's exemption schedules which price the base rate at 15%. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+
 vat.reduced_10:
   rate: "0.10"
-  description_en: "Reduced-rate goods and services (illustrative)"
-  description_bn: "হ্রাসকৃত হারের পণ্য ও সেবা"
-  source_doc: "PLACEHOLDER — FY2026-27 reduced-rate VAT schedule / SRO, p.__"
+  description_en: "Reduced 10% band (e.g. non-AC hotel, service code S001.10)"
+  description_bn: "হ্রাসকৃত হার ১০%"
+  source_doc: "DRAFT (UNVERIFIED) - S.R.O. 127-Ain/2026/332-Mushak dated 07 June 2026, Table-4 (service stage), service code S001.10 non-AC hotel = 10%. nbr_documents/fy2026_27_vat_exemption_sro_127.pdf. Extracted 2026-08-26. NOTE: 10% is a real band but is item-specific - do NOT apply it to a PO line without checking the item appears in the schedule. AWAITING ACCOUNTANT SIGN-OFF."
+
+vat.reduced_7_5:
+  rate: "0.075"
+  description_en: "Reduced 7.5% band (e.g. locally manufactured AC/refrigerator/freezer/compressor; furniture S024.00; grandfathered construction contracts S004.00)"
+  description_bn: "হ্রাসকৃত হার ৭.৫%"
+  source_doc: "DRAFT (UNVERIFIED) - S.R.O. 146-Ain/2026/351-Mushak dated 07 June 2026 (AC/refrigerator/freezer/compressor, local manufacturing stage, in force to 30 June 2030), nbr_documents/fy2026_27_vat_sro_146_ac_refrigerator.pdf p.1 and p.3 para 7-8; also S.R.O. 127 Table-4 service codes S024.00 (furniture) and S004.00 (construction, grandfathered for contracts signed before 30 June 2026). Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+
+vat.reduced_5:
+  rate: "0.05"
+  description_en: "Reduced 5% band (e.g. restaurant S001.20; carriage of petroleum products by a transport contractor S048.00)"
+  description_bn: "হ্রাসকৃত হার ৫%"
+  source_doc: "DRAFT (UNVERIFIED) - S.R.O. 127-Ain/2026/332-Mushak dated 07 June 2026, Table-4 (service stage): S001.20 restaurant = 5% (excluding restaurants in three-star-or-above hotels and certain others); S048.00 transport contractor clause (ka) = 5% for carriage of petroleum products. nbr_documents/fy2026_27_vat_exemption_sro_127.pdf. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+
 vat.exempt:
   rate: "0"
-  description_en: "VAT-exempt items"
-  description_bn: "ভ্যাট অব্যাহতিপ্রাপ্ত"
-  source_doc: "PLACEHOLDER — VAT & SD Act 2012 First Schedule, p.__"
+  description_en: "Exempt - no VAT imposable"
+  description_bn: "অব্যাহতিপ্রাপ্ত"
+  source_doc: "DRAFT (UNVERIFIED) - S.R.O. 127-Ain/2026/332-Mushak dated 07 June 2026, the annual omnibus exemption notification issued under s.126(1) of the VAT & SD Act 2012, exempting the entire VAT imposable (other than advance tax) on the listed items; read with the First Schedule of the Act. nbr_documents/fy2026_27_vat_exemption_sro_127.pdf p.1 clauses (ka)-(cha) and p.30 paras 2-6. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."

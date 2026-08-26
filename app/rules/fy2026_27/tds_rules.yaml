@@ -1,17 +1,265 @@
-# ============================================================================
-# PLACEHOLDER TABLE — every number below is a stand-in, NOT authoritative.
-# Real slabs/rates come from the Income Tax Paripatra FY2026-27 (owner-provided,
-# PLAN.md §8/§14) in Phase 5. Rates are strings -> exact Decimal.
-# tds.supply_of_goods.s89 is a flat 5% placeholder so golden scenarios S1/S2
-# (whiteboard: TDS 5%) compute cleanly until real slabs are ingested.
-# ============================================================================
+# =============================================================================
+# TDS (income tax deducted at source) - FY2026-27
+#
+# STATUS: DRAFT. Every rate below was read from the official gazette PDF in
+# nbr_documents/ on 2026-08-26 and each was independently re-read by a second
+# reader, but NONE has been confirmed by an accountant. `show-policy` still
+# prints the unverified warning and Phase 5 is not complete until sign-off.
+#
+# SOURCE: Utse Kor Bidhimala 2026 (Withholding Tax Rules 2026),
+# S.R.O. 273-Ain/Aykar-5/2026, gazetted 5 July 2026, deemed in force 1 July 2026.
+# NOT S.R.O. 210 of 8 June 2026 - that earlier SRO of the SAME NAME was
+# superseded before taking effect and differs on SERVICE rates.
+#
+# STRUCTURE: Rule 3(1) is keyed to COMMODITY / ACTIVITY TYPE across 20 serials,
+# NOT to amount slabs. Its chapeau applies the rates to base value of ANY amount
+# ("je-kono poriman bhittimulyer upor") - there is NO de-minimis floor. Each
+# entry below therefore has ONE open slab.
+#
+# 🔴 BASE DEFINITION IS THE OPEN RISK. `base: excl_vat` below follows
+# PRACTITIONER CONVENTION, chosen by the owner ("do what most people do").
+# It is NOT what the statute says. ITA 2023 s.140(5) defines base value as the
+# HIGHEST of (i) contract value, (ii) the amount in the bill or invoice,
+# (iii) payment - and is COMPLETELY SILENT on VAT. A sweep of all 287 pages of
+# the Act found only three VAT references, none of them a withholding base
+# rule; and s.152(3) shows the drafter DID say "minus VAT and SD" when that was
+# intended. Read literally, "the amount in the bill or invoice" is a Mushak 6.3
+# total, which is VAT-INCLUSIVE. If this flips to incl_vat every TDS figure
+# rises by the VAT fraction (~15%), and under-deduction carries a 2%/month
+# charge under s.143(3). ASK THE ACCOUNTANT THIS FIRST.
+#
+# NOT YET MODELLED (needs engine work, not just data):
+#   - Rule 3(1) proviso: NO deduction at all on oil/gas supplied by a petrol
+#     pump or CNG station.
+#   - Rule 3(2)/(3): the section 89 deduction is NET OF import-stage tax paid
+#     under s.120, and of tax paid under s.94, via a (B - A) formula.
+#   - s.142(2): a separate uplift where payment is not made by bank transfer.
+# =============================================================================
+
+- id: tds.goods.s89.serial_01
+  # Industrial undertakings engaged in the production of MS billets, and
+  # locally purchased MS scrap
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 1, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.005"}   # printed as ০.৫%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_02
+  # Supply of oil by an oil marketing company engaged in the marketing of
+  # petroleum oil and lubricants
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 2, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.006"}   # printed as ০.৬%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_03
+  # Supply of oil by a dealer or agent of a petroleum oil marketing company
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 3, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}   # printed as ১%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_04
+  # Supply of: paddy, rice bran, rice, fortified rice kernel, wheat, potato,
+  # cattle, cattle bone, poultry, fish, meat, onion, garlic, peas, gram
+  # (chickpea), lentil, ginger, turmeric, dried chilli, pulses, maize, atta
+  # (flour), maida, iodine, salt, edible oil, sugar, seed, jute, jute stick,
+  # cotton, mustard, sesame, raw tea leaf, black pepper, cardamom, cinnamon,
+  # clove, bay leaf, egg, vegetables, lemon, green chilli, liquid milk, [item
+  # apparently omitted in the gazette], saw-mill bran/dust, poultry feed,
+  # pelleted poultry feed, mushroom, honey, molasses/jaggery (gur), leaves and
+  # bark of trees other than tobacco, vines/creeper leaves, chitagur
+  # (molasses), oil cake (khoil), soybean meal, D-O-R-B (De-oiled Rice Bran),
+  # raw hide, organic fertiliser, organic pesticide or insecticide
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 4, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.005"}   # printed as ০.৫%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_05
+  # Supply of gold, silver, gold ornaments, gems and diamonds
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 5, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.005"}   # printed as ০.৫%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_06
+  # Supply of yarn (suta)
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 6, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}   # printed as ১%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_07
+  # Supply of all kinds of fruit
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 7, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.02"}   # printed as ২%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_08
+  # Sub-contract given by a hundred-percent export-oriented garments industry
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 8, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}   # printed as ১%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_09
+  # Supply of cement, iron or iron products, and ferro alloy products, other
+  # than MS billets
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 9, PDF p.3. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.02"}   # printed as ২%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_10
+  # Supply of oil by a company engaged in oil refinery activities
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 10, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}   # printed as ১%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_11
+  # Company engaged in gas transmission
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 11, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.03"}   # printed as ৩%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_12
+  # Company engaged in gas distribution
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 12, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.006"}   # printed as ০.৬%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_13
+  # Supply of 33 kV to 500 kV Extra High Voltage Power Cable manufactured by a
+  # company that has its own Vertical Continuous Vulcanization line at the
+  # local level
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 13, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.03"}   # printed as ৩%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_14
+  # Supply of books to any person other than the Government, any authority,
+  # corporation or body of the Government, and all offices attached to or
+  # subordinate to it
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 14, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.03"}   # printed as ৩%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_15
+  # Supply of all recyclable goods including recycled plastic, polythene,
+  # battery, lead, electrical, electronics, paper and glass
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 15, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}   # printed as ১%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_16
+  # Supply of raw materials used in the recycling industry
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 16, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.01"}   # printed as ১%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_17
+  # Supply of raw materials and packing materials used in industrial
+  # production
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 17, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.03"}   # printed as ৩%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_18
+  # Manufacturing, process or conversion, civil/public works, construction,
+  # engineering, or any other work of a similar nature
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 18, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.05"}   # printed as ৫%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+- id: tds.goods.s89.serial_19
+  # Supply of tobacco-based raw materials to the cigarette, bidi, zarda and
+  # gul industries
+  law: "Income Tax Act 2023, s.89 (rate prescribed by rule, capped at 10% by the section)"
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 19, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
+  slabs:
+    - {min: 0, max: null, rate: "0.10"}   # printed as ১০%
+  uplift_if_no_return_proof: "1.5"
+  effective_from: 2026-07-01
+
+# ---------------------------------------------------------------------------
+# SERIAL 20 - THE RESIDUAL. Two limbs sharing one rate: (a) supply of all goods
+# not described in serials 1-19, and (b) all other cases under section 89.
+# This keeps the id the engines and fixtures already use, so an unclassified
+# ordinary good computes at the residual rate rather than failing.
+# ---------------------------------------------------------------------------
 - id: tds.supply_of_goods.s89
   law: "Income Tax Act 2023, s.89"
-  source_doc: "PLACEHOLDER — Income Tax Paripatra FY2026-27, p.__"
-  base: excl_vat                              # confirm from paripatra
+  source_doc: "DRAFT (UNVERIFIED) - Withholding Tax Rules 2026 (Utse Kor Bidhimala 2026), S.R.O. 273-Ain/Aykar-5/2026, Bangladesh Gazette Extraordinary 5 July 2026, Rule 3(1) serial 20, PDF p.4. Extracted 2026-08-26 from nbr_documents/fy2026_27_withholding_tax_rules_2026.pdf. AWAITING ACCOUNTANT SIGN-OFF."
+  base: excl_vat
   slabs:
-    - {min: 0, max: null, rate: "0.05"}
-  uplift_if_no_return_proof: "1.5"            # confirm exact provision (S7)
+    - {min: 0, max: null, rate: "0.05"}   # printed as ৫%
+  uplift_if_no_return_proof: "1.5"
   effective_from: 2026-07-01
 
 - id: tds.services.s90

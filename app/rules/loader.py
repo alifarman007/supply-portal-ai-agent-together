@@ -21,6 +21,11 @@ from app.config import get_settings
 
 RULES_DIR = Path(__file__).resolve().parent
 
+# A citation starting with any of these means the figure has NOT been confirmed
+# by a human against the source document. Phase 5 is not complete until every
+# entry carries a plain citation with no marker.
+UNVERIFIED_MARKERS = ("PLACEHOLDER", "DRAFT", "UNVERIFIED")
+
 
 class RulesError(ValueError):
     """A rule table failed validation or could not be found."""
@@ -167,7 +172,7 @@ class RuleSet(BaseModel):
             + [r.source_doc for r in self.tds_rules.values()]
             + [self.policies.source_doc]
         )
-        return any(doc.startswith("PLACEHOLDER") for doc in docs)
+        return any(doc.upper().startswith(UNVERIFIED_MARKERS) for doc in docs)
 
 
 def fy_for_date(d: date) -> str:

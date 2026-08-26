@@ -82,21 +82,55 @@
   → http://127.0.0.1:8000/review. `ruff` clean; 172 tests passing.
   NOTE: schema changed (unique payment_instructions.bill_id) — billcheck.db
   was regenerated via `seed`; delete + reseed any stale copy.
-- **Phase 5 — source documents OBTAINED 2026-08-25 (extraction not started).**
+- **Phase 5 — RATES EXTRACTED 2026-08-26; AWAITING ACCOUNTANT SIGN-OFF.**
   16 official PDFs downloaded to `nbr_documents/` (gitignored) + `MANIFEST.md`
   and a 60 KB `research_notes.md`. Key discoveries: the **FY2026-27 Income Tax
   Paripatra does not exist** (latest is FY2025-26) — withholding rates come from
   উৎসে কর বিধিমালা ২০২৬ instead; **no standalone FY2026-27 VDS guideline** (use
   VDS Rules 2025 + SRO 140/2026); and a **two-SRO trap** — SRO 210 (June) vs
   **SRO 273 (July, operative)** differ on service rates (4% vs 2% on the serial-5
-  basket). NOTHING has been written into the YAML tables: nearly every figure is
-  single-source and unverified, and Phase 5's exit requires accountant sign-off.
+  basket). Rates HAVE now been extracted into the YAML as DRAFT entries — see the
+  next bullet — but none is signed off, so Phase 5's exit is still open.
   Still needed from the owner: a FILLED Mushak 6.3 sample (owner will supply
   later — ASK AGAIN). Supply categories: owner says suppliers sell varied items,
   so no narrowing is possible — the system must stay safe for unclassified goods,
   which `tests/golden/test_unknown_category_safety.py` now pins: an unknown VAT or
   TDS category yields REVIEW_REQUIRED with the line and category named, charges
   NO invented tax, and never silently skips a deduction.
+- **Phase 5 extraction results (2026-08-26).** Five readers rasterised the
+  Bangla gazette PDFs (legacy Bijoy encoding defeats text extraction) and
+  cross-checked every digit against the text layer; 10 load-bearing figures were
+  then independently re-read by a second agent and ALL 10 AGREED at high
+  confidence. Written into the YAML as DRAFT entries with page-level citations:
+  * `tds_rules.yaml` — the full **Rule 3(1) goods table, all 20 serials**
+    (MS scrap 0.5%, petroleum marketing 0.6%, cement/iron 2%, industrial raw &
+    packing materials 3%, manufacturing/construction 5%, tobacco raw 10%,
+    **serial 20 residual 5%**). Serial 20 keeps the id `tds.supply_of_goods.s89`
+    that the engines and fixtures already use, so behaviour is unchanged.
+    Confirmed: NO de-minimis floor — the chapeau applies the rates to base
+    value of ANY amount.
+  * `vat_rates.yaml` — standard 15%, plus real reduced bands 10% / 7.5% / 5%
+    and exempt, each cited to its SRO.
+  * `vds_rules.yaml` — CONFIRMED we are a withholding entity (Rule 2(1)(kha)
+    covers "any limited company", any turnover).
+  🔴 **THE VAT-BASE QUESTION IS NOW ANSWERED AGAINST US.** ITA 2023 s.140(5)
+  defines base value as the HIGHEST of (i) contract value, (ii) the amount in
+  the bill or invoice, (iii) payment — and is COMPLETELY SILENT on VAT. A sweep
+  of all 287 pages found only three VAT references, none a withholding-base
+  rule, while s.152(3) shows the drafter DID write "minus VAT and SD" when that
+  was intended. Read literally, "the amount in the bill or invoice" is a Mushak
+  6.3 total, which is VAT-INCLUSIVE. Our `base: excl_vat` is practitioner
+  convention with no statutory support. If it flips, every TDS figure rises by
+  ~15% and under-deduction carries 2%/month under s.143(3). PUT THIS TO THE
+  ACCOUNTANT FIRST.
+  ⚠️ **Two things deliberately NOT modelled** (documented in the YAML headers):
+  the VDS **services override** — Rule 3(1)'s ~44 service codes must be deducted
+  "whether or not a Mushak 6.3 exists", so SERVICE bills would be under-deducted
+  and must not be run through this system yet; and the Rule 3(2)/(3) netting of
+  import-stage tax paid under s.120/s.94. The VDS missing-Mushak rate (7.5%) is
+  explicitly labelled a carried-over GUESS, not a sourced figure.
+  Loader now treats PLACEHOLDER, DRAFT and UNVERIFIED citation prefixes alike,
+  so `show-policy` keeps warning until a human signs each entry off.
 - **Phase 6 — DONE 2026-08-26.** Eval harness in `app/eval/` + CLI
   `python -m app.cli eval [--llm] [--persist]` → markdown in `eval_reports/`.
   Dataset: `seeds/eval_cases.json`, 28 cases (E01–E28) covering 3-way-match

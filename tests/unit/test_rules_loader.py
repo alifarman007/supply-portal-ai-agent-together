@@ -55,11 +55,11 @@ def test_missing_citation_rejected(tmp_path: Path):
     shutil.copy(RULES_DIR / "policies.yaml", tmp_path / "policies.yaml")
 
     tds = fy_dir / "tds_rules.yaml"
-    text = tds.read_text(encoding="utf-8").replace(
-        'source_doc: "PLACEHOLDER — Income Tax Paripatra FY2026-27, p.__"',
-        'source_doc: ""',
-    )
-    tds.write_text(text, encoding="utf-8")
+    text = tds.read_text(encoding="utf-8")
+    # blank the first citation, whatever its wording
+    start = text.index("source_doc:")
+    end = text.index(chr(10), start)
+    tds.write_text(text[:start] + 'source_doc: ""' + text[end:], encoding="utf-8")
 
     with pytest.raises(RulesError, match="citation"):
         load_ruleset("fy2026_27", rules_dir=tmp_path)

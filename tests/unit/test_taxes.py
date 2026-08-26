@@ -1,5 +1,6 @@
-"""Tax engines on the PLACEHOLDER FY tables: VAT (mixed categories, inclusive
-base), TDS (flat, slab boundaries, uplift, incl_vat base), VDS (Mushak 6.3)."""
+"""Tax engines on the FY2026-27 rule tables (DRAFT, pending sign-off):
+VAT (mixed categories, inclusive base), TDS (flat, slab boundaries, uplift,
+incl_vat base), VDS (Mushak 6.3)."""
 
 from decimal import Decimal
 
@@ -9,7 +10,7 @@ from app.engines.matching import LineComputation
 from app.engines.tax_tds import compute_tds
 from app.engines.tax_vat import compute_vat
 from app.engines.tax_vds import evaluate_vds
-from app.rules.loader import load_ruleset
+from app.rules.loader import UNVERIFIED_MARKERS, load_ruleset
 
 
 @pytest.fixture(scope="module")
@@ -53,7 +54,11 @@ def test_vat_mixed_categories_s8_numbers(rules):
         Decimal("50.00"),
         Decimal("30.00"),
     ]
-    assert all(v.source_doc.startswith("PLACEHOLDER") for v in vat_lines)
+    # Every rate must still carry an unverified marker: the FY2026-27 figures
+    # are extracted from the gazette but NOT yet signed off by an accountant.
+    assert all(
+        v.source_doc.upper().startswith(UNVERIFIED_MARKERS) for v in vat_lines
+    ), "a rate lost its unverified marker without an accountant sign-off"
 
 
 def test_vat_unknown_category_flags_unclassified(rules):
