@@ -65,6 +65,44 @@
   </table>
   {% endif %}
 
+  {% if rates_applied %}
+  <h2>Tax rates applied — for accountant verification</h2>
+  {% set unverified_count = rates_applied | selectattr("unverified") | list | length %}
+  {% if unverified_count %}
+  <p class="ratewarn">
+    <strong>{{ unverified_count }} of {{ rates_applied | length }} rates on this bill
+    have not been confirmed by an accountant.</strong>
+    Each was read from the official NBR gazette PDF and independently re-read, but
+    nobody has signed it off. Check the rate against the cited page below; when all
+    are confirmed, remove the DRAFT marker from the matching entry in
+    <code>app/rules/fy2026_27/*.yaml</code>.
+  </p>
+  {% endif %}
+  <table>
+    <tr>
+      <th>Tax</th><th>Rule</th><th class="num">Rate</th><th>Applies to</th>
+      <th class="num">Base Tk</th><th class="num">Amount Tk</th><th>Confirmed?</th>
+    </tr>
+    {% for r in rates_applied %}
+    <tr>
+      <td><strong>{{ r.tax }}</strong></td>
+      <td><code>{{ r.rule_id }}</code>{% if r.law %}<div class="meta">{{ r.law }}</div>{% endif %}</td>
+      <td class="num">{{ r.rate }}</td>
+      <td>{{ r.applies_to }}</td>
+      <td class="num">{{ r.base if r.base is not none else "—" }}</td>
+      <td class="num">{{ r.amount if r.amount is not none else "—" }}</td>
+      <td>
+        {% if r.unverified %}<span class="badge REVIEW">NOT CONFIRMED</span>
+        {% else %}<span class="badge CLEAR">confirmed</span>{% endif %}
+      </td>
+    </tr>
+    <tr class="srcrow">
+      <td colspan="7" class="meta"><em>Source:</em> {{ r.source_doc or "no citation recorded" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
   <h2>Report</h2>
   <pre class="report">{{ result.report_md }}</pre>
 

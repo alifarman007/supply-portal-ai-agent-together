@@ -41,6 +41,7 @@ from app.models import (
     make_engine,
     make_session_factory,
 )
+from app.rules.loader import UNVERIFIED_MARKERS
 from app.seeding import bill_from_in
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -111,6 +112,62 @@ def create_app(
 
     def _tk(paisa: int | None) -> str | None:
         return None if paisa is None else str(from_paisa(paisa))
+
+
+    def _pct(rate: str | None) -> str:
+        """'0.075' -> '7.5%'. Exact Decimal throughout; never float."""
+        if rate is None:
+            return "—"
+        value = (Decimal(rate) * 100).normalize()
+        return f"{value:f}%"
+
+    def _rates_applied(breakdown: dict) -> list[dict]:
+        """Every tax rate this run actually applied, with the citation it came
+        from and whether a human has confirmed it.
+
+        This is what lets an accountant verify the tables against a REAL bill
+        instead of against an abstract list — they see the rate, the amount it
+        produced, and the gazette page it was read from, together.
+        """
+        rows: list[dict] = []
+        for v in breakdown.get("vat") or []:
+            rows.append({
+                "tax": "VAT",
+                "rule_id": v.get("category_id"),
+                "rate": _pct(v.get("rate")),
+                "applies_to": f"line {v.get('line_no')}",
+                "base": v.get("base"),
+                "amount": v.get("amount"),
+                "source_doc": v.get("source_doc") or "",
+            })
+        for d in breakdown.get("vds_deducted") or []:
+            rows.append({
+                "tax": "VDS",
+                "rule_id": d.get("rule_id"),
+                "rate": _pct(d.get("rate")) if d.get("rate") else "no deduction",
+                "applies_to": "whole bill",
+                "base": d.get("base"),
+                "amount": d.get("amount"),
+                "source_doc": d.get("source_doc") or "",
+            })
+        for t in breakdown.get("tds_deducted") or []:
+            note = ""
+            if t.get("uplift_applied"):
+                note = f" x{t.get('uplift')} (no return proof)"
+            lines = ", ".join(str(n) for n in (t.get("line_nos") or []))
+            rows.append({
+                "tax": "TDS",
+                "rule_id": t.get("category_id"),
+                "rate": _pct(t.get("rate")) + note,
+                "applies_to": f"lines {lines}" if lines else "whole bill",
+                "base": t.get("base"),
+                "amount": t.get("amount"),
+                "source_doc": t.get("source_doc") or "",
+                "law": t.get("law") or "",
+            })
+        for row in rows:
+            row["unverified"] = row["source_doc"].upper().startswith(UNVERIFIED_MARKERS)
+        return rows
 
     # ---- API: intake / check / status (JSON) -------------------------------
 
@@ -257,6 +314,7 @@ def create_app(
                 "exceptions": result.exceptions if result is not None else [],
                 "claimed_tk": _tk(bill.claimed_total_paisa),
                 "net_tk": _tk(result.net_payable_paisa) if result else None,
+                "rates_applied": _rates_applied(breakdown),
                 "decidable": bill.status == DECIDABLE_STATUS and result is not None,
                 "payable": result is not None and result.net_payable_paisa is not None,
                 "approvals": approvals,
