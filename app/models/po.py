@@ -50,6 +50,9 @@ class PoLine(Base):
     unit_price_paisa: Mapped[int] = mapped_column(Integer)
     vat_category_id: Mapped[str] = mapped_column(String(60))
     tds_category_id: Mapped[str] = mapped_column(String(60))
+    # VDS Rule 3(1) service code (S001.10 etc). SERVICE lines only — for a
+    # listed service, VDS is deducted whether or not a Mushak 6.3 exists.
+    service_code: Mapped[str] = mapped_column(String(20), default="")
 
     po: Mapped[PurchaseOrder] = relationship(back_populates="lines")
 
@@ -69,6 +72,7 @@ class PoLineIn(BaseModel):
     unit_price_tk: Decimal
     vat_category_id: str
     tds_category_id: str
+    service_code: str = ""
 
     _guard = field_validator("qty", "unit_price_tk", mode="before")(_no_float)
 

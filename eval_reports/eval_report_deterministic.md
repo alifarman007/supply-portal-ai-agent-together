@@ -1,8 +1,8 @@
 # Bill-checking agent — evaluation report
 
-- Generated: 2026-08-26T08:31:27+00:00
+- Generated: 2026-08-27T10:47:36+00:00
 - Mode: **deterministic**
-- Rule tables: `729230bb46024626`
+- Rule tables: `c39687290e487bfc`
 
 ## 1. Correctness
 

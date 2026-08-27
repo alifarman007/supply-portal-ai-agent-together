@@ -30,6 +30,9 @@ class PoLineData:
     tds_category_id: str
     description: str = ""
     uom: str = "pcs"
+    # Rule 3(1) VDS service code (S001.10 etc). Set on SERVICE lines only;
+    # empty for goods, which follow the Mushak 6.3 rule instead.
+    service_code: str = ""
 
 
 @dataclass(frozen=True)
@@ -180,6 +183,7 @@ class LineComputation:
     qty_adjustment: Decimal  # <= 0
     vat_category_id: str
     tds_category_id: str
+    service_code: str = ""
 
 
 def three_way_line(
@@ -275,5 +279,6 @@ def three_way_line(
         qty_adjustment=qty_adjustment,
         vat_category_id=po_line.vat_category_id,
         tds_category_id=po_line.tds_category_id,
+        service_code=po_line.service_code,
     )
     return computation, exceptions

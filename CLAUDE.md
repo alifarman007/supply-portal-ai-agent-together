@@ -151,9 +151,39 @@
   keyed), so `test_tds_slab_boundary_exact_edge` now exercises the engine's
   slab logic against a SYNTHETIC rule rather than table data.
   Still NOT modelled and flagged in the YAML: proviso (ka) financial-sector
-  carve-out; serial 19's "not deductible under any other section" condition;
-  and the VDS services override (Rule 3(1)'s ~44 service codes must be deducted
-  whether or not a Mushak 6.3 exists) — VDS remains goods-only.
+  carve-out, and serial 19's "not deductible under any other section" condition.
+- **VDS SERVICES SUPPORT added 2026-08-27 — the owner confirmed they DO receive
+  service bills, so this was a live under-deduction.** Rule 3(1) of the VDS
+  Rules 2025 requires deduction at the tabled rate *"whether or not a Mushak 6.3
+  exists"* — the OPPOSITE of the goods rule. A service bill with a valid VAT
+  invoice was previously deducted NOTHING.
+  * `app/rules/fy2026_27/vds_service_codes.yaml` — 46 codes / 51 rows, read by
+    TWO independent agents (one top-down, one bottom-up at high DPI) and
+    reconciled by a third. GROUND TRUTH PASSED: the owner's real BRAC invoice
+    shows S001.10=15% and S001.20=5%; both match.
+  * `PoLine.service_code` + `evaluate_service_vds()` (per line, not per bill).
+  * 🔴 **A CODE DOES NOT ALWAYS DETERMINE A RATE.** S001.10 is 15% for an AC
+    hotel and 10% for a non-AC hotel under the SAME code; S010.20 is 2%/4.5%/2%
+    by floor area; S048.00 is 5% for petroleum carriage vs 15% otherwise (3x).
+    For these the engine computes NOTHING and raises `vds_service_rate_ambiguous`
+    (REVIEW) naming the candidates — guessing would be a 5-point error on every
+    hotel bill.
+  * Rule 5 exemptions (attested Mushak, First Schedule, zero-rated, EFD
+    invoices, startups) are NOT evaluated, so every applied service rate is
+    disclosed via `vds_service_rule5_not_checked` (INFO) — it may OVER-deduct.
+  * Sub-rules 3(2)–(5) carry 15% obligations that are NOT table rows (premises
+    rent, imported services, licence fees) — a bill for those finds no code and
+    is UNDER-deducted. Documented in the YAML header, not silently missed.
+  * The extraction's own honest caveat, kept: three readings of ONE document is
+    not independent verification, and the 51-row table is a hand-merge of the
+    2025 base rules with SRO 140/2026 — no consolidated official text exists.
+- **Rates now shown in the CFO UI for verification (2026-08-27).** The review
+  page lists every rate a run applied (VAT per line, VDS, TDS) with its rule id,
+  what it applied to, the amount produced, and the full citation naming the SRO
+  and gazette page — badged NOT CONFIRMED while the citation carries a
+  PLACEHOLDER/DRAFT/UNVERIFIED marker. The owner asked for verification on the
+  frontend rather than a static checklist, which is the better instinct: a rate
+  is far easier to check against a real bill than in the abstract.
 - **Mushak 6.3 validation added 2026-08-27** (`app/engines/mushak.py`), built
   from TWO REAL invoices the owner supplied. Two findings drove the design:
   * **The line description carries the tax classification code.** Suppliers

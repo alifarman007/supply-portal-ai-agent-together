@@ -35,7 +35,7 @@ from app.engines.netting import LedgerAmount, NettingResult, build_netting
 from app.engines.policy import CheckException, apply_severities, recommend
 from app.engines.tax_tds import compute_tds
 from app.engines.tax_vat import compute_vat
-from app.engines.tax_vds import evaluate_vds
+from app.engines.tax_vds import evaluate_service_vds, evaluate_vds
 from app.llm.base import LLMClient, LLMError
 from app.models import (
     Bill,
@@ -105,6 +105,29 @@ def _git_sha() -> str | None:
 
 def _money(value: Decimal | None) -> str | None:
     return None if value is None else str(quantize_taka(value))
+
+
+
+def _combine_vds(goods_vds, service_total: Decimal, base: Decimal):
+    """Fold per-line service VDS into the single VDS line the netting expects.
+
+    Both are VAT withheld from this payment; the CFO breakdown keeps the
+    per-line service detail separately so the combined figure is explainable.
+    """
+    from app.engines.tax_vds import VdsDeduction
+
+    if goods_vds is None:
+        return VdsDeduction(
+            rule_id="vds.services.rule_3_1",
+            source_doc="see vds_service_codes.yaml (per-line detail in the breakdown)",
+            action="deduct",
+            rate=None,
+            base=base,
+            amount=service_total,
+        )
+    goods_vds.amount = quantize_taka(goods_vds.amount + service_total)
+    goods_vds.action = "deduct"
+    return goods_vds
 
 
 def check_bill(
@@ -240,6 +263,7 @@ def check_bill(
             tds_category_id=line.tds_category_id,
             description=line.description,
             uom=line.uom,
+            service_code=line.service_code or "",
         )
         for line in po.lines
     ]
@@ -389,8 +413,21 @@ def check_bill(
     vat_lines, vat_exceptions = compute_vat(computations, ruleset)
     exceptions.extend(vat_exceptions)
 
+    # VDS splits by line type, because the two regimes are opposites:
+    #   SERVICES listed in Rule 3(1) -> deduct at the tabled rate ALWAYS,
+    #     Mushak 6.3 or not (the chapeau says so in terms).
+    #   GOODS and unlisted services  -> a valid Mushak 6.3 means no deduction.
+    service_lines = [c for c in computations if c.service_code]
+    goods_lines = [c for c in computations if not c.service_code]
+
+    service_vds, service_vds_exceptions = evaluate_service_vds(service_lines, ruleset)
+    exceptions.extend(service_vds_exceptions)
+
+    goods_base = quantize_taka(
+        sum((c.approved_amount for c in goods_lines), Decimal(0))
+    )
     vds, vds_exceptions = evaluate_vds(
-        approved_base, ruleset, mushak_6_3_present=bill.mushak_6_3_no is not None
+        goods_base, ruleset, mushak_6_3_present=bill.mushak_6_3_no is not None
     )
     exceptions.extend(vds_exceptions)
 
@@ -460,6 +497,14 @@ def check_bill(
                 ref=entry.ref,
             )
         )
+    # Service VDS rides alongside the goods VDS in the netting: both are VAT
+    # withheld from this payment and remitted to the government.
+    service_vds_total = quantize_taka(
+        sum((d.amount for d in service_vds), Decimal(0))
+    )
+    if service_vds_total:
+        vds = _combine_vds(vds, service_vds_total, approved_base)
+
     netting = build_netting(
         approved_base=approved_base,
         vat_lines=vat_lines,
@@ -480,7 +525,10 @@ def check_bill(
     )
     recommendation = recommend(exceptions, has_adjustments)
 
-    breakdown = _breakdown(gross_claimed, computations, vat_lines, vds, tds_deductions, netting)
+    breakdown = _breakdown(
+        gross_claimed, computations, vat_lines, vds, tds_deductions, netting,
+        service_vds=service_vds,
+    )
 
     # Node C: LLM report behind the numeric guard (§6.8) — one repair attempt,
     # then fall back to the deterministic template. The rejected drafts remain
@@ -590,7 +638,8 @@ def _prior_billed_qty(prior_bills: list[Bill], po) -> dict[int, Decimal]:
     return billed
 
 
-def _breakdown(gross_claimed, computations, vat_lines, vds, tds_deductions, netting) -> dict:
+def _breakdown(gross_claimed, computations, vat_lines, vds, tds_deductions, netting,
+               service_vds=None) -> dict:
     return {
         "gross_claimed": _money(gross_claimed),
         "price_adjustments": [
@@ -667,6 +716,18 @@ def _breakdown(gross_claimed, computations, vat_lines, vds, tds_deductions, nett
                 "line_nos": t.line_nos,
             }
             for t in tds_deductions
+        ],
+        "vds_services": [
+            {
+                "line_no": d.line_no,
+                "service_code": d.service_code,
+                "serial": d.serial,
+                "description_en": d.description_en,
+                "rate": str(d.rate),
+                "base": _money(d.base),
+                "amount": _money(d.amount),
+            }
+            for d in (service_vds or [])
         ],
         "advance_adjusted": _money(netting.advance_adjusted),
         "retention_held": _money(netting.retention_held),

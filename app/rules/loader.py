@@ -112,6 +112,44 @@ class VdsRule(BaseModel):
         return v
 
 
+
+class VdsServiceVariant(BaseModel):
+    """One sub-row of a Rule 3(1) service code."""
+
+    rate: Decimal
+    serial: str = ""
+    printed: str = ""
+    description_en: str = ""
+    confidence: str = "low"
+
+    _dec = field_validator("rate", mode="before")(_to_decimal)
+
+
+class VdsServiceCode(BaseModel):
+    """A Rule 3(1) service code and every rate row printed against it.
+
+    A code with more than one DISTINCT rate cannot be resolved from the code
+    alone — hotel is 15% with air conditioning and 10% without, and both print
+    the same code S001.10. The engine must refuse to guess in that case.
+    """
+
+    page: str = ""
+    variants: list[VdsServiceVariant]
+
+    @property
+    def distinct_rates(self) -> list[Decimal]:
+        return sorted({v.rate for v in self.variants})
+
+    @property
+    def is_ambiguous(self) -> bool:
+        return len(self.distinct_rates) > 1
+
+    @property
+    def rate(self) -> Decimal | None:
+        """The single rate, or None when the code is ambiguous."""
+        rates = self.distinct_rates
+        return rates[0] if len(rates) == 1 else None
+
 class VatRate(BaseModel):
     rate: Decimal
     description_en: str
@@ -172,6 +210,7 @@ class RuleSet(BaseModel):
     fiscal_year: str
     vat_rates: dict[str, VatRate]
     vds_rules: dict[str, VdsRule]
+    vds_service_codes: dict[str, VdsServiceCode] = {}
     tds_rules: dict[str, TdsRule]
     policies: Policies
     version_hash: str
@@ -245,6 +284,7 @@ def load_ruleset(fy: str | None = None, rules_dir: Path | None = None) -> RuleSe
         fy_dir / "vds_rules.yaml",
         fy_dir / "tds_rules.yaml",
         rules_dir / "policies.yaml",
+        fy_dir / "vds_service_codes.yaml",
     ]
     digest = hashlib.sha256()
     for path in files:
@@ -257,6 +297,13 @@ def load_ruleset(fy: str | None = None, rules_dir: Path | None = None) -> RuleSe
         vds_raw = _unique_by_id(_read_yaml(files[1]), files[1])
         tds_raw = _unique_by_id(_read_yaml(files[2]), files[2])
         policies_raw = _require_mapping(_read_yaml(files[3]), files[3])
+        # Optional: absent in older rule sets, present from FY2026-27.
+        service_path = files[4]
+        service_raw = (
+            _require_mapping(_read_yaml(service_path), service_path)
+            if service_path.exists()
+            else {}
+        )
         return RuleSet(
             fiscal_year=fy,
             vat_rates={
@@ -264,6 +311,10 @@ def load_ruleset(fy: str | None = None, rules_dir: Path | None = None) -> RuleSe
                 for cat, spec in vat_raw.items()
             },
             vds_rules={rid: VdsRule(**spec) for rid, spec in vds_raw.items()},
+            vds_service_codes={
+                code: VdsServiceCode(**_require_mapping(spec, service_path))
+                for code, spec in service_raw.items()
+            },
             tds_rules={rid: TdsRule(**spec) for rid, spec in tds_raw.items()},
             policies=Policies(**policies_raw),
             version_hash=digest.hexdigest(),

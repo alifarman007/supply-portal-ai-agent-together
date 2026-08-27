@@ -1,0 +1,524 @@
+# =============================================================================
+# VDS SERVICE CODES - Rule 3(1) table, VAT Deduction at Source Rules 2025
+# (S.R.O. 182-Ain/2025/310-Mushak) as amended for FY2026-27 by
+# S.R.O. 140-Ain/2026/345-Mushak.
+#
+# STATUS: DRAFT, read 2026-08-27 by two independent readers (one top-down, one
+# bottom-up at high DPI) and reconciled by a third. NOT signed off.
+#
+# GROUND TRUTH CHECK PASSED: a real supplier invoice supplied by the owner
+# shows S001.10 = 15% and S001.20 = 5%. Both match. That anchors 2 of 51 rows;
+# the other 49 rest on the gazette alone.
+#
+# WHY THIS TABLE EXISTS AND WHY IT MATTERS:
+# Rule 3(1)'s opening words require deduction at the tabled rate
+# "musok chalanpotro thakuk ba na thakuk abosshikbhabe" - MANDATORILY, WHETHER
+# OR NOT A MUSHAK 6.3 EXISTS. That is the opposite of the goods rule. Without
+# this table a service bill with a valid VAT invoice was deducted NOTHING, i.e.
+# under-deducted, which is our liability with a 2%/month charge.
+#
+# 🔴 A CODE DOES NOT ALWAYS DETERMINE A RATE. Four codes carry sub-rows:
+#   S001.10  AC hotel 15% vs non-AC hotel 10%   (5 point swing)
+#   S010.20  building construction 2% / 4.5% / 2% by floor area
+#   S048.00  transport contractor 5% petroleum vs 15% other goods (3x swing)
+#   S024.00  two sub-rows, both 7.5% - resolves to one rate in practice
+# Where the rate is genuinely ambiguous the engine computes NOTHING and raises
+# a REVIEW naming the candidates. It must never pick one silently.
+#
+# ⚠️ THIS TABLE IS NOT THE WHOLE OF RULE 3, AND NOT THE WHOLE ANSWER:
+#   - RULE 5 can switch a row off entirely (attested Mushak 6.3 for S007.00 and
+#     S043.00, First Schedule items, zero-rated supplies, EFD-issued invoices,
+#     registered startups, and more). This engine does NOT evaluate Rule 5, so
+#     an applied rate is disclosed as such and may OVER-deduct.
+#   - SUB-RULES 3(2)-(5) carry 15% obligations that are NOT rows in this table:
+#     premises rent, imported services, licence/permit fees and revenue-sharing.
+#     A bill for those finds no code here and will be UNDER-deducted.
+#   - THE BASE (VAT-inclusive or exclusive) IS NOT FIXED BY THIS TABLE.
+#   - There is deliberately NO S099.40; the gazette skips it.
+# =============================================================================
+
+
+S001.10:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "01"
+      printed: "১৫%"
+      description_en: "AC hotel (এসি হোটেল)"
+      confidence: high
+    - rate: "0.10"
+      serial: "01"
+      printed: "১০%"
+      description_en: "Non-AC hotel (নন এসি হোটেল)"
+      confidence: high
+
+
+S001.20:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.05"
+      serial: "01"
+      printed: "৫%"
+      description_en: "Restaurant — excluding (a) a restaurant located in a residential hotel of three-star or above standard listed by the Ministry of Civil Aviation and Tourism, (b) a restaurant located in a hotel containing a liquor bar, and (c) a restaurant that has a liquor bar (রেস্তোরাঁ)"
+      confidence: high
+
+
+S002.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "02"
+      printed: "১৫%"
+      description_en: "Decorators and caterers (ডেকোরেটর্স ও ক্যাটারার্স)"
+      confidence: high
+
+
+S003.10:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.10"
+      serial: "03"
+      printed: "১০%"
+      description_en: "Motor vehicle garage and workshop (মোটর গাড়ির গ্যারেজ ও ওয়ার্কশপ)"
+      confidence: high
+
+
+S003.20:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "04"
+      printed: "১৫%"
+      description_en: "Dockyard (ডকইয়ার্ড)"
+      confidence: high
+
+
+S004.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.10"
+      serial: "05"
+      printed: "১০%"
+      description_en: "Construction firm / construction organisation (নির্মাণ সংস্থা)"
+      confidence: high
+
+
+S007.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "06"
+      printed: "১৫%"
+      description_en: "Advertising agency (বিজ্ঞাপনী সংস্থা)"
+      confidence: high
+
+
+S008.10:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "07"
+      printed: "১৫%"
+      description_en: "Printing press (ছাপাখানা)"
+      confidence: high
+
+
+S009.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "08"
+      printed: "১৫%"
+      description_en: "Auctioneer organisation (নিলামকারী সংস্থা)"
+      confidence: high
+
+
+S010.10:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.02"
+      serial: "09"
+      printed: "২%"
+      description_en: "Land development organisation (ভূমি উন্নয়ন সংস্থা)"
+      confidence: high
+
+
+S010.20:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.02"
+      serial: "10 (ka)"
+      printed: "২%"
+      description_en: "Building construction organisation (ভবন নির্মাণ সংস্থা) — (ka) up to 1–1,600 square feet"
+      confidence: high
+    - rate: "0.045"
+      serial: "10 (kha)"
+      printed: "৪.৫%"
+      description_en: "Building construction organisation (ভবন নির্মাণ সংস্থা) — (kha) from 1,601 square feet and above"
+      confidence: high
+    - rate: "0.02"
+      serial: "10 (ga)"
+      printed: "২%"
+      description_en: "Building construction organisation (ভবন নির্মাণ সংস্থা) — (ga) in the case of re-registration of any size"
+      confidence: high
+
+
+S014.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "11"
+      printed: "১৫%"
+      description_en: "Indenting firm (ইন্ডেন্টিং সংস্থা)"
+      confidence: high
+
+
+S015.10:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "12"
+      printed: "১৫%"
+      description_en: "Freight forwarders (ফ্রেইট ফরোয়ার্ডার্স)"
+      confidence: high
+
+
+S017.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "13"
+      printed: "১৫%"
+      description_en: "Community centre (কমিউনিটি সেন্টার)"
+      confidence: high
+
+
+S020.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "14"
+      printed: "১৫%"
+      description_en: "Survey firm (জরিপ সংস্থা)"
+      confidence: high
+
+
+S021.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.15"
+      serial: "15"
+      printed: "১৫%"
+      description_en: "Organisation providing plant or capital machinery on hire (প্ল্যান্ট বা মূলধনী যন্ত্রপাতি ভাড়া প্রদানকারী সংস্থা)"
+      confidence: high
+
+
+S024.00:
+  page: "vds_rules_2025_base.pdf p.2"
+  variants:
+    - rate: "0.075"
+      serial: "16 (ka)"
+      printed: "৭.৫%"
+      description_en: "Furniture marketing centre (আসবাবপত্রের বিপণন কেন্দ্র) — (ka) manufacturer of furniture (if supplied directly from the manufacturing factory to the consumer, the VAT rate is 15%)"
+      confidence: high
+    - rate: "0.075"
+      serial: "16 (kha)"
+      printed: "৭.৫%"
+      description_en: "Furniture marketing centre (আসবাবপত্রের বিপণন কেন্দ্র) — (kha) marketing outlet for furniture (subject to holding a challan evidencing payment of 7.5% VAT at the production stage; otherwise the VAT rate is 15%)"
+      confidence: high
+
+
+S028.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "17"
+      printed: "১৫%"
+      description_en: "Courier and express mail service (কুরিয়ার (Courier) ও এক্সপ্রেস মেইল সার্ভিস)"
+      confidence: high
+
+
+S031.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "18"
+      printed: "১৫%"
+      description_en: "Person, establishment or organisation engaged in the repair or servicing of taxable goods for consideration (পণের বিনিময়ে করযোগ্য পণ্য মেরামত বা সার্ভিসিং এর কাজে নিয়োজিত ব্যক্তি, প্রতিষ্ঠান বা সংস্থা)"
+      confidence: high
+
+
+S032.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "19"
+      printed: "১৫%"
+      description_en: "Consultancy firm and supervisory firm (কনসালটেন্সি ফার্ম ও সুপারভাইজরি ফার্ম)"
+      confidence: high
+
+
+S033.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "20"
+      printed: "১৫%"
+      description_en: "Leaseholder / lease-taker (ইজারাদার)"
+      confidence: high
+
+
+S034.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "21"
+      printed: "১৫%"
+      description_en: "Audit and accounting firm (অডিট এন্ড একাউন্টিং ফার্ম)"
+      confidence: high
+
+
+S037.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.10"
+      serial: "22"
+      printed: "১০%"
+      description_en: "Procurement provider (যোগানদার (Procurement Provider))"
+      confidence: high
+
+
+S040.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "23"
+      printed: "১৫%"
+      description_en: "Security service (সিকিউরিটি সার্ভিস)"
+      confidence: high
+
+
+S043.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "24"
+      printed: "১৫%"
+      description_en: "Supplier of programmes through television and online broadcasting media (টেলিভিশন ও অনলাইন সম্প্রচার মাধ্যমে অনুষ্ঠান সরবরাহকারী)"
+      confidence: high
+
+
+S045.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "25"
+      printed: "১৫%"
+      description_en: "Legal adviser (আইন পরামর্শক)"
+      confidence: high
+
+
+S048.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.05"
+      serial: "26 (ka)"
+      printed: "৫%"
+      description_en: "Transport contractor (পরিবহন ঠিকাদার) — (ka) in the case of carriage of petroleum products"
+      confidence: high
+    - rate: "0.15"
+      serial: "26 (kha)"
+      printed: "১৫%"
+      description_en: "Transport contractor (পরিবহন ঠিকাদার) — (kha) in the case of carriage of other goods"
+      confidence: high
+
+
+S049.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "27"
+      printed: "১৫%"
+      description_en: "Provider of vehicles on hire (যানবাহন ভাড়া প্রদানকারী)"
+      confidence: high
+
+
+S050.10:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "28"
+      printed: "১৫%"
+      description_en: "Architect, interior designer or interior decorator (আর্কিটেক্ট, ইন্টেরিয়র ডিজাইনার বা ইন্টেরিয়র ডেকোরেটর)"
+      confidence: high
+
+
+S050.20:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "29"
+      printed: "১৫%"
+      description_en: "Graphic designer (গ্রাফিক ডিজাইনার)"
+      confidence: high
+
+
+S051.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "30"
+      printed: "১৫%"
+      description_en: "Engineering firm (ইঞ্জিনিয়ারিং ফার্ম)"
+      confidence: high
+
+
+S052.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "31"
+      printed: "১৫%"
+      description_en: "Provider of sound and lighting equipment on hire (শব্দ ও আলোক সরঞ্জাম ভাড়া প্রদানকারী)"
+      confidence: high
+
+
+S053.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "32"
+      printed: "১৫%"
+      description_en: "Person attending a board meeting (বোর্ড সভায় যোগদানকারী)"
+      confidence: high
+
+
+S054.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "33"
+      printed: "১৫%"
+      description_en: "Broadcaster of advertisements through satellite channels (উপগ্রহ চ্যানেলের মাধ্যমে বিজ্ঞাপন প্রচারকারী)"
+      confidence: high
+
+
+S058.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "34"
+      printed: "১৫%"
+      description_en: "Provider of chartered aircraft or helicopter on hire (চার্টার্ড বিমান বা হেলিকপ্টার ভাড়া প্রদানকারী)"
+      confidence: high
+
+
+S060.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "35"
+      printed: "১৫%"
+      description_en: "Buyer of auctioned goods (নিলামকৃত পণ্যের ক্রেতা)"
+      confidence: high
+
+
+S065.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "36"
+      printed: "১৫%"
+      description_en: "Organisation cleaning or maintaining buildings, floors and premises (ভবন, মেঝে ও অংগন পরিস্কার বা রক্ষণাবেক্ষণকারী সংস্থা)"
+      confidence: high
+
+
+S066.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "37"
+      printed: "১৫%"
+      description_en: "Seller of lottery tickets (লটারির টিকিট বিক্রয়কারী)"
+      confidence: high
+
+
+S067.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "38"
+      printed: "১৫%"
+      description_en: "Immigration adviser (ইমিগ্রেশন উপদেষ্টা)"
+      confidence: high
+
+
+S071.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "39"
+      printed: "১৫%"
+      description_en: "Event organiser (অনুষ্ঠান আয়োজক)"
+      confidence: high
+
+
+S072.00:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "40"
+      printed: "১৫%"
+      description_en: "Human resource supply or management establishment (মানব সম্পদ সরবরাহ বা ব্যবস্থাপনা প্রতিষ্ঠান)"
+      confidence: high
+
+
+S083.00:
+  page: "fy2026_27_vds_amendment_sro_140.pdf p.1"
+  variants:
+    - rate: "0.15"
+      serial: "41"
+      printed: "১৫%"
+      description_en: "Semiconductor assembly, testing and packaging service (সেমিকন্ডাক্টর এসেম্বলি, টেস্টিং ও প্যাকেজিং সেবা)"
+      confidence: high
+
+
+S099.10:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.05"
+      serial: "42"
+      printed: "৫%"
+      description_en: "Information technology enabled services (তথ্য-প্রযুক্তি নির্ভর সেবা (Information Technology Enabled Services))"
+      confidence: high
+
+
+S099.20:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "43"
+      printed: "১৫%"
+      description_en: "Other miscellaneous services (অন্যান্য বিবিধ সেবা)"
+      confidence: high
+
+
+S099.30:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "44"
+      printed: "১৫%"
+      description_en: "Sponsorship services (স্পন্সরশীপ সেবা (Sponsorship Services))"
+      confidence: high
+
+
+S099.50:
+  page: "vds_rules_2025_base.pdf p.3"
+  variants:
+    - rate: "0.15"
+      serial: "45"
+      printed: "১৫%"
+      description_en: "Credit rating agency (ক্রেডিট রেটিং এজেন্সি)"
+      confidence: high
+

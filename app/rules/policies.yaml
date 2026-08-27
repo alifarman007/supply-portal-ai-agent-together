@@ -152,6 +152,13 @@ exception_severities:
   missing_mushak_6_3: REVIEW
   line_amount_mismatch: REVIEW
   vds_rule_unsupported_action: REVIEW
+  # A service code carrying more than one rate in Rule 3(1) (hotel is 15% with
+  # air conditioning and 10% without, under the SAME code). No VDS is computed
+  # — a human picks the rate. Guessing is a 5-point error on every hotel bill.
+  vds_service_rate_ambiguous: REVIEW
+  # A service code that is not in the Rule 3(1) table at all: either the
+  # deduction is being missed, or it is genuinely an unlisted service.
+  vds_service_code_unknown: REVIEW
   # Services, Rule 4(1) proviso (kha): the law wants the GREATER of a rate on
   # the commission and a rate on the total bill, but a bill line carries no
   # commission split. The engine computes the total-bill figure, which could
@@ -166,6 +173,11 @@ exception_severities:
   # The supplier gave no service/HS code, so we cannot verify the VAT
   # classification from the invoice — informational, not a blocker.
   mushak_line_uncoded: INFO
+  # VDS was deducted on a listed service, but Rule 5's exemptions (attested
+  # Mushak 6.3, First Schedule items, zero-rated supplies, EFD invoices,
+  # registered startups) are NOT evaluated by this system. Disclosed so an
+  # over-deduction cannot happen silently.
+  vds_service_rule5_not_checked: INFO
   price_over_po: INFO
   price_under_po: INFO
   advance_partially_offset: INFO
