@@ -124,7 +124,23 @@ exception_severities:
   po_not_found: BLOCKER
   po_not_open: BLOCKER
   invalid_bill: BLOCKER
+  # A Mushak 6.3 naming a DIFFERENT purchaser or a different supplier cannot
+  # support our input-VAT position at all, so it blocks rather than reviews.
+  mushak_purchaser_mismatch: BLOCKER
+  mushak_supplier_mismatch: BLOCKER
   duplicate_fuzzy: REVIEW
+  # Mushak 6.3 defects. All REVIEW: the invoice is usable evidence but a human
+  # must see the discrepancy before we rely on it. A real sample invoice from
+  # the owner had a wrong "total with duty and VAT" column, which is exactly
+  # why every figure is recomputed rather than trusted.
+  mushak_bin_invalid: REVIEW
+  mushak_no_format_invalid: REVIEW
+  mushak_fiscal_year_mismatch: REVIEW
+  mushak_no_lines: REVIEW
+  mushak_line_arithmetic: REVIEW
+  mushak_sd_arithmetic: REVIEW
+  mushak_vat_arithmetic: REVIEW
+  mushak_total_mismatch: REVIEW
   qty_over_grn: REVIEW
   unmapped_line: REVIEW
   mapping_low_confidence: REVIEW
@@ -147,6 +163,9 @@ exception_severities:
   # price_over_po is INFO: the over-billed amount is CUT automatically (the
   # adjustment itself drives CLEAR_WITH_ADJUSTMENTS per §10 S2); the flag is
   # informational for the CFO breakdown.
+  # The supplier gave no service/HS code, so we cannot verify the VAT
+  # classification from the invoice — informational, not a blocker.
+  mushak_line_uncoded: INFO
   price_over_po: INFO
   price_under_po: INFO
   advance_partially_offset: INFO

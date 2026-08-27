@@ -154,6 +154,31 @@
   carve-out; serial 19's "not deductible under any other section" condition;
   and the VDS services override (Rule 3(1)'s ~44 service codes must be deducted
   whether or not a Mushak 6.3 exists) — VDS remains goods-only.
+- **Mushak 6.3 validation added 2026-08-27** (`app/engines/mushak.py`), built
+  from TWO REAL invoices the owner supplied. Two findings drove the design:
+  * **The line description carries the tax classification code.** Suppliers
+    write `S001.10-Guestroom Delux Couple` (VAT service code) or
+    `2105.00.00-Chocolate Ice-cream Container` (HS code). So classification can
+    be a DETERMINISTIC lookup instead of an LLM guess — Node B becomes a
+    fallback for uncoded lines rather than the primary route.
+  * **A real Mushak can be internally inconsistent.** On the Kazi Farms invoice
+    the printed "Total Price with all Duty & VAT" column said 4,000.00 for a
+    line whose own figures give 4,000 + 400 SD + 330 VAT = 4,730. The engine
+    therefore RECOMPUTES every figure and treats printed totals as claims.
+  Also learned: VAT is charged on price PLUS supplementary duty (7.5% of 4,400,
+  not of 4,000 — that is the only way the printed 330 reconciles); the BRAC
+  invoice's BIN `123456789-011` is short and fails BIN validation; and the
+  declared rates S001.10=15% / S001.20=5% MATCH our extracted FY2026-27 VAT
+  schedule, which independently corroborates that extraction.
+  Validation covers: BIN format both sides, purchaser/supplier identity
+  (BLOCKER — an invoice issued to another company cannot support our input VAT),
+  Mushak number format and fiscal year, per-line qty x price, SD, VAT, and
+  grand-total arithmetic, and uncoded lines (INFO).
+  ⚠️ NOT WIRED INTO THE PIPELINE YET: `Bill` still stores only
+  `mushak_6_3_no` as a string. Capturing the full invoice (lines, codes,
+  declared rates) needs a data-model change and a source for that data — the
+  supplier portal or OCR intake in Phase L. The engine and its tests are ready
+  for that moment.
 - **Phase 6 — DONE 2026-08-26.** Eval harness in `app/eval/` + CLI
   `python -m app.cli eval [--llm] [--persist]` → markdown in `eval_reports/`.
   Dataset: `seeds/eval_cases.json`, 28 cases (E01–E28) covering 3-way-match
