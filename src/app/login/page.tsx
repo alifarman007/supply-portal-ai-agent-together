@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   motion,
@@ -16,22 +16,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   ArrowRight,
   BadgeCheck,
   CheckCircle2,
   Eye,
   EyeOff,
-  Fingerprint,
   Leaf,
   Loader2,
   Lock,
   Mail,
   Package,
-  RefreshCw,
   ShieldCheck,
   Truck,
-  TriangleAlert,
 } from "lucide-react";
 import { Logo, LogoMark } from "@/components/shell/Logo";
 import { AnimatedChickenMark } from "@/components/shell/AnimatedChickenMark";
@@ -39,12 +35,8 @@ import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { LangToggle } from "@/components/shell/LangToggle";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { OtpInput } from "@/components/auth/OtpInput";
 import { useAuth } from "@/store/auth";
 
-const EXPECTED_OTP = "135790";
-const MAX_ATTEMPTS = 3;
-const OTP_DESTINATION = "+880 1•••• ••23";
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const TRUST_ITEMS = [
@@ -144,15 +136,8 @@ export default function LoginPage() {
   const login = useAuth((s) => s.login);
   const prefersReducedMotion = useReducedMotion();
 
-  const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [locked, setLocked] = useState(false);
-  const [resendIn, setResendIn] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Page-level pointer tracking, normalized to -0.5..0.5, drives the
@@ -176,12 +161,6 @@ export default function LoginPage() {
       password: "Demo@2026!",
     },
   });
-
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const id = setInterval(() => setResendIn((n) => Math.max(0, n - 1)), 1000);
-    return () => clearInterval(id);
-  }, [resendIn]);
 
   const handlePageMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (prefersReducedMotion || e.pointerType !== "mouse") return;
@@ -212,46 +191,12 @@ export default function LoginPage() {
     setSubmitting(true);
     await wait(750);
     setSubmitting(false);
-    setStep("otp");
-    setResendIn(30);
+    setShowSuccess(true);
+    login();
+    toast.success("Signed in", { description: "Welcome to the Kazi Farms Supplier Portal." });
+    await wait(prefersReducedMotion ? 200 : 900);
+    router.push("/app");
   });
-
-  const verify = async (code = otp) => {
-    if (locked || verifying) return;
-    setVerifying(true);
-    await wait(850);
-    setVerifying(false);
-    if (code === EXPECTED_OTP) {
-      setShowSuccess(true);
-      login();
-      toast.success("Signed in", { description: "Welcome to the Kazi Farms Supplier Portal." });
-      await wait(prefersReducedMotion ? 200 : 900);
-      router.push("/app");
-      return;
-    }
-    const a = attempts + 1;
-    setAttempts(a);
-    setOtp("");
-    if (a >= MAX_ATTEMPTS) {
-      setLocked(true);
-      setOtpError(
-        "Account temporarily locked after 3 failed attempts. Please contact your administrator.",
-      );
-    } else {
-      const left = MAX_ATTEMPTS - a;
-      setOtpError(
-        `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} remaining.`,
-      );
-    }
-  };
-
-  const resend = () => {
-    if (resendIn > 0 || locked) return;
-    setResendIn(30);
-    setOtpError(null);
-    setOtp("");
-    toast.success("A new verification code has been sent.");
-  };
 
   return (
     <div
@@ -417,196 +362,99 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {step === "credentials" ? (
-              <motion.div
-                key="credentials"
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.25 }}
-              >
-                <h1 className="font-heading text-2xl font-bold text-foreground">
-                  Sign in to your portal
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Welcome back. Enter your supplier credentials to continue.
-                </p>
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <h1 className="font-heading text-2xl font-bold text-foreground">
+              Sign in to your portal
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Welcome back. Enter your supplier credentials to continue.
+            </p>
 
-                <form onSubmit={onCreds} className="mt-6 space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Work email</Label>
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <input
-                        id="email"
-                        type="email"
-                        autoComplete="username"
-                        {...form.register("email")}
-                        className="h-11 w-full rounded-xl border border-border bg-muted/40 pr-3 pl-9 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/50"
-                      />
-                    </div>
-                    {form.formState.errors.email && (
-                      <p className="text-xs text-danger">{form.formState.errors.email.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <button
-                        type="button"
-                        onClick={() => toast.info("Contact your administrator to reset access.")}
-                        className="text-xs font-medium text-primary hover:underline dark:text-brand-cream"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <input
-                        id="password"
-                        type={showPw ? "text" : "password"}
-                        autoComplete="current-password"
-                        {...form.register("password")}
-                        className="h-11 w-full rounded-xl border border-border bg-muted/40 pr-10 pl-9 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/50"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPw((v) => !v)}
-                        className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        aria-label={showPw ? "Hide password" : "Show password"}
-                      >
-                        {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
-                    </div>
-                    {form.formState.errors.password && (
-                      <p className="text-xs text-danger">{form.formState.errors.password.message}</p>
-                    )}
-                  </div>
-
-                  <Magnetic>
-                    <Button
-                      type="submit"
-                      size="lg"
-                      disabled={submitting}
-                      className="group relative h-11 w-full gap-2 overflow-hidden bg-gradient-to-r from-brand-red to-brand-red-700 text-base text-white shadow-lg shadow-brand-red/25 transition-shadow hover:from-brand-red-600 hover:to-brand-red-700 hover:shadow-brand-red/40"
-                    >
-                      <span
-                        aria-hidden
-                        className="absolute inset-y-0 left-0 w-1/3 -translate-x-[150%] skew-x-[-20deg] bg-white/25 transition-transform duration-700 ease-out group-hover:translate-x-[350%]"
-                      />
-                      {submitting ? (
-                        <><Loader2 className="size-4 animate-spin" /> Signing in…</>
-                      ) : (
-                        <>Continue <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /></>
-                      )}
-                    </Button>
-                  </Magnetic>
-
-                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Lock className="size-3" />
-                    Secured with bank-grade 256-bit TLS encryption
-                  </div>
-
-                  <p className="rounded-lg bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
-                    Demo credentials are prefilled — just click Continue.
-                  </p>
-                </form>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="otp"
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.25 }}
-              >
-                <button
-                  type="button"
-                  onClick={() => { setStep("credentials"); setOtp(""); setOtpError(null); }}
-                  className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="size-3.5" /> Back
-                </button>
-
-                <div className="mb-3 grid size-12 place-items-center rounded-2xl bg-primary/12 text-primary ring-1 ring-primary/20 dark:text-brand-cream dark:ring-brand-cream/25">
-                  <Fingerprint className="size-6" />
-                </div>
-                <h1 className="font-heading text-2xl font-bold text-foreground">
-                  Two-factor verification
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Enter the 6-digit code sent to{" "}
-                  <span className="font-medium text-foreground">{OTP_DESTINATION}</span>.
-                </p>
-
-                <div className="mt-6 space-y-3">
-                  <OtpInput
-                    value={otp}
-                    onChange={(v) => { setOtp(v); if (otpError && !locked) setOtpError(null); }}
-                    onComplete={(v) => verify(v)}
-                    autoFocus
-                    invalid={!!otpError}
-                    disabled={locked || verifying}
+            <form onSubmit={onCreds} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Work email</Label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="username"
+                    {...form.register("email")}
+                    className="h-11 w-full rounded-xl border border-border bg-muted/40 pr-3 pl-9 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/50"
                   />
-
-                  {otpError ? (
-                    <div className="flex items-start gap-2 rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
-                      <TriangleAlert className="mt-px size-3.5 shrink-0" />
-                      <span>{otpError}</span>
-                    </div>
-                  ) : (
-                    <p className="rounded-lg bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
-                      Demo code:{" "}
-                      <span className="tnum font-semibold text-foreground tracking-[0.3em]">
-                        {EXPECTED_OTP}
-                      </span>
-                    </p>
-                  )}
-
-                  <Magnetic>
-                    <Button
-                      type="button"
-                      size="lg"
-                      disabled={otp.length < 6 || verifying || locked}
-                      onClick={() => verify()}
-                      className="group relative h-11 w-full gap-2 overflow-hidden bg-gradient-to-r from-brand-red to-brand-red-700 text-base text-white shadow-lg shadow-brand-red/25 transition-shadow hover:from-brand-red-600 hover:to-brand-red-700 hover:shadow-brand-red/40"
-                    >
-                      <span
-                        aria-hidden
-                        className="absolute inset-y-0 left-0 w-1/3 -translate-x-[150%] skew-x-[-20deg] bg-white/25 transition-transform duration-700 ease-out group-hover:translate-x-[350%]"
-                      />
-                      {verifying ? (
-                        <><Loader2 className="size-4 animate-spin" /> Verifying…</>
-                      ) : (
-                        <>Verify &amp; sign in <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /></>
-                      )}
-                    </Button>
-                  </Magnetic>
-
-                  <div className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-                    {locked ? (
-                      <span className="text-danger">Account locked</span>
-                    ) : resendIn > 0 ? (
-                      <span>
-                        Resend code in{" "}
-                        <span className="tnum font-medium text-foreground">{resendIn}s</span>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={resend}
-                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline dark:text-brand-cream"
-                      >
-                        <RefreshCw className="size-3.5" /> Resend code
-                      </button>
-                    )}
-                  </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {form.formState.errors.email && (
+                  <p className="text-xs text-danger">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button
+                    type="button"
+                    onClick={() => toast.info("Contact your administrator to reset access.")}
+                    className="text-xs font-medium text-primary hover:underline dark:text-brand-cream"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="password"
+                    type={showPw ? "text" : "password"}
+                    autoComplete="current-password"
+                    {...form.register("password")}
+                    className="h-11 w-full rounded-xl border border-border bg-muted/40 pr-10 pl-9 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((v) => !v)}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPw ? "Hide password" : "Show password"}
+                  >
+                    {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+                {form.formState.errors.password && (
+                  <p className="text-xs text-danger">{form.formState.errors.password.message}</p>
+                )}
+              </div>
+
+              <Magnetic>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={submitting}
+                  className="group relative h-11 w-full gap-2 overflow-hidden bg-gradient-to-r from-brand-red to-brand-red-700 text-base text-white shadow-lg shadow-brand-red/25 transition-shadow hover:from-brand-red-600 hover:to-brand-red-700 hover:shadow-brand-red/40"
+                >
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-0 w-1/3 -translate-x-[150%] skew-x-[-20deg] bg-white/25 transition-transform duration-700 ease-out group-hover:translate-x-[350%]"
+                  />
+                  {submitting ? (
+                    <><Loader2 className="size-4 animate-spin" /> Signing in…</>
+                  ) : (
+                    <>Continue <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /></>
+                  )}
+                </Button>
+              </Magnetic>
+
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                <Lock className="size-3" />
+                Secured with bank-grade 256-bit TLS encryption
+              </div>
+
+              <p className="rounded-lg bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
+                Demo credentials are prefilled — just click Continue.
+              </p>
+            </form>
+          </motion.div>
         </motion.div>
       </div>
 

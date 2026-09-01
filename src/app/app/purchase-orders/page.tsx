@@ -69,10 +69,11 @@ export default function OrderInformationPage() {
 
     return (pos ?? []).map((po) => {
       const bills = byPo.get(po.id) ?? [];
-      const billedAmount = bills.reduce((s, i) => s + i.totalAmount, 0);
-      const paidAmount = bills
-        .filter((i) => i.status === "paid")
-        .reduce((s, i) => s + i.totalAmount, 0);
+      // Prefer amounts the source already computed (real PO data carries
+      // these); fall back to joining against the invoice list for mock data.
+      const billedAmount = po.billedAmount ?? bills.reduce((s, i) => s + i.totalAmount, 0);
+      const paidAmount =
+        po.paidAmount ?? bills.filter((i) => i.status === "paid").reduce((s, i) => s + i.totalAmount, 0);
       return {
         po,
         bills,
@@ -80,7 +81,7 @@ export default function OrderInformationPage() {
         paidAmount,
         // What is still owed on the order as a whole — an order with nothing
         // billed yet still has its full value outstanding.
-        dueAmount: Math.max(0, po.grandTotal - paidAmount),
+        dueAmount: po.dueAmount ?? Math.max(0, po.grandTotal - paidAmount),
       };
     });
   }, [pos, invoices]);
@@ -108,14 +109,14 @@ export default function OrderInformationPage() {
     {
       key: "items",
       header: "Item Number",
-      render: (r) => <span className="tnum">{r.po.items.length}</span>,
+      render: (r) => <span className="tnum">{r.po.itemCount ?? r.po.items.length}</span>,
     },
     {
       key: "vds",
       header: "VDS Amount",
       render: (r) => (
         <span className="tnum whitespace-nowrap">
-          {amount(vdsAmount(r.po.subtotal))}
+          {amount(r.po.vdsAmount ?? vdsAmount(r.po.subtotal))}
         </span>
       ),
     },
@@ -124,7 +125,7 @@ export default function OrderInformationPage() {
       header: "TDS Amount",
       render: (r) => (
         <span className="tnum whitespace-nowrap">
-          {amount(tdsAmount(r.po.subtotal))}
+          {amount(r.po.tdsAmount ?? tdsAmount(r.po.subtotal))}
         </span>
       ),
     },

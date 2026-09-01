@@ -23,6 +23,9 @@ export interface POLineItem {
   itemName?: string;
   itemCode?: string;
   specification?: string;
+  /** Present when the source (e.g. the iDempiere API) supplies real per-line tax; otherwise derive from `totalPrice` via src/lib/format/tax.ts. */
+  vdsAmount?: number;
+  tdsAmount?: number;
 }
 
 export interface PurchaseOrder {
@@ -34,9 +37,17 @@ export interface PurchaseOrder {
   buyerContactName: string;
   buyerContactEmail: string;
   items: POLineItem[];
+  /** Item count for list views. Falls back to `items.length` when absent. */
+  itemCount?: number;
   subtotal: number;
   vatAmount: number;
   grandTotal: number;
+  /** Present when the source supplies real tax/settlement figures; otherwise derive from `subtotal`/related invoices. */
+  vdsAmount?: number;
+  tdsAmount?: number;
+  billedAmount?: number;
+  paidAmount?: number;
+  dueAmount?: number;
   status: POStatus;
   termsAndConditions: string;
   deliveryAddress: string;

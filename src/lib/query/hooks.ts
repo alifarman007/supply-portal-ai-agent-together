@@ -1,6 +1,7 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/mock/api";
+import * as poApi from "@/lib/idempiere/api";
 import type { POFilters, InvoiceFilters, PaymentFilters, ChallanFilters, TenderFilters, BidFilters } from "@/lib/mock/types";
 
 export const qk = {
@@ -27,11 +28,11 @@ export function useKpiSummary() {
 }
 
 export function usePurchaseOrders(filters: POFilters = {}) {
-  return useQuery({ queryKey: qk.purchaseOrders(filters), queryFn: () => api.listPurchaseOrders(filters) });
+  return useQuery({ queryKey: qk.purchaseOrders(filters), queryFn: () => poApi.listPurchaseOrders(filters) });
 }
 
 export function usePurchaseOrder(id: string) {
-  return useQuery({ queryKey: qk.purchaseOrder(id), queryFn: () => api.getPurchaseOrder(id), enabled: !!id });
+  return useQuery({ queryKey: qk.purchaseOrder(id), queryFn: () => poApi.getPurchaseOrder(id), enabled: !!id });
 }
 
 export function useAcknowledgedPOs() {

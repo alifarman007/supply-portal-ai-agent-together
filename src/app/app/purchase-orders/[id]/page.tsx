@@ -113,8 +113,8 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
     );
   }
 
-  const vds = vdsAmount(po.subtotal);
-  const tds = tdsAmount(po.subtotal);
+  const vds = po.vdsAmount ?? vdsAmount(po.subtotal);
+  const tds = po.tdsAmount ?? tdsAmount(po.subtotal);
   const terms = po.termsAndConditions.split("\n").filter(Boolean);
 
   return (
@@ -236,10 +236,10 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
                     {item.itemCode ?? "—"}
                   </td>
                   <td className="tnum py-4 pr-4 align-middle whitespace-nowrap text-warn">
-                    {formatBDT(vdsAmount(item.totalPrice))}
+                    {formatBDT(item.vdsAmount ?? vdsAmount(item.totalPrice))}
                   </td>
                   <td className="tnum py-4 pr-4 align-middle whitespace-nowrap text-warn">
-                    {formatBDT(tdsAmount(item.totalPrice))}
+                    {formatBDT(item.tdsAmount ?? tdsAmount(item.totalPrice))}
                   </td>
                   <td className="py-4 pr-4 align-middle text-muted-foreground">
                     {item.specification ?? item.description}
