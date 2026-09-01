@@ -21,10 +21,16 @@ function decodeJwtExpiry(token: string): number | null {
   }
 }
 
+// The backend host is an internal-network-only IP. On a deployment that
+// can't reach it (e.g. Vercel), fail fast instead of hanging until the
+// platform's own timeout.
+const CONNECT_TIMEOUT_MS = 5000;
+
 async function fetchToken(): Promise<string> {
   const res = await fetch(`${BASE_URL}/auth/tokens`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(CONNECT_TIMEOUT_MS),
     // @ts-expect-error -- dispatcher is an undici-specific fetch option, not in the DOM lib types
     dispatcher: insecureDispatcher,
     body: JSON.stringify({
@@ -68,6 +74,7 @@ export async function idempiereFetch(path: string, init: RequestInit = {}): Prom
     fetch(`${BASE_URL}${path}`, {
       ...init,
       headers: { ...init.headers, Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(CONNECT_TIMEOUT_MS),
       // @ts-expect-error -- dispatcher is an undici-specific fetch option, not in the DOM lib types
       dispatcher: insecureDispatcher,
     });
