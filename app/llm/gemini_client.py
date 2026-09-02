@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.llm.base import BaseHTTPLLMClient, LLMError, Message
+from app.llm.base import Attachment, BaseHTTPLLMClient, LLMError, Message
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -39,7 +39,10 @@ class GeminiClient(BaseHTTPLLMClient):
     provider = "gemini"
 
     def _build_request(
-        self, messages: list[Message], schema_dict: dict[str, Any] | None
+        self,
+        messages: list[Message],
+        schema_dict: dict[str, Any] | None,
+        attachments: list[Attachment] | None = None,
     ) -> tuple[str, dict[str, str], dict[str, Any]]:
         url = f"{API_BASE}/{self.model}:generateContent"
         headers = {
@@ -55,6 +58,16 @@ class GeminiClient(BaseHTTPLLMClient):
             for m in messages
             if m["role"] != "system"
         ]
+        # A file (a scanned or PDF bill) rides on the LAST user turn, so the
+        # instructions that precede it are already in context when the model
+        # reads it.
+        if attachments:
+            if not contents:
+                contents = [{"role": "user", "parts": []}]
+            contents[-1]["parts"].extend(
+                {"inline_data": {"mime_type": a.mime_type, "data": a.data_b64}}
+                for a in attachments
+            )
         payload: dict[str, Any] = {"contents": contents}
         if system_texts:
             payload["systemInstruction"] = {"parts": [{"text": "\n\n".join(system_texts)}]}

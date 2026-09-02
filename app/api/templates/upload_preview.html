@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}check before saving{% endblock %}
+{% block content %}
+<h1>Check this before saving</h1>
+<p class="meta">Read from <strong>{{ filename }}</strong> ({{ draft.source }}).</p>
+
+{% if draft.source.startswith("llm:") %}
+<p class="ratewarn">
+  <strong>These values were read by AI and have not been verified.</strong>
+  Compare every figure against the document before saving. Anything wrong here
+  becomes a wrong payment.
+</p>
+{% endif %}
+
+{% for note in draft.notes %}
+<p class="ratewarn">{{ note }}</p>
+{% endfor %}
+
+<form class="decision" method="post" action="/upload/confirm">
+  <h2>Bill details</h2>
+  <label>Bill reference</label>
+  <input type="text" name="id" value="{{ draft.id }}" required
+         placeholder="BILL-2026-014">
+
+  <label>Supplier</label>
+  <select name="supplier_id" required>
+    <option value="">— choose —</option>
+    {% for s in suppliers %}
+    <option value="{{ s.id }}" {% if s.id == draft.supplier_id %}selected{% endif %}>
+      {{ s.id }} — {{ s.name }}
+    </option>
+    {% endfor %}
+  </select>
+
+  <label>Purchase order</label>
+  <select name="po_id" required>
+    <option value="">— choose —</option>
+    {% for po in purchase_orders %}
+    <option value="{{ po.id }}" {% if po.id == draft.po_id %}selected{% endif %}>
+      {{ po.id }} — supplier {{ po.supplier_id }}
+    </option>
+    {% endfor %}
+  </select>
+
+  <label>Supplier's invoice number</label>
+  <input type="text" name="supplier_invoice_no" value="{{ draft.supplier_invoice_no }}" required>
+
+  <label>Invoice date <span class="meta">(YYYY-MM-DD)</span></label>
+  <input type="text" name="invoice_date" value="{{ draft.invoice_date }}" required
+         placeholder="2026-08-27">
+
+  <label>Mushak 6.3 number <span class="meta">(leave blank if the supplier gave none)</span></label>
+  <input type="text" name="mushak_6_3_no" value="{{ draft.mushak_6_3_no }}">
+
+  <h2>Lines</h2>
+  <table>
+    <tr>
+      <th>Line</th><th>Description</th><th>Product code</th>
+      <th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th>
+    </tr>
+    {% for line in draft.lines %}
+    <tr>
+      <td><input type="text" name="line_{{ loop.index0 }}_no" value="{{ line.line_no }}" size="3"></td>
+      <td><input type="text" name="line_{{ loop.index0 }}_description" value="{{ line.description }}"></td>
+      <td><input type="text" name="line_{{ loop.index0 }}_product_code" value="{{ line.product_code }}" size="12"></td>
+      <td><input type="text" name="line_{{ loop.index0 }}_qty" value="{{ line.qty }}" size="8"></td>
+      <td><input type="text" name="line_{{ loop.index0 }}_unit_price_tk" value="{{ line.unit_price_tk }}" size="10"></td>
+      <td><input type="text" name="line_{{ loop.index0 }}_amount_tk" value="{{ line.amount_tk }}" size="10"></td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <label>Claimed total (Tk)</label>
+  <input type="text" name="claimed_total_tk" value="{{ draft.claimed_total_tk }}" required>
+  <p class="meta">
+    The lines above add up to <strong>{{ computed_total or "—" }}</strong>.
+    The total must match exactly, or saving is refused — that mismatch is itself
+    a finding worth knowing about.
+  </p>
+
+  <button type="submit">Save and check this bill</button>
+</form>
+
+<p class="meta">
+  Saving runs the full check: the bill is matched against the purchase order and
+  the goods received, taxes are computed, and the result goes to the CFO review
+  queue. Nothing is paid without approval.
+</p>
+{% endblock %}

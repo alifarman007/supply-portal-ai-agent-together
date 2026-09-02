@@ -11,6 +11,7 @@ this package (enforced by tests/unit/test_engine_purity.py).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from dataclasses import dataclass
@@ -43,6 +44,37 @@ class LLMSchemaError(LLMError):
 
 
 @dataclass
+class Attachment:
+    """A file handed to the model — a scanned or PDF bill, typically.
+
+    `data_b64` is deliberately EXCLUDED from the audit record: a 200 KB PDF
+    becomes ~270 KB of base64 per call and would swamp an append-only log that
+    exists to be read. The audit keeps the filename, media type, byte size and
+    a SHA-256 of the content, which is enough to prove WHICH file was sent.
+    """
+
+    filename: str
+    mime_type: str
+    data_b64: str
+
+    @property
+    def size_bytes(self) -> int:
+        # base64 encodes 3 bytes as 4 chars and pads the tail with '='; each
+        # pad char stands for one byte that is not there.
+        padding = len(self.data_b64) - len(self.data_b64.rstrip("="))
+        return (len(self.data_b64) * 3) // 4 - padding
+
+    def audit_summary(self) -> dict[str, Any]:
+        digest = hashlib.sha256(self.data_b64.encode("ascii")).hexdigest()
+        return {
+            "filename": self.filename,
+            "mime_type": self.mime_type,
+            "size_bytes": self.size_bytes,
+            "sha256_of_base64": digest,
+        }
+
+
+@dataclass
 class LLMResponse:
     text: str
     parsed_json: Any | None
@@ -63,7 +95,23 @@ class LLMClient(Protocol):
         messages: list[Message],
         json_schema: type[BaseModel] | dict[str, Any] | None = None,
         audit_context: dict[str, Any] | None = None,
+        attachments: list[Attachment] | None = None,
     ) -> LLMResponse: ...
+
+
+
+def _prompt_text(payload: dict[str, Any]) -> str:
+    """Best-effort extraction of the human-readable prompt from a provider
+    payload, so the audit record still shows WHAT was asked."""
+    chunks: list[str] = []
+    for content in payload.get("contents", []) or []:
+        for part in content.get("parts", []) or []:
+            if "text" in part:
+                chunks.append(part["text"])
+    for message in payload.get("messages", []) or []:
+        if isinstance(message.get("content"), str):
+            chunks.append(message["content"])
+    return chr(10).join(chunks)
 
 
 class BaseHTTPLLMClient:
@@ -101,10 +149,28 @@ class BaseHTTPLLMClient:
 
     # ---- adapter contract -------------------------------------------------
     def _build_request(
-        self, messages: list[Message], schema_dict: dict[str, Any] | None
+        self,
+        messages: list[Message],
+        schema_dict: dict[str, Any] | None,
+        attachments: list[Attachment] | None = None,
     ) -> tuple[str, dict[str, str], dict[str, Any]]:
         """Return (url, headers, json_payload). Headers carry auth and are never audited."""
         raise NotImplementedError
+
+    @staticmethod
+    def _redact(payload: dict[str, Any], attachments: list[Attachment] | None):
+        """What goes in the audit log: the prompt, plus a description of any
+        attached file rather than its base64 bytes."""
+        if not attachments:
+            return payload
+        return {
+            "_note": "attachment bytes redacted from the audit record",
+            "attachments": [a.audit_summary() for a in attachments],
+            "messages_only": {
+                k: v for k, v in payload.items() if k not in ("contents", "messages")
+            },
+            "prompt_text": _prompt_text(payload),
+        }
 
     def _extract(self, data: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         """Return (text, usage) from a raw provider response body."""
@@ -116,6 +182,7 @@ class BaseHTTPLLMClient:
         messages: list[Message],
         json_schema: type[BaseModel] | dict[str, Any] | None = None,
         audit_context: dict[str, Any] | None = None,
+        attachments: list[Attachment] | None = None,
     ) -> LLMResponse:
         model_cls: type[BaseModel] | None = None
         schema_dict: dict[str, Any] | None = None
@@ -129,7 +196,7 @@ class BaseHTTPLLMClient:
         last_error: Exception | None = None
         for _validation_round in range(2):  # one repair retry on schema mismatch
             text, usage, raw, latency = self._send_with_retries(
-                attempt_messages, schema_dict, audit_context
+                attempt_messages, schema_dict, audit_context, attachments
             )
             if schema_dict is None:
                 return LLMResponse(text, None, usage, raw, self.provider, self.model, latency)
@@ -171,8 +238,12 @@ class BaseHTTPLLMClient:
         messages: list[Message],
         schema_dict: dict[str, Any] | None,
         audit_context: dict[str, Any] | None = None,
+        attachments: list[Attachment] | None = None,
     ) -> tuple[str, dict[str, Any], dict[str, Any], float]:
-        url, headers, payload = self._build_request(messages, schema_dict)
+        url, headers, payload = self._build_request(messages, schema_dict, attachments)
+        # The audited payload carries a SUMMARY of each attachment, never its
+        # bytes — see Attachment.audit_summary.
+        audited_payload = self._redact(payload, attachments)
         attempts = self.max_retries + 1
         error: Exception | None = None
         for attempt in range(1, attempts + 1):
@@ -183,7 +254,7 @@ class BaseHTTPLLMClient:
                 if resp.status_code in RETRYABLE_STATUS:
                     error = LLMHTTPError(resp.status_code, resp.text)
                 elif resp.status_code >= 400:
-                    self._audit(url, payload, resp.text, "error", latency, attempt,
+                    self._audit(url, audited_payload, resp.text, "error", latency, attempt,
                                 f"HTTP {resp.status_code}", context=audit_context)
                     raise LLMHTTPError(resp.status_code, resp.text)
                 else:
@@ -193,18 +264,18 @@ class BaseHTTPLLMClient:
                     except (ValueError, KeyError, IndexError, TypeError, LLMError) as exc:
                         # HTTP 200 with an unusable body (proxy error page, safety
                         # block, malformed response): audit the raw body, fail loud.
-                        self._audit(url, payload, resp.text, "error", latency, attempt,
+                        self._audit(url, audited_payload, resp.text, "error", latency, attempt,
                                     str(exc), context=audit_context)
                         raise LLMError(
                             f"{self.provider} returned HTTP 200 with an unusable body: {exc}"
                         ) from exc
-                    self._audit(url, payload, data, "ok", latency, attempt, None,
+                    self._audit(url, audited_payload, data, "ok", latency, attempt, None,
                                 usage=usage, context=audit_context)
                     return text, usage, data, latency
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 latency = (time.perf_counter() - start) * 1000
                 error = exc
-            self._audit(url, payload, getattr(error, "body", None), "retryable_error",
+            self._audit(url, audited_payload, getattr(error, "body", None), "retryable_error",
                         latency, attempt, str(error), context=audit_context)
             if attempt < attempts:
                 self._sleep(self.backoff_base_s * (2 ** (attempt - 1)))

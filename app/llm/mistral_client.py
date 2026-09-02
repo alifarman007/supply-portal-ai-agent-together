@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.llm.base import BaseHTTPLLMClient, Message
+from app.llm.base import Attachment, BaseHTTPLLMClient, LLMError, Message
 
 API_URL = "https://api.mistral.ai/v1/chat/completions"
 
@@ -29,8 +29,19 @@ class MistralClient(BaseHTTPLLMClient):
     provider = "mistral"
 
     def _build_request(
-        self, messages: list[Message], schema_dict: dict[str, Any] | None
+        self,
+        messages: list[Message],
+        schema_dict: dict[str, Any] | None,
+        attachments: list[Attachment] | None = None,
     ) -> tuple[str, dict[str, str], dict[str, Any]]:
+        if attachments:
+            # Refuse loudly. Silently dropping the file would make the model
+            # answer about a document it never saw — the worst outcome for a
+            # bill-reading feature.
+            raise LLMError(
+                "the Mistral adapter cannot send file attachments; set "
+                "LLM_PROVIDER=gemini in .env to read PDF or image bills"
+            )
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",

@@ -209,6 +209,26 @@
   declared rates) needs a data-model change and a source for that data — the
   supplier portal or OCR intake in Phase L. The engine and its tests are ready
   for that moment.
+- **Bill file upload added 2026-08-27** (owner request). `GET/POST /upload`,
+  `POST /upload/confirm`, reachable from the header on every page.
+  * **CSV** (lines; header fields from the form, spreadsheet-style column
+    aliases accepted) and **JSON** (the POST /bills shape) parse
+    deterministically in `app/ingest/parsers.py`.
+  * **PDF / photo / scan** is read by Gemini — Node E, `app/ingest/extract.py`,
+    prompt `node_e_bill_extractor.md`. Requires an explicit opt-in checkbox, so
+    no file is sent to an LLM by accident.
+  * 🔴 **NOTHING IS SAVED FROM A FILE.** Every path yields a DraftBill rendered
+    into an editable confirmation form; only the confirmed values are validated
+    by `BillIn` and saved, with the same status forcing as the JSON intake.
+    Node E is told NOT to calculate — an unprinted line amount is left empty and
+    WE derive it visibly; the document's printed total is never adopted, only
+    compared (the Kazi Farms sample had a wrong one).
+  * LLM layer gained `Attachment` + inline file support on the Gemini adapter;
+    Mistral raises rather than silently dropping a file. **The audit record
+    stores a filename/mime/size/SHA-256 summary, NOT the base64** — a 92 KB PDF
+    audits in ~3 KB instead of ~125 KB.
+  * Live-verified on the blank Mushak form: the model returned EMPTY fields and
+    listed them in `uncertain_fields` rather than inventing values.
 - **Phase 6 — DONE 2026-08-26.** Eval harness in `app/eval/` + CLI
   `python -m app.cli eval [--llm] [--persist]` → markdown in `eval_reports/`.
   Dataset: `seeds/eval_cases.json`, 28 cases (E01–E28) covering 3-way-match

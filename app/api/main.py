@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import httpx
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -27,6 +27,17 @@ from app.adapters.treasury import emit_payment_instruction
 from app.agent.pipeline import BillNotCheckableError, check_bill
 from app.config import get_settings
 from app.engines.money import from_paisa, to_paisa
+from app.ingest.parsers import (
+    DraftBill,
+    DraftLine,
+    UploadError,
+    check_size,
+    draft_to_payload,
+    needs_llm,
+    parse_csv,
+    parse_json,
+    suffix_of,
+)
 from app.models import (
     ApprovalRecord,
     Bill,
@@ -437,6 +448,163 @@ def create_app(
             session.commit()
 
         return RedirectResponse("/review", status_code=303)
+
+
+    # ---- Upload a bill file -------------------------------------------------
+
+    @app.get("/upload")
+    def upload_form(request: Request, session: Session = Depends(get_session)):
+        return templates.TemplateResponse(
+            request,
+            "upload.html",
+            {
+                "suppliers": session.query(Supplier).order_by(Supplier.id).all(),
+                "purchase_orders": session.query(PurchaseOrder)
+                .order_by(PurchaseOrder.id)
+                .all(),
+                "error": None,
+            },
+        )
+
+    @app.post("/upload")
+    async def upload_file(
+        request: Request,
+        upload: UploadFile = File(...),
+        supplier_id: str = Form(""),
+        po_id: str = Form(""),
+        bill_id: str = Form(""),
+        use_llm: str = Form(""),
+        session: Session = Depends(get_session),
+    ):
+        """Parse the file into a DRAFT and show it for confirmation.
+
+        This endpoint deliberately does NOT create a bill. Two of the three
+        input paths involve reading a document, and a misread line on a
+        supplier bill is money — so a person confirms every value first.
+        """
+        filename = upload.filename or ""
+        content = await upload.read()
+        try:
+            check_size(content)
+            suffix = suffix_of(filename)
+            if suffix == ".json":
+                draft = parse_json(content)
+            elif suffix == ".csv":
+                draft = parse_csv(content)
+            elif needs_llm(filename):
+                if not use_llm:
+                    raise UploadError(
+                        f"{filename} is a document, so reading it needs the AI "
+                        "reader. Tick the box to allow it, or upload a CSV/JSON."
+                    )
+                from app.ingest.extract import extract_bill
+                from app.llm.factory import get_llm_client
+
+                draft = extract_bill(
+                    get_llm_client(), filename=filename, content=content
+                )
+            else:
+                raise UploadError(
+                    f"unsupported file type {suffix or '(none)'} — upload a .csv, "
+                    ".json, .pdf, .png or .jpg"
+                )
+        except UploadError as err:
+            return templates.TemplateResponse(
+                request,
+                "upload.html",
+                {
+                    "suppliers": session.query(Supplier).order_by(Supplier.id).all(),
+                    "purchase_orders": session.query(PurchaseOrder)
+                    .order_by(PurchaseOrder.id)
+                    .all(),
+                    "error": str(err),
+                },
+                status_code=400,
+            )
+
+        # Form values win over anything read from the file: the person filling
+        # them in knows which PO this bill belongs to; the document usually
+        # does not say.
+        draft.supplier_id = supplier_id.strip() or draft.supplier_id
+        draft.po_id = po_id.strip() or draft.po_id
+        draft.id = bill_id.strip() or draft.id
+        if not draft.claimed_total_tk:
+            draft.claimed_total_tk = draft.computed_total()
+
+        return templates.TemplateResponse(
+            request,
+            "upload_preview.html",
+            {
+                "draft": draft,
+                "filename": filename,
+                "computed_total": draft.computed_total(),
+                "suppliers": session.query(Supplier).order_by(Supplier.id).all(),
+                "purchase_orders": session.query(PurchaseOrder)
+                .order_by(PurchaseOrder.id)
+                .all(),
+            },
+        )
+
+    @app.post("/upload/confirm")
+    async def upload_confirm(
+        request: Request, session: Session = Depends(get_session)
+    ):
+        """Create the bill from the CONFIRMED values, then check it.
+
+        Everything arrives as form fields a human has just looked at. It still
+        goes through the same BillIn validation and the same status forcing as
+        the JSON intake — confirmation is not a licence to skip checks.
+        """
+        form = await request.form()
+        draft = DraftBill(
+            id=str(form.get("id") or ""),
+            supplier_id=str(form.get("supplier_id") or ""),
+            po_id=str(form.get("po_id") or ""),
+            supplier_invoice_no=str(form.get("supplier_invoice_no") or ""),
+            invoice_date=str(form.get("invoice_date") or ""),
+            mushak_6_3_no=str(form.get("mushak_6_3_no") or ""),
+            claimed_total_tk=str(form.get("claimed_total_tk") or ""),
+        )
+        index = 0
+        while f"line_{index}_qty" in form:
+            draft.lines.append(
+                DraftLine(
+                    line_no=int(str(form.get(f"line_{index}_no") or index + 1) or index + 1),
+                    description=str(form.get(f"line_{index}_description") or ""),
+                    product_code=str(form.get(f"line_{index}_product_code") or ""),
+                    qty=str(form.get(f"line_{index}_qty") or ""),
+                    unit_price_tk=str(form.get(f"line_{index}_unit_price_tk") or ""),
+                    amount_tk=str(form.get(f"line_{index}_amount_tk") or ""),
+                )
+            )
+            index += 1
+
+        if not draft.lines:
+            raise HTTPException(400, "the bill has no lines")
+
+        payload = draft_to_payload(draft)
+        try:
+            bill_in = BillIn.model_validate(payload)
+        except ValidationError as err:
+            raise HTTPException(422, f"the confirmed values are not valid: {err}") from err
+        if session.get(Bill, bill_in.id) is not None:
+            raise HTTPException(409, f"bill {bill_in.id!r} already exists")
+        if session.get(Supplier, bill_in.supplier_id) is None:
+            raise HTTPException(400, f"unknown supplier {bill_in.supplier_id!r}")
+        if session.get(PurchaseOrder, bill_in.po_id) is None:
+            raise HTTPException(400, f"unknown PO {bill_in.po_id!r}")
+
+        bill_in = bill_in.model_copy(
+            update={"status": BillStatus.ASSIGNED, "scenario_tag": None}
+        )
+        session.add(bill_from_in(bill_in))
+        session.commit()
+
+        try:
+            check_bill(session, bill_in.id)
+        except BillNotCheckableError as err:
+            raise HTTPException(409, str(err)) from err
+        return RedirectResponse(f"/review/{bill_in.id}", status_code=303)
 
     @app.get("/")
     def root():
