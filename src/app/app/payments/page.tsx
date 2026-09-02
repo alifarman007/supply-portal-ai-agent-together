@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { usePayments, useInvoices, usePurchaseOrders } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
+import { useLabels } from "@/lib/i18n/labels";
 import type { Invoice, PurchaseOrder } from "@/lib/mock/types";
 
 /** A bill only counts as billed once it has actually been submitted. */
@@ -37,6 +38,7 @@ interface BilledPoRow {
 }
 
 export default function PaymentsPage() {
+  const { t } = useLabels();
   const [search, setSearch] = useState("");
   const { data: payments, isLoading: paymentsLoading } = usePayments({});
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({});
@@ -92,7 +94,7 @@ export default function PaymentsPage() {
   const columns: ReportColumn<BilledPoRow>[] = [
     {
       key: "po",
-      header: "PO Number",
+      header: t("col_po_number"),
       render: (r) => (
         <Link
           href={`/app/purchase-orders/${r.po.id}`}
@@ -104,17 +106,17 @@ export default function PaymentsPage() {
     },
     {
       key: "poDate",
-      header: "PO Date",
+      header: t("col_po_date"),
       render: (r) => <span className="tnum whitespace-nowrap">{formatDate(r.po.issuedDate)}</span>,
     },
     {
       key: "poAmount",
-      header: "PO Amount",
+      header: t("col_po_amount"),
       render: (r) => <span className="tnum whitespace-nowrap">{formatBDT(r.po.grandTotal)}</span>,
     },
     {
       key: "bill",
-      header: "Bill Number",
+      header: t("col_bill_number"),
       cellClassName: "min-w-[160px]",
       render: (r) => (
         <div className="flex flex-col gap-1">
@@ -132,29 +134,29 @@ export default function PaymentsPage() {
     },
     {
       key: "submitted",
-      header: "Submitted Date",
+      header: t("col_submitted_date"),
       render: (r) => <span className="tnum whitespace-nowrap">{formatDate(r.submittedDate)}</span>,
     },
     {
       key: "vatChallan",
-      header: "VAT Challan",
+      header: t("col_vat_challan"),
       render: (r) => <Checkbox checked={r.vatChallanSubmitted} disabled />,
     },
     {
       key: "totalAmount",
-      header: "Total Amount",
+      header: t("col_total_amount"),
       render: (r) => <span className="tnum font-semibold whitespace-nowrap">{formatBDT(r.totalAmount)}</span>,
     },
     {
       key: "attachment",
-      header: "Attachment",
+      header: t("col_attachment"),
       render: () => (
         <button
           type="button"
-          onClick={() => toast.info("Attachment preview coming soon.")}
+          onClick={() => toast.info(t("toast_attachment_soon"))}
           className="inline-flex items-center gap-1.5 font-semibold whitespace-nowrap text-primary underline underline-offset-4 hover:opacity-80"
         >
-          <Paperclip className="size-3.5" /> View File
+          <Paperclip className="size-3.5" /> {t("view_file_btn")}
         </button>
       ),
     },
@@ -163,24 +165,26 @@ export default function PaymentsPage() {
   return (
     <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
-        title="Payment History"
-        subtitle="Track all payments received from Kazi Farms Group"
+        title={t("payment_history_title")}
+        subtitle={t("payment_subtitle")}
         actions={
-          <Button variant="outline" onClick={() => toast.info("CSV export coming soon.")}>
-            <Download className="size-4" /> Export
+          <Button variant="outline" onClick={() => toast.info(t("toast_csv_soon"))}>
+            <Download className="size-4" /> {t("export_btn")}
           </Button>
         }
       />
 
       {/* Summary Bar */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          { label: "Total Gross", value: totalGross, color: "text-foreground" },
-          { label: "Total Deductions", value: totalDeductions, color: "text-danger" },
-          { label: "Net Received", value: totalReceived, color: "text-ok" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="glass p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+        {(
+          [
+            { labelKey: "total_gross", value: totalGross, color: "text-foreground" },
+            { labelKey: "total_deductions", value: totalDeductions, color: "text-danger" },
+            { labelKey: "net_received", value: totalReceived, color: "text-ok" },
+          ] as const
+        ).map(({ labelKey, value, color }) => (
+          <div key={labelKey} className="glass p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t(labelKey)}</div>
             <div className={`tnum mt-1 text-xl font-bold ${color}`}>
               {paymentsLoading ? "—" : formatBDT(value)}
             </div>
@@ -193,7 +197,7 @@ export default function PaymentsPage() {
         <div className="relative max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by PO or bill number…"
+            placeholder={t("payment_search_ph")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -206,7 +210,7 @@ export default function PaymentsPage() {
         rows={rows}
         getRowKey={(r) => r.po.id}
         loading={isLoading}
-        emptyLabel="No billed purchase orders found."
+        emptyLabel={t("payment_empty")}
       />
     </div>
   );

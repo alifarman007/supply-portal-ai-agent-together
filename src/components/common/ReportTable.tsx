@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLabels } from "@/lib/i18n/labels";
 
 const PAGE_SIZES = [10, 25, 50] as const;
 
@@ -34,7 +35,7 @@ export function ReportTable<T>({
   columns,
   rows,
   getRowKey,
-  emptyLabel = "Nothing to show",
+  emptyLabel,
   loading = false,
   className,
   stickyFirstColumn = false,
@@ -52,6 +53,7 @@ export function ReportTable<T>({
    */
   stickyFirstColumn?: boolean;
 }) {
+  const { t, lang } = useLabels();
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
   const [page, setPage] = useState(0);
 
@@ -116,7 +118,7 @@ export function ReportTable<T>({
                   colSpan={columns.length}
                   className="px-5 py-10 text-center text-muted-foreground"
                 >
-                  {emptyLabel}
+                  {emptyLabel ?? t("nothing_to_show")}
                 </td>
               </tr>
             ) : (
@@ -148,7 +150,7 @@ export function ReportTable<T>({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          Rows per page:
+          {t("rows_per_page")}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-1 px-2 font-medium">
@@ -174,12 +176,14 @@ export function ReportTable<T>({
 
         <div className="flex items-center gap-2">
           <span className="tnum text-sm text-muted-foreground">
-            {first}-{last} of {rows.length}
+            {lang === "bn"
+              ? `মোট ${rows.length}-এর মধ্যে ${first}-${last}`
+              : `${first}-${last} of ${rows.length}`}
           </span>
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Previous page"
+            aria-label={t("previous_page")}
             disabled={page === 0}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
           >
@@ -188,7 +192,7 @@ export function ReportTable<T>({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Next page"
+            aria-label={t("next_page")}
             disabled={page >= pageCount - 1}
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
           >

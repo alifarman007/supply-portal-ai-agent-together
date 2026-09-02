@@ -16,11 +16,13 @@ import { useBid, useRespondToBidClarification } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate, formatDateTime, daysUntil } from "@/lib/format/date";
 import { usePermission } from "@/lib/rbac";
+import { useLabels } from "@/lib/i18n/labels";
 import type { Bid } from "@/lib/mock/types";
 
 export default function BidDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { t } = useLabels();
   const { data: bid, isLoading } = useBid(id);
   const canRespond = usePermission("submit_bids");
   const respond = useRespondToBidClarification();
@@ -42,9 +44,9 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
   if (!bid) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <p className="text-lg font-semibold text-foreground">Bid not found</p>
+        <p className="text-lg font-semibold text-foreground">{t("bid_not_found")}</p>
         <Button variant="outline" className="mt-4" onClick={() => router.back()}>
-          <ArrowLeft className="size-4" /> Go back
+          <ArrowLeft className="size-4" /> {t("go_back")}
         </Button>
       </div>
     );
@@ -55,7 +57,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
   const onRespond = async () => {
     if (!openClarification) return;
     if (!response.trim()) {
-      toast.error("Please enter your response");
+      toast.error(t("toast_enter_response"));
       return;
     }
     try {
@@ -64,12 +66,12 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
         clarificationId: openClarification.id,
         response: response.trim(),
       });
-      toast.success("Response submitted", {
-        description: "Your bid has been returned for evaluation.",
+      toast.success(t("toast_response_submitted"), {
+        description: t("toast_response_desc"),
       });
       setResponse("");
     } catch {
-      toast.error("Failed to submit response");
+      toast.error(t("toast_response_failed"));
     }
   };
 
@@ -82,15 +84,15 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
             <StatusPill status={bid.status} variant="solid" />
           </span>
         }
-        subtitle={`Submitted: ${formatDate(bid.submittedAt)}  ·  Tender: ${bid.tenderNumber}  ·  Validity: ${bid.bidValidityDays} days`}
+        subtitle={`${t("lbl_submitted")}: ${formatDate(bid.submittedAt)}  ·  ${t("col_tender")}: ${bid.tenderNumber}  ·  ${t("lbl_bid_validity")}: ${bid.bidValidityDays} ${t("days_word")}`}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="size-4" /> Back to Bids
+              <ArrowLeft className="size-4" /> {t("back_to_bids")}
             </Button>
             <Button asChild className="gap-2">
               <Link href={`/app/tenders/${bid.tenderId}`}>
-                <FileText className="size-4" /> View Tender
+                <FileText className="size-4" /> {t("view_tender")}
               </Link>
             </Button>
           </div>
@@ -101,8 +103,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
         <div className="glass flex items-center gap-3 border-ok/30 bg-ok/10 p-4 text-sm text-ok">
           <Trophy className="size-5 shrink-0" />
           <div>
-            <strong>Congratulations — this bid was awarded!</strong> A Purchase Order will
-            follow via the Procurement team.
+            <strong>{t("bid_awarded_title")}</strong> {t("bid_awarded_desc")}
           </div>
         </div>
       )}
@@ -110,12 +111,12 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
       {bid.status === "not_awarded" && (
         <div className="glass flex items-center gap-3 border-border p-4 text-sm text-muted-foreground">
           <ShieldX className="size-5 shrink-0" />
-          <div>This bid was not awarded. See the evaluation result below.</div>
+          <div>{t("bid_not_awarded_msg")}</div>
         </div>
       )}
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Widget title="Bid Details" className="lg:col-span-2">
+        <Widget title={t("bid_details_title")} className="lg:col-span-2">
           <Link
             href={`/app/tenders/${bid.tenderId}`}
             className="font-heading text-base font-bold text-foreground hover:text-primary"
@@ -129,12 +130,12 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
           )}
 
           <dl className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            <Field label="Tender Reference" value={bid.tenderNumber} />
-            <Field label="Bid Number" value={bid.bidNumber} />
-            <Field label="Submitted" value={formatDateTime(bid.submittedAt)} />
-            <Field label="Bid Validity" value={`${bid.bidValidityDays} days`} />
-            <Field label="Line Items" value={String(bid.items.length)} />
-            <Field label="Total Bid Amount" value={formatBDT(bid.totalBidAmount)} />
+            <Field label={t("lbl_tender_reference")} value={bid.tenderNumber} />
+            <Field label={t("lbl_bid_number")} value={bid.bidNumber} />
+            <Field label={t("lbl_submitted")} value={formatDateTime(bid.submittedAt)} />
+            <Field label={t("lbl_bid_validity")} value={`${bid.bidValidityDays} ${t("days_word")}`} />
+            <Field label={t("lbl_line_items")} value={String(bid.items.length)} />
+            <Field label={t("lbl_total_bid_amount")} value={formatBDT(bid.totalBidAmount)} />
           </dl>
         </Widget>
 
@@ -143,7 +144,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
 
       {/* Body bleeds to the card edges so the header band spans the full width. */}
       <Widget
-        title={`Technical & Financial Proposal (${bid.items.length})`}
+        title={`${t("tech_financial_proposal")} (${bid.items.length})`}
         className="overflow-hidden"
         bodyClassName="-mx-6 -mb-6"
       >
@@ -151,12 +152,12 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[color-mix(in_oklab,var(--brand-yellow)_22%,transparent)] text-xs font-semibold tracking-[0.08em] whitespace-nowrap text-foreground/70 uppercase">
-                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">#</th>
-                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">Description</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Unit</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Qty</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Unit Price</th>
-                <th scope="col" className="py-3.5 pr-6 text-right">Line Total</th>
+                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">{t("col_hash")}</th>
+                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">{t("col_description")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_unit")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_qty")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_unit_price")}</th>
+                <th scope="col" className="py-3.5 pr-6 text-right">{t("col_line_total")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -191,19 +192,19 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
 
         <dl className="space-y-2.5 border-t border-border px-6 py-4 text-sm">
           <div className="flex items-center justify-end gap-6">
-            <dt className="text-muted-foreground">Subtotal</dt>
+            <dt className="text-muted-foreground">{t("lbl_subtotal")}</dt>
             <dd className="tnum w-40 text-right font-medium text-foreground">
               {formatBDT(bid.subtotal)}
             </dd>
           </div>
           <div className="flex items-center justify-end gap-6">
-            <dt className="text-muted-foreground">VAT (15%)</dt>
+            <dt className="text-muted-foreground">{t("lbl_vat_15")}</dt>
             <dd className="tnum w-40 text-right font-medium text-foreground">
               {formatBDT(bid.vatAmount)}
             </dd>
           </div>
           <div className="flex items-center justify-end gap-6 border-t border-border pt-2.5">
-            <dt className="font-medium text-muted-foreground">Total Bid Amount</dt>
+            <dt className="font-medium text-muted-foreground">{t("lbl_total_bid_amount")}</dt>
             <dd className="tnum font-heading w-40 text-right text-lg font-bold text-foreground">
               {formatBDT(bid.totalBidAmount)}
             </dd>
@@ -212,22 +213,22 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
       </Widget>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Widget title="Negotiation & Clarification">
+        <Widget title={t("negotiation_clarification")}>
           {bid.clarifications.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              The buyer has not raised any clarification on this bid.
+              {t("no_clarification_msg")}
             </p>
           ) : (
             <div className="space-y-4">
               {bid.clarifications.map((c) => (
                 <div key={c.id} className="rounded-xl border border-border p-3">
-                  <div className="text-sm font-medium text-foreground">Buyer: {c.question}</div>
+                  <div className="text-sm font-medium text-foreground">{t("buyer_prefix")}: {c.question}</div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {c.askedBy} · {formatDateTime(c.askedAt)}
                   </div>
                   {c.response ? (
                     <div className="mt-3 rounded-lg bg-muted/40 p-2.5">
-                      <div className="text-sm text-foreground">You: {c.response}</div>
+                      <div className="text-sm text-foreground">{t("you_prefix")}: {c.response}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {c.respondedAt && formatDateTime(c.respondedAt)}
                       </div>
@@ -236,7 +237,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
                     canRespond && (
                       <div className="mt-3 space-y-2">
                         <Textarea
-                          placeholder="Type your response to the buyer's question…"
+                          placeholder={t("response_ph")}
                           value={response}
                           onChange={(e) => setResponse(e.target.value)}
                           rows={3}
@@ -253,7 +254,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
                             ) : (
                               <Send className="size-3.5" />
                             )}
-                            Send Response
+                            {t("send_response_btn")}
                           </Button>
                         </div>
                       </div>
@@ -265,9 +266,9 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
           )}
         </Widget>
 
-        <Widget title="Bid Status Timeline">
+        <Widget title={t("bid_status_timeline")}>
           {bid.timeline.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+            <p className="text-sm text-muted-foreground">{t("no_activity_yet")}</p>
           ) : (
             <ol className="relative space-y-4 border-l border-border pl-6">
               {bid.timeline.map((event, idx) => (
@@ -280,7 +281,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
                     </span>
                   </div>
                   {event.actor && (
-                    <p className="mt-1 text-xs text-muted-foreground">by {event.actor}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{t("by_prefix")} {event.actor}</p>
                   )}
                   {event.note && <p className="mt-0.5 text-xs text-foreground">{event.note}</p>}
                 </li>
@@ -295,6 +296,7 @@ export default function BidDetailPage({ params }: { params: Promise<{ id: string
 
 /** Right-hand rail mirroring the tender page's "Your Bid Status" card. */
 function EvaluationCard({ bid }: { bid: Bid }) {
+  const { t } = useLabels();
   const hasScores = bid.technicalScore !== undefined || bid.financialScore !== undefined;
   // submittedAt is in the past, so daysUntil is negative — flip it.
   const daysSince = Math.max(0, -daysUntil(bid.submittedAt));
@@ -302,31 +304,31 @@ function EvaluationCard({ bid }: { bid: Bid }) {
 
   const note =
     bid.status === "clarification_requested"
-      ? "The buyer is waiting on your response before evaluation can resume."
+      ? t("note_clarification_requested")
       : bid.status === "awarded"
-        ? "This bid won. A Purchase Order will follow from Procurement."
+        ? t("note_awarded")
         : bid.status === "not_awarded"
-          ? "The tender was awarded to another supplier."
+          ? t("note_not_awarded")
           : bid.status === "rejected"
-            ? "This bid was rejected and will not proceed to evaluation."
-            : "Your bid is with the evaluation committee. You'll be notified of any change.";
+            ? t("note_rejected")
+            : t("note_in_progress");
 
   return (
-    <Widget title="Evaluation Status">
+    <Widget title={t("evaluation_status")}>
       <StatusPill status={bid.status} variant="solid" />
 
       {hasScores ? (
         <div className="mt-5 grid grid-cols-2 gap-4">
           <Field
-            label="Technical Score"
+            label={t("technical_score")}
             value={
-              bid.technicalScore !== undefined ? `${bid.technicalScore}/100` : "Not scored"
+              bid.technicalScore !== undefined ? `${bid.technicalScore}/100` : t("not_scored")
             }
           />
           <Field
-            label="Financial Score"
+            label={t("financial_score")}
             value={
-              bid.financialScore !== undefined ? `${bid.financialScore}/100` : "Not scored"
+              bid.financialScore !== undefined ? `${bid.financialScore}/100` : t("not_scored")
             }
           />
         </div>
@@ -334,13 +336,13 @@ function EvaluationCard({ bid }: { bid: Bid }) {
         <div className="mt-5">
           <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
             {decided
-              ? "Decided"
+              ? t("decided")
               : bid.status === "clarification_requested"
-                ? "Awaiting your response"
-                : "In evaluation"}
+                ? t("awaiting_your_response")
+                : t("in_evaluation")}
           </div>
           <div className="font-heading mt-1 text-lg font-bold text-foreground">
-            {daysSince} day{daysSince === 1 ? "" : "s"} since submission
+            {daysSince} {daysSince === 1 ? t("day_word") : t("days_word")} {t("since_submission_suffix")}
           </div>
         </div>
       )}
@@ -349,7 +351,7 @@ function EvaluationCard({ bid }: { bid: Bid }) {
 
       {bid.evaluationRemarks && (
         <div className="mt-4 rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">Remarks: </span>
+          <span className="font-semibold text-foreground">{t("remarks_colon")}: </span>
           {bid.evaluationRemarks}
         </div>
       )}

@@ -22,6 +22,7 @@ import { formatBDT } from "@/lib/format/money";
 import { formatDate, formatDateTime } from "@/lib/format/date";
 import { vdsAmount, tdsAmount, VDS_RATE, TDS_RATE } from "@/lib/format/tax";
 import { usePermission } from "@/lib/rbac";
+import { useLabels } from "@/lib/i18n/labels";
 import type { Invoice, Payment, POStatus } from "@/lib/mock/types";
 
 /** The order's progress as the supplier experiences it. */
@@ -47,6 +48,7 @@ interface BillRow {
 export default function PODetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { t } = useLabels();
   const { data: po, isLoading } = usePurchaseOrder(id);
   const { data: invoices } = useInvoices({});
   const { data: payments } = usePayments({});
@@ -81,11 +83,11 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
   const onAcknowledge = async () => {
     try {
       await acknowledge.mutateAsync(id);
-      toast.success("Order acknowledged", {
-        description: `${po?.poNumber} has been acknowledged.`,
+      toast.success(t("toast_order_acknowledged"), {
+        description: `${po?.poNumber} ${t("toast_order_acknowledged_desc")}`,
       });
     } catch {
-      toast.error("Failed to acknowledge order");
+      toast.error(t("toast_ack_failed"));
     }
   };
 
@@ -105,9 +107,9 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
   if (!po) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <p className="text-lg font-semibold text-foreground">Purchase order not found</p>
+        <p className="text-lg font-semibold text-foreground">{t("po_not_found")}</p>
         <Button variant="outline" className="mt-4" onClick={() => router.back()}>
-          <ArrowLeft className="size-4" /> Go back
+          <ArrowLeft className="size-4" /> {t("go_back")}
         </Button>
       </div>
     );
@@ -126,11 +128,11 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
             <StatusPill status={ORDER_STATUS[po.status]} variant="solid" />
           </span>
         }
-        subtitle={`Issued: ${formatDate(po.issuedDate)}  ·  Delivery Due: ${formatDate(po.requiredDeliveryDate)}`}
+        subtitle={`${t("issued_colon")}: ${formatDate(po.issuedDate)}  ·  ${t("delivery_due_colon")}: ${formatDate(po.requiredDeliveryDate)}`}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="size-4" /> Back to Orders
+              <ArrowLeft className="size-4" /> {t("back_to_orders")}
             </Button>
             {po.status === "issued" && canAcknowledge && (
               <Button onClick={onAcknowledge} disabled={acknowledge.isPending} className="gap-2">
@@ -139,7 +141,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
                 ) : (
                   <CheckCircle className="size-4" />
                 )}
-                Acknowledge Order
+                {t("acknowledge_order")}
               </Button>
             )}
           </div>
@@ -147,33 +149,33 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
       />
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Widget title="Order Details" className="lg:col-span-2">
+        <Widget title={t("order_details")} className="lg:col-span-2">
           <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            <Field label="Cost Center" value={po.buyerDepartment} />
-            <Field label="BIN Number" value={profile?.binNumber ?? "—"} />
-            <Field label="Contact Person" value={po.buyerContactName} />
-            <Field label="Contact Email" value={po.buyerContactEmail} />
-            <Field label="Delivery Address" value={po.deliveryAddress} />
-            <Field label="Issue Date" value={formatDate(po.issuedDate)} />
-            <Field label="Required Delivery" value={formatDate(po.requiredDeliveryDate)} />
+            <Field label={t("lbl_cost_center")} value={po.buyerDepartment} />
+            <Field label={t("lbl_bin_number")} value={profile?.binNumber ?? "—"} />
+            <Field label={t("lbl_contact_person")} value={po.buyerContactName} />
+            <Field label={t("lbl_contact_email")} value={po.buyerContactEmail} />
+            <Field label={t("lbl_delivery_address")} value={po.deliveryAddress} />
+            <Field label={t("col_issue_date")} value={formatDate(po.issuedDate)} />
+            <Field label={t("lbl_required_delivery")} value={formatDate(po.requiredDeliveryDate)} />
             {po.acknowledgedAt && (
-              <Field label="Acknowledged At" value={formatDateTime(po.acknowledgedAt)} />
+              <Field label={t("lbl_acknowledged_at")} value={formatDateTime(po.acknowledgedAt)} />
             )}
           </dl>
           {po.notes && (
             <div className="mt-5 rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Notes: </span>
+              <span className="font-semibold text-foreground">{t("notes_colon")}: </span>
               {po.notes}
             </div>
           )}
         </Widget>
 
-        <Widget title="Financial Summary">
+        <Widget title={t("financial_summary")}>
           <dl className="space-y-3 text-sm">
-            <Line label="Subtotal" value={formatBDT(po.subtotal)} />
-            <Line label="VAT (15%)" value={formatBDT(po.vatAmount)} />
+            <Line label={t("lbl_subtotal")} value={formatBDT(po.subtotal)} />
+            <Line label={t("lbl_vat_15")} value={formatBDT(po.vatAmount)} />
             <Line
-              label="Grand Total"
+              label={t("lbl_grand_total")}
               value={formatBDT(po.grandTotal)}
               className="border-t border-border pt-3 font-bold text-foreground"
             />
@@ -181,20 +183,20 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
             {/* Withheld by the buyer at settlement, so they reduce the payout
                 rather than adding to the order value. */}
             <div className="pt-2 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-              Deducted at Source
+              {t("deducted_at_source")}
             </div>
             <Line
-              label={`VDS Amount (${VDS_RATE * 100}%)`}
+              label={`${t("col_vds_amount")} (${VDS_RATE * 100}%)`}
               value={`− ${formatBDT(vds)}`}
               valueClassName="text-warn"
             />
             <Line
-              label={`TDS Amount (${TDS_RATE * 100}%)`}
+              label={`${t("col_tds_amount")} (${TDS_RATE * 100}%)`}
               value={`− ${formatBDT(tds)}`}
               valueClassName="text-warn"
             />
             <Line
-              label="Net Payable"
+              label={t("lbl_net_payable")}
               value={formatBDT(po.grandTotal - vds - tds)}
               className="border-t border-border pt-3 font-bold text-foreground"
               valueClassName="text-ok"
@@ -205,7 +207,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
 
       {/* Body bleeds to the card edges so the header band spans the full width. */}
       <Widget
-        title={`Line Items (${po.items.length})`}
+        title={`${t("line_items_lbl")} (${po.items.length})`}
         className="overflow-hidden"
         bodyClassName="-mx-6 -mb-6"
       >
@@ -213,16 +215,16 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[color-mix(in_oklab,var(--brand-yellow)_22%,transparent)] text-xs font-semibold tracking-[0.08em] whitespace-nowrap text-foreground/70 uppercase">
-                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">#</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Item Name</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Item Code</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">VDS</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">TDS</th>
-                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">Description</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Unit</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Qty</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Unit Price</th>
-                <th scope="col" className="py-3.5 pr-6 text-right">Total</th>
+                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">{t("col_hash")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_item_name")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_item_code")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_vds")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_tds")}</th>
+                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">{t("col_description")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_unit")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_qty")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_unit_price")}</th>
+                <th scope="col" className="py-3.5 pr-6 text-right">{t("col_total")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -263,7 +265,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
         </div>
 
         <div className="flex items-center justify-end gap-6 border-t border-border px-6 py-4">
-          <span className="text-sm font-medium text-muted-foreground">Subtotal</span>
+          <span className="text-sm font-medium text-muted-foreground">{t("lbl_subtotal")}</span>
           <span className="tnum font-heading text-lg font-bold text-foreground">
             {formatBDT(po.subtotal)}
           </span>
@@ -271,25 +273,25 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
       </Widget>
 
       <Widget
-        title={`Submitted Bill Details (${bills.length})`}
+        title={`${t("submitted_bill_details")} (${bills.length})`}
         className="overflow-hidden"
         bodyClassName="-mx-6 -mb-6"
       >
         {bills.length === 0 ? (
           <p className="px-6 pb-6 text-sm text-muted-foreground">
-            No bill has been submitted against this order yet.
+            {t("no_bill_yet")}
           </p>
         ) : (
           <div className="table-scroll">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[color-mix(in_oklab,var(--brand-yellow)_22%,transparent)] text-xs font-semibold tracking-[0.08em] whitespace-nowrap text-foreground/70 uppercase">
-                  <th scope="col" className="py-3.5 pr-4 pl-6 text-left">Bill/Invoice Number</th>
-                  <th scope="col" className="py-3.5 pr-4 text-left">Date</th>
-                  <th scope="col" className="py-3.5 pr-4 text-left">Is VAT Challan</th>
-                  <th scope="col" className="py-3.5 pr-4 text-left">Bill/Invoice Amount</th>
-                  <th scope="col" className="py-3.5 pr-4 text-left">Payment Status</th>
-                  <th scope="col" className="w-full min-w-[14rem] py-3.5 pr-6 text-left">Other Information</th>
+                  <th scope="col" className="py-3.5 pr-4 pl-6 text-left">{t("col_bill_invoice_number")}</th>
+                  <th scope="col" className="py-3.5 pr-4 text-left">{t("date_word")}</th>
+                  <th scope="col" className="py-3.5 pr-4 text-left">{t("col_is_vat_challan")}</th>
+                  <th scope="col" className="py-3.5 pr-4 text-left">{t("col_bill_invoice_amount")}</th>
+                  <th scope="col" className="py-3.5 pr-4 text-left">{t("col_payment_status")}</th>
+                  <th scope="col" className="w-full min-w-[14rem] py-3.5 pr-6 text-left">{t("col_other_information")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -318,14 +320,14 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
                     </td>
                     <td className="py-4 pr-6 text-xs leading-relaxed text-muted-foreground">
                       {bill.payments.length === 0 ? (
-                        <span>Awaiting payment advice.</span>
+                        <span>{t("awaiting_payment_advice")}</span>
                       ) : (
                         bill.payments.map((p) => (
                           <div key={p.id} className="not-first:mt-2">
-                            <div>Bank Name: {p.bankName}</div>
-                            <div>Transfer Ref: {p.bankTransferRef}</div>
-                            <div>Date: {formatDate(p.paymentDate)}</div>
-                            <div>Amount: {formatBDT(p.netAmountPaid)}</div>
+                            <div>{t("bank_name_colon")}: {p.bankName}</div>
+                            <div>{t("transfer_ref_colon")}: {p.bankTransferRef}</div>
+                            <div>{t("date_word")}: {formatDate(p.paymentDate)}</div>
+                            <div>{t("amount_colon")}: {formatBDT(p.netAmountPaid)}</div>
                           </div>
                         ))
                       )}
@@ -339,7 +341,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
       </Widget>
 
       {terms.length > 0 && (
-        <Widget title="Terms & Conditions">
+        <Widget title={t("terms_conditions")}>
           <ol className="space-y-3 text-sm">
             {terms.map((line, i) => (
               <li key={i} className="flex gap-3">
@@ -377,10 +379,11 @@ function Line({
 
 /** Checkbox-style read-only mark, matching the design's tick column. */
 function VatChallanMark({ charged }: { charged: boolean }) {
+  const { t } = useLabels();
   return (
     <span
       role="img"
-      aria-label={charged ? "VAT challan" : "Not a VAT challan"}
+      aria-label={charged ? t("vat_challan_label") : t("not_vat_challan_label")}
       className={`flex size-5 items-center justify-center rounded border ${
         charged ? "border-primary bg-primary text-white" : "border-input"
       }`}

@@ -22,6 +22,7 @@ import {
 } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate, DEMO_NOW } from "@/lib/format/date";
+import { useLabels } from "@/lib/i18n/labels";
 import type { Invoice, PurchaseOrder } from "@/lib/mock/types";
 
 /** Reports are cut against period end rather than "now" so totals stay stable. */
@@ -50,6 +51,7 @@ interface FulfilmentRow {
 }
 
 export default function ReportsPage() {
+  const { t, lang } = useLabels();
   const [activeTab, setActiveTab] = useState("receivables");
   const { data: invoices } = useInvoices({});
   const { data: pos } = usePurchaseOrders({});
@@ -170,7 +172,7 @@ export default function ReportsPage() {
   const receivableCols: ReportColumn<ReceivableRow>[] = [
     {
       key: "invoice",
-      header: "Invoice #",
+      header: t("col_invoice_number"),
       render: (r) => (
         <Link
           href={`/app/invoices/${r.id}`}
@@ -183,25 +185,25 @@ export default function ReportsPage() {
     },
     {
       key: "date",
-      header: "Date",
+      header: t("date_word"),
       render: (r) => <span className="tnum">{formatDate(r.invoiceDate)}</span>,
       csv: (r) => r.invoiceDate.slice(0, 10),
     },
     {
       key: "po",
-      header: "PO Ref",
+      header: t("col_po_ref"),
       render: (r) => <span className="text-muted-foreground">{r.poNumber}</span>,
       csv: (r) => r.poNumber,
     },
     {
       key: "amount",
-      header: "Amount (BDT)",
+      header: t("col_amount_bdt"),
       render: (r) => <span className="tnum font-semibold">{formatBDT(r.totalAmount)}</span>,
       csv: (r) => r.totalAmount,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("col_status"),
       render: (r) => <StatusPill status={r.displayStatus} variant="solid" />,
       csv: (r) => r.displayStatus,
     },
@@ -210,26 +212,26 @@ export default function ReportsPage() {
   const vatCols: ReportColumn<VatRow>[] = [
     {
       key: "month",
-      header: "Month",
+      header: t("col_month"),
       cellClassName: "w-full min-w-[140px]",
       render: (r) => <span className="font-medium text-foreground">{r.month}</span>,
       csv: (r) => r.month,
     },
     {
       key: "invoiced",
-      header: "Invoiced (BDT)",
+      header: t("col_invoiced_bdt"),
       render: (r) => <span className="tnum whitespace-nowrap">{formatBDT(r.invoiced)}</span>,
       csv: (r) => r.invoiced,
     },
     {
       key: "vat",
-      header: "VAT Collected (15%)",
+      header: t("col_vat_collected_15"),
       render: (r) => <span className="tnum whitespace-nowrap">{formatBDT(r.vatCollected)}</span>,
       csv: (r) => r.vatCollected,
     },
     {
       key: "ait",
-      header: "AIT Deducted (3%)",
+      header: t("col_ait_deducted_3"),
       render: (r) => (
         <span className="tnum whitespace-nowrap text-danger">
           {formatBDT(r.aitDeducted)}
@@ -239,7 +241,7 @@ export default function ReportsPage() {
     },
     {
       key: "net",
-      header: "Net After Deduction",
+      header: t("col_net_after_deduction"),
       render: (r) => (
         <span className="tnum font-semibold whitespace-nowrap text-ok">{formatBDT(r.net)}</span>
       ),
@@ -250,7 +252,7 @@ export default function ReportsPage() {
   const fulfilmentCols: ReportColumn<FulfilmentRow>[] = [
     {
       key: "po",
-      header: "PO Number",
+      header: t("col_po_number"),
       render: (r) => (
         <Link
           href={`/app/purchase-orders/${r.po.id}`}
@@ -263,7 +265,7 @@ export default function ReportsPage() {
     },
     {
       key: "dept",
-      header: "Buyer Dept",
+      header: t("col_buyer_dept"),
       cellClassName: "w-full min-w-[160px]",
       render: (r) => (
         <span className="text-muted-foreground">{r.po.buyerDepartment}</span>
@@ -272,25 +274,25 @@ export default function ReportsPage() {
     },
     {
       key: "ordered",
-      header: "Items Ordered",
+      header: t("col_items_ordered"),
       render: (r) => <span className="tnum">{r.itemsOrdered}</span>,
       csv: (r) => r.itemsOrdered,
     },
     {
       key: "delivered",
-      header: "Items Delivered",
+      header: t("col_items_delivered"),
       render: (r) => <span className="tnum">{r.itemsDelivered}</span>,
       csv: (r) => r.itemsDelivered,
     },
     {
       key: "pct",
-      header: "Fulfillment %",
+      header: t("col_fulfillment_pct"),
       render: (r) => <span className="tnum">{r.fulfilmentPct}%</span>,
       csv: (r) => `${r.fulfilmentPct}%`,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("col_status"),
       render: (r) => <StatusPill status={r.status} variant="solid" />,
       csv: (r) => r.status,
     },
@@ -304,17 +306,17 @@ export default function ReportsPage() {
     } else {
       downloadReportCsv("po-fulfillment.csv", fulfilmentCols, fulfilment);
     }
-    toast.success("Report exported.");
+    toast.success(t("toast_report_exported"));
   };
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
-        title="Reports"
-        subtitle="Financial reports and analytics for your supplier account"
+        title={t("nav_reports")}
+        subtitle={t("reports_subtitle")}
         actions={
           <Button variant="outline" className="gap-2" onClick={exportActive}>
-            <Download className="size-4" /> Export CSV
+            <Download className="size-4" /> {t("export_csv_btn")}
           </Button>
         }
       />
@@ -325,13 +327,13 @@ export default function ReportsPage() {
         <div className="tab-scroll -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="h-12 w-full min-w-max rounded-full bg-muted p-1.5">
             <TabsTrigger value="receivables" className="rounded-full">
-              Outstanding Receivables
+              {t("tab_receivables")}
             </TabsTrigger>
             <TabsTrigger value="vat" className="rounded-full">
-              VAT &amp; TAX Summary
+              {t("tab_vat")}
             </TabsTrigger>
             <TabsTrigger value="fulfillment" className="rounded-full">
-              PO Fulfillment
+              {t("tab_fulfillment")}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -339,28 +341,28 @@ export default function ReportsPage() {
         {/* Outstanding receivables */}
         <TabsContent value="receivables" className="mt-5 space-y-3">
           <SectionTitle
-            title="Outstanding & Overdue Invoices"
-            meta={`${receivables.length} invoice${receivables.length === 1 ? "" : "s"} · ${formatBDT(outstandingTotal)} outstanding`}
+            title={t("outstanding_overdue_title")}
+            meta={`${receivables.length} ${receivables.length === 1 ? t("invoice_word") : t("invoices_word")} · ${formatBDT(outstandingTotal)} ${t("outstanding_word")}`}
           />
           <ReportTable
             columns={receivableCols}
             rows={receivables}
             getRowKey={(r) => r.id}
-            emptyLabel="No outstanding invoices — everything is settled."
+            emptyLabel={t("receivables_empty")}
           />
         </TabsContent>
 
         {/* VAT & TAX summary */}
         <TabsContent value="vat" className="mt-5 space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Total VAT Collected (15%)" value={formatBDT(vatTotals.collected)} />
+            <StatCard label={t("total_vat_collected")} value={formatBDT(vatTotals.collected)} />
             <StatCard
-              label="Total AIT Deducted (3%)"
+              label={t("total_ait_deducted")}
               value={formatBDT(vatTotals.deducted)}
               tone="text-danger"
             />
             <StatCard
-              label="Net After Deduction YTD"
+              label={t("net_after_deduction_ytd")}
               value={formatBDT(vatTotals.net)}
               tone="text-ok"
             />
@@ -370,26 +372,48 @@ export default function ReportsPage() {
             columns={vatCols}
             rows={vatRows}
             getRowKey={(r) => r.key}
-            emptyLabel="No invoices raised in this period."
+            emptyLabel={t("vat_empty")}
           />
 
-          <Widget title="VAT Notes">
+          <Widget title={t("vat_notes_title")}>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                • Standard VAT rate: <strong className="text-foreground">15%</strong> (per NBR
-                Bangladesh)
-              </p>
-              <p>
-                • AIT (Advance Income Tax): <strong className="text-foreground">3%</strong>{" "}
-                deducted at source
-              </p>
-              <p>• All payments are subject to TDS per NBR schedule</p>
-              <p>
-                • Supplier TIN: <strong className="text-foreground">123456789012</strong>
-              </p>
-              <p>
-                • BIN (VAT Reg.): <strong className="text-foreground">000123456-0301</strong>
-              </p>
+              {lang === "bn" ? (
+                <>
+                  <p>
+                    • আদর্শ ভ্যাট হার: <strong className="text-foreground">১৫%</strong> (এনবিআর
+                    বাংলাদেশ অনুযায়ী)
+                  </p>
+                  <p>
+                    • এআইটি (অগ্রিম আয়কর): <strong className="text-foreground">৩%</strong>{" "}
+                    উৎসে কর্তনকৃত
+                  </p>
+                  <p>• সকল পেমেন্ট এনবিআর সময়সূচী অনুযায়ী টিডিএস সাপেক্ষে</p>
+                  <p>
+                    • সরবরাহকারীর টিআইএন: <strong className="text-foreground">123456789012</strong>
+                  </p>
+                  <p>
+                    • বিআইএন (ভ্যাট নিবন্ধন): <strong className="text-foreground">000123456-0301</strong>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>
+                    • Standard VAT rate: <strong className="text-foreground">15%</strong> (per NBR
+                    Bangladesh)
+                  </p>
+                  <p>
+                    • AIT (Advance Income Tax): <strong className="text-foreground">3%</strong>{" "}
+                    deducted at source
+                  </p>
+                  <p>• All payments are subject to TDS per NBR schedule</p>
+                  <p>
+                    • Supplier TIN: <strong className="text-foreground">123456789012</strong>
+                  </p>
+                  <p>
+                    • BIN (VAT Reg.): <strong className="text-foreground">000123456-0301</strong>
+                  </p>
+                </>
+              )}
             </div>
           </Widget>
         </TabsContent>
@@ -397,14 +421,14 @@ export default function ReportsPage() {
         {/* PO fulfilment */}
         <TabsContent value="fulfillment" className="mt-5 space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Total Purchase Orders" value={String(fulfilment.length)} />
+            <StatCard label={t("total_purchase_orders")} value={String(fulfilment.length)} />
             <StatCard
-              label="On-Time Delivery Rate"
+              label={t("on_time_delivery_rate")}
               value={`${onTimeRate}%`}
               tone="text-ok"
             />
             <StatCard
-              label="Avg. Fulfillment Rate"
+              label={t("avg_fulfillment_rate")}
               value={`${avgFulfilment}%`}
               tone="text-warn"
             />
@@ -414,7 +438,7 @@ export default function ReportsPage() {
             columns={fulfilmentCols}
             rows={fulfilment}
             getRowKey={(r) => r.po.id}
-            emptyLabel="No purchase orders yet."
+            emptyLabel={t("fulfillment_empty")}
           />
         </TabsContent>
       </Tabs>

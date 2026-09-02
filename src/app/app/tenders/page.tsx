@@ -17,32 +17,34 @@ import {
 import { useTenders, useBids } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
+import { useLabels, type LabelKey } from "@/lib/i18n/labels";
 import type { Tender, Bid, TenderStatus } from "@/lib/mock/types";
 
-const TENDER_STATUSES: { value: TenderStatus | "all"; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "published", label: "Published" },
-  { value: "evaluation", label: "Under Evaluation" },
-  { value: "negotiation", label: "Negotiation" },
-  { value: "awarded", label: "Awarded" },
-  { value: "closed", label: "Closed" },
-  { value: "cancelled", label: "Cancelled" },
+const TENDER_STATUSES: { value: TenderStatus | "all"; labelKey: LabelKey }[] = [
+  { value: "all", labelKey: "all_statuses" },
+  { value: "published", labelKey: "published" },
+  { value: "evaluation", labelKey: "evaluation" },
+  { value: "negotiation", labelKey: "negotiation" },
+  { value: "awarded", labelKey: "awarded" },
+  { value: "closed", labelKey: "closed" },
+  { value: "cancelled", labelKey: "cancelled" },
 ];
 
 /** Short forms for the "Your bid" column — the full labels are too wide here. */
-const BID_LABELS: Record<string, string> = {
-  draft: "Draft",
-  submitted: "Submitted",
-  under_evaluation: "Under Evaluation",
-  clarification_requested: "Clarify Req.",
-  shortlisted: "Shortlisted",
-  awarded: "Awarded",
-  not_awarded: "Not Awarded",
-  rejected: "Rejected",
-  cancelled: "Withdrawn",
+const BID_LABEL_KEYS: Record<string, LabelKey> = {
+  draft: "draft",
+  submitted: "submitted",
+  under_evaluation: "under_evaluation",
+  clarification_requested: "clarify_req",
+  shortlisted: "shortlisted",
+  awarded: "awarded",
+  not_awarded: "not_awarded",
+  rejected: "rejected",
+  cancelled: "withdrawn",
 };
 
 export default function TendersPage() {
+  const { t } = useLabels();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<TenderStatus | "all">("all");
 
@@ -52,81 +54,81 @@ export default function TendersPage() {
 
   const bidLabel = (tender: Tender) => {
     const bid = bidByTender.get(tender.id);
-    if (!bid) return "Not submitted";
-    return BID_LABELS[bid.status] ?? bid.status;
+    if (!bid) return t("not_submitted");
+    return t(BID_LABEL_KEYS[bid.status] ?? (bid.status as LabelKey));
   };
 
   const columns: ReportColumn<Tender>[] = [
     {
       key: "tender",
-      header: "Tender #",
-      render: (t) => (
+      header: t("col_tender_number"),
+      render: (tender) => (
         <Link
-          href={`/app/tenders/${t.id}`}
+          href={`/app/tenders/${tender.id}`}
           className="font-semibold whitespace-nowrap text-primary underline underline-offset-4 hover:opacity-80"
         >
-          {t.tenderNumber}
+          {tender.tenderNumber}
         </Link>
       ),
     },
     {
       key: "deadline",
-      header: "Deadline",
-      render: (t) => (
-        <span className="tnum whitespace-nowrap">{formatDate(t.submissionDeadline)}</span>
+      header: t("col_deadline"),
+      render: (tender) => (
+        <span className="tnum whitespace-nowrap">{formatDate(tender.submissionDeadline)}</span>
       ),
     },
     {
       key: "title",
-      header: "Title",
+      header: t("col_title"),
       // Takes the slack left by the fixed-width columns so titles stay readable.
       cellClassName: "w-full min-w-[180px] whitespace-normal",
-      render: (t) => <span className="line-clamp-2 text-foreground sm:line-clamp-1">{t.title}</span>,
+      render: (tender) => <span className="line-clamp-2 text-foreground sm:line-clamp-1">{tender.title}</span>,
     },
     {
       key: "category",
-      header: "Category",
+      header: t("col_category"),
       // Secondary detail — dropped first so Status never scrolls out of view.
       cellClassName: "hidden 2xl:table-cell",
-      render: (t) => (
-        <span className="whitespace-nowrap text-muted-foreground">{t.category}</span>
+      render: (tender) => (
+        <span className="whitespace-nowrap text-muted-foreground">{tender.category}</span>
       ),
     },
     {
       key: "value",
-      header: "Value (BDT)",
-      render: (t) => (
+      header: t("col_value_bdt"),
+      render: (tender) => (
         <span className="tnum font-semibold whitespace-nowrap">
-          {formatBDT(t.estimatedValue)}
+          {formatBDT(tender.estimatedValue)}
         </span>
       ),
     },
     {
       key: "bid",
-      header: "Your Bid",
-      render: (t) => (
-        <span className="whitespace-nowrap text-muted-foreground">{bidLabel(t)}</span>
+      header: t("col_your_bid"),
+      render: (tender) => (
+        <span className="whitespace-nowrap text-muted-foreground">{bidLabel(tender)}</span>
       ),
     },
     {
       key: "status",
-      header: "Status",
-      render: (t) => <StatusPill status={t.status} variant="solid" />,
+      header: t("col_status"),
+      render: (tender) => <StatusPill status={tender.status} variant="solid" />,
     },
   ];
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-5">
       <PageHeader
-        title="Tenders / RFQs"
-        subtitle="Browse published tenders, check eligibility and track your bid status"
+        title={t("nav_tenders")}
+        subtitle={t("tender_subtitle")}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by tender #, title or category…"
+            placeholder={t("tender_search_ph")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 rounded-xl bg-card pl-10"
@@ -139,7 +141,7 @@ export default function TendersPage() {
           <SelectContent>
             {TENDER_STATUSES.map((s) => (
               <SelectItem key={s.value} value={s.value}>
-                {s.label}
+                {t(s.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -151,7 +153,7 @@ export default function TendersPage() {
         rows={tenders ?? []}
         getRowKey={(t) => t.id}
         loading={isLoading}
-        emptyLabel="No tenders match your search."
+        emptyLabel={t("tender_empty")}
       />
     </div>
   );

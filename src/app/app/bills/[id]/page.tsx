@@ -16,6 +16,7 @@ import { usePurchaseOrder, useCreateInvoice } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate, DEMO_NOW } from "@/lib/format/date";
 import { VAT_RATE, AIT_RATE, calcVAT, calcAIT } from "@/lib/format/tax";
+import { useLabels } from "@/lib/i18n/labels";
 import type { PurchaseOrder } from "@/lib/mock/types";
 
 /** Bills fall due 30 days after submission, per the standard PO terms. */
@@ -32,6 +33,7 @@ export default function SubmitBillPage({ params }: { params: Promise<{ id: strin
 
 function SubmitBillLoader({ id }: { id: string }) {
   const router = useRouter();
+  const { t } = useLabels();
   const { data: po, isLoading } = usePurchaseOrder(id);
 
   if (isLoading) {
@@ -46,9 +48,9 @@ function SubmitBillLoader({ id }: { id: string }) {
   if (!po) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <p className="text-lg font-semibold text-foreground">Purchase order not found</p>
+        <p className="text-lg font-semibold text-foreground">{t("po_not_found")}</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push("/app/bills")}>
-          <ArrowLeft className="size-4" /> Back to Bill Submission
+          <ArrowLeft className="size-4" /> {t("back_to_bill_submission")}
         </Button>
       </div>
     );
@@ -59,6 +61,7 @@ function SubmitBillLoader({ id }: { id: string }) {
 
 function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const router = useRouter();
+  const { t } = useLabels();
   const createInvoice = useCreateInvoice();
 
   const [amount, setAmount] = useState<number>(po.grandTotal);
@@ -78,12 +81,12 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
 
   const onSubmit = async () => {
     if (amount <= 0) {
-      toast.error("Enter the amount you are billing.");
+      toast.error(t("toast_enter_amount"));
       return;
     }
     if (amount > po.grandTotal) {
-      toast.error("Bill amount cannot exceed the order value.", {
-        description: `This order is worth ${formatBDT(po.grandTotal)}.`,
+      toast.error(t("toast_bill_exceed"), {
+        description: `${t("toast_order_worth")} ${formatBDT(po.grandTotal)}.`,
       });
       return;
     }
@@ -104,46 +107,46 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
           ? "VAT challan (Mushak 6.3) confirmed as submitted."
           : "Submitted without VAT challan confirmation.",
       });
-      toast.success("Bill submitted", {
-        description: `${invoice.invoiceNumber} has been sent for review.`,
+      toast.success(t("toast_bill_submitted"), {
+        description: `${invoice.invoiceNumber} ${t("toast_bill_sent_review")}`,
       });
       router.push("/app/bills");
     } catch {
-      toast.error("Failed to submit bill");
+      toast.error(t("toast_bill_failed"));
     }
   };
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
-        title="Submit Bill"
-        subtitle={`For ${po.poNumber}  ·  ${po.buyerDepartment}`}
+        title={t("submit_bill_title")}
+        subtitle={`${t("submit_bill_subtitle_for")} ${po.poNumber}  ·  ${po.buyerDepartment}`}
         actions={
           <Button variant="outline" onClick={() => router.push("/app/bills")}>
-            <ArrowLeft className="size-4" /> Back to Bill Submission
+            <ArrowLeft className="size-4" /> {t("back_to_bill_submission")}
           </Button>
         }
       />
 
-      <Widget title="Bill Details">
+      <Widget title={t("bill_details_title")}>
         <div className="grid gap-5 sm:grid-cols-2">
-          <ReadOnlyField label="Submitted Date" value={formatDate(DEMO_NOW)} />
-          <ReadOnlyField label="Bill Number" value="Assigned on submission" />
+          <ReadOnlyField label={t("lbl_submitted_date")} value={formatDate(DEMO_NOW)} />
+          <ReadOnlyField label={t("lbl_bill_number")} value={t("assigned_on_submission")} />
         </div>
 
         <div className="mt-5">
-          <FieldLabel>VAT Challan Submitted</FieldLabel>
+          <FieldLabel>{t("vat_challan_submitted_lbl")}</FieldLabel>
           <label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
             <Checkbox
               checked={vatChallanSubmitted}
               onCheckedChange={(v) => setVatChallanSubmitted(v === true)}
             />
-            I confirm the VAT challan (Mushak 6.3) has been submitted
+            {t("vat_challan_confirm")}
           </label>
         </div>
 
         <div className="mt-5">
-          <FieldLabel htmlFor="bill-amount">Total Amount (BDT)</FieldLabel>
+          <FieldLabel htmlFor="bill-amount">{t("total_amount_bdt")}</FieldLabel>
           <Input
             id="bill-amount"
             type="number"
@@ -154,23 +157,22 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
             className="h-11 rounded-xl"
           />
           <p className="mt-2 text-xs text-muted-foreground">
-            Order value {formatBDT(po.grandTotal)}. Bill for less to invoice a partial
-            delivery.
+            {t("order_value_hint")} {formatBDT(po.grandTotal)}. {t("bill_for_less_hint")}
           </p>
         </div>
 
         {/* Deductions surprise suppliers otherwise — the amount billed is not
             the amount received. */}
         <dl className="mt-5 space-y-2 rounded-xl bg-muted/40 p-4 text-sm">
-          <Line label="Subtotal" value={formatBDT(subtotal)} />
-          <Line label={`VAT (${VAT_RATE * 100}%)`} value={formatBDT(vat)} />
+          <Line label={t("lbl_subtotal")} value={formatBDT(subtotal)} />
+          <Line label={`${t("col_vat")} (${VAT_RATE * 100}%)`} value={formatBDT(vat)} />
           <Line
-            label={`AIT deducted (${AIT_RATE * 100}%)`}
+            label={`${t("ait_deducted_lbl")} (${AIT_RATE * 100}%)`}
             value={`− ${formatBDT(ait)}`}
             valueClassName="text-warn"
           />
           <Line
-            label="Net payable to you"
+            label={t("net_payable_to_you")}
             value={formatBDT(netPayable)}
             className="border-t border-border pt-2 font-semibold text-foreground"
             valueClassName="text-ok"
@@ -178,15 +180,15 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         </dl>
 
         <div className="mt-5">
-          <FieldLabel htmlFor="bill-attachment">Invoice Attachment (PDF, JPG)</FieldLabel>
+          <FieldLabel htmlFor="bill-attachment">{t("invoice_attachment_lbl")}</FieldLabel>
           <div className="flex items-center gap-3 rounded-xl border border-input px-3 py-2">
             <Paperclip className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-              {attachment ? attachment.name : "No file chosen"}
+              {attachment ? attachment.name : t("no_file_chosen")}
             </span>
             <Button asChild variant="outline" size="sm">
               <label htmlFor="bill-attachment" className="cursor-pointer">
-                Browse
+                {t("browse_btn")}
                 <input
                   id="bill-attachment"
                   type="file"
@@ -202,18 +204,18 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         <div className="mt-5 flex items-start gap-2.5 rounded-xl bg-info/10 p-3.5 text-sm text-info">
           <Info className="mt-0.5 size-4 shrink-0" />
           <span>
-            Expected payment date: within {PAYMENT_TERM_DAYS} days of bill submission —
-            approx. {formatDate(dueDate)}
+            {t("expected_payment_date")} {PAYMENT_TERM_DAYS} {t("days_of_bill_submission")}{" "}
+            {formatDate(dueDate)}
           </span>
         </div>
 
         <div className="mt-6 flex items-center gap-3">
           <Button variant="outline" onClick={() => router.push("/app/bills")}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={onSubmit} disabled={createInvoice.isPending} className="gap-2">
             {createInvoice.isPending && <Loader2 className="size-4 animate-spin" />}
-            Submit Bill
+            {t("submit_bill_btn")}
           </Button>
         </div>
       </Widget>

@@ -1,60 +1,60 @@
 import { cn } from "@/lib/utils";
+import { useLabels, type LabelKey } from "@/lib/i18n/labels";
 import type { POStatus, InvoiceStatus, DeliveryStatus, DocumentStatus, TenderStatus, BidStatus } from "@/lib/mock/types";
 
 type AnyStatus = POStatus | InvoiceStatus | DeliveryStatus | DocumentStatus | TenderStatus | BidStatus | string;
 
-interface StatusMeta {
-  label: string;
-  color: "ok" | "warn" | "danger" | "info" | "neutral";
-}
+type Color = "ok" | "warn" | "danger" | "info" | "neutral";
 
-const STATUS_MAP: Record<string, StatusMeta> = {
+// Label text lives in the shared i18n dictionary (keyed by the same status
+// string) so every pill in the app translates from one place.
+const STATUS_COLOR: Record<string, Color> = {
   // PO
-  draft: { label: "Draft", color: "neutral" },
-  issued: { label: "Issued", color: "info" },
-  acknowledged: { label: "Acknowledged", color: "ok" },
-  partially_fulfilled: { label: "Partial", color: "warn" },
-  fulfilled: { label: "Fulfilled", color: "ok" },
-  cancelled: { label: "Cancelled", color: "danger" },
+  draft: "neutral",
+  issued: "info",
+  acknowledged: "ok",
+  partially_fulfilled: "warn",
+  fulfilled: "ok",
+  cancelled: "danger",
   // Invoice
-  submitted: { label: "Submitted", color: "info" },
-  under_review: { label: "Under Review", color: "warn" },
-  approved: { label: "Approved", color: "ok" },
-  paid: { label: "Paid", color: "ok" },
-  rejected: { label: "Rejected", color: "danger" },
+  submitted: "info",
+  under_review: "warn",
+  approved: "ok",
+  paid: "ok",
+  rejected: "danger",
   // Delivery
-  scheduled: { label: "Scheduled", color: "info" },
-  in_transit: { label: "In Transit", color: "warn" },
-  delivered: { label: "Delivered", color: "ok" },
-  grn_confirmed: { label: "GRN Confirmed", color: "ok" },
+  scheduled: "info",
+  in_transit: "warn",
+  delivered: "ok",
+  grn_confirmed: "ok",
   // Document
-  valid: { label: "Verified", color: "ok" },
-  expiring_soon: { label: "Expiring Soon", color: "warn" },
-  expired: { label: "Expired", color: "danger" },
-  pending_verification: { label: "Pending", color: "neutral" },
+  valid: "ok",
+  expiring_soon: "warn",
+  expired: "danger",
+  pending_verification: "neutral",
   // Tender
-  published: { label: "Published", color: "info" },
-  evaluation: { label: "Under Evaluation", color: "warn" },
-  negotiation: { label: "Negotiation", color: "warn" },
-  awarded: { label: "Awarded", color: "ok" },
-  closed: { label: "Closed", color: "neutral" },
+  published: "info",
+  evaluation: "warn",
+  negotiation: "warn",
+  awarded: "ok",
+  closed: "neutral",
   // Bid (draft/submitted/cancelled share keys with PO/Invoice above)
-  under_evaluation: { label: "Under Evaluation", color: "warn" },
-  clarification_requested: { label: "Clarification Requested", color: "warn" },
-  shortlisted: { label: "Shortlisted", color: "info" },
-  not_awarded: { label: "Not Awarded", color: "neutral" },
+  under_evaluation: "warn",
+  clarification_requested: "warn",
+  shortlisted: "info",
+  not_awarded: "neutral",
   // Derived in reports rather than stored: an unpaid invoice past its due date.
-  overdue: { label: "Overdue", color: "danger" },
+  overdue: "danger",
   // Derived in the PO fulfilment report: acknowledged but nothing shipped yet.
-  pending: { label: "Pending", color: "neutral" },
-  partial: { label: "Partial", color: "warn" },
+  pending: "neutral",
+  partial: "warn",
   // Order Information reads PO progress from the supplier's side, so an
   // acknowledged order is one the buyer is waiting on.
-  waiting_for_delivery: { label: "Waiting for Delivery", color: "warn" },
-  partially_delivered: { label: "Partially Delivered", color: "warn" },
+  waiting_for_delivery: "warn",
+  partially_delivered: "warn",
   // Settlement state of a submitted bill, derived from payments against it.
-  partially_paid: { label: "Partially Paid", color: "warn" },
-  unpaid: { label: "Unpaid", color: "neutral" },
+  partially_paid: "warn",
+  unpaid: "neutral",
 };
 
 const COLORS = {
@@ -94,8 +94,9 @@ export function StatusPill({
   label?: string;
   className?: string;
 }) {
-  const mapped = STATUS_MAP[status] ?? { label: status, color: "neutral" as const };
-  const meta = label ? { ...mapped, label } : mapped;
+  const { t } = useLabels();
+  const color = STATUS_COLOR[status] ?? "neutral";
+  const text = label ?? t(status as LabelKey);
   const solid = variant === "solid";
 
   return (
@@ -104,12 +105,12 @@ export function StatusPill({
         // A pill that wraps mid-label reads as two statuses — never let it.
         "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold whitespace-nowrap",
         solid ? "px-3 py-1" : "px-2.5 py-0.5",
-        solid ? SOLID[meta.color] : COLORS[meta.color],
+        solid ? SOLID[color] : COLORS[color],
         className,
       )}
     >
-      {!solid && <span className={cn("size-1.5 rounded-full", DOTS[meta.color])} />}
-      {meta.label}
+      {!solid && <span className={cn("size-1.5 rounded-full", DOTS[color])} />}
+      {text}
     </span>
   );
 }

@@ -18,15 +18,16 @@ import { usePurchaseOrders, useInvoices } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
 import { vdsAmount, tdsAmount } from "@/lib/format/tax";
+import { useLabels, type LabelKey } from "@/lib/i18n/labels";
 import type { Invoice, POStatus, PurchaseOrder } from "@/lib/mock/types";
 
-const PO_STATUSES: { value: POStatus | "all"; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "issued", label: "Issued" },
-  { value: "acknowledged", label: "Waiting for Delivery" },
-  { value: "partially_fulfilled", label: "Partially Delivered" },
-  { value: "fulfilled", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
+const PO_STATUSES: { value: POStatus | "all"; labelKey: LabelKey }[] = [
+  { value: "all", labelKey: "all_statuses" },
+  { value: "issued", labelKey: "issued" },
+  { value: "acknowledged", labelKey: "waiting_for_delivery" },
+  { value: "partially_fulfilled", labelKey: "partially_delivered" },
+  { value: "fulfilled", labelKey: "delivered" },
+  { value: "cancelled", labelKey: "cancelled" },
 ];
 
 /** The order's progress as the supplier experiences it. */
@@ -54,6 +55,7 @@ interface OrderRow {
 const amount = (n: number) => formatBDT(n, { symbol: false });
 
 export default function OrderInformationPage() {
+  const { t } = useLabels();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<POStatus | "all">("all");
 
@@ -89,7 +91,7 @@ export default function OrderInformationPage() {
   const columns: ReportColumn<OrderRow>[] = [
     {
       key: "po",
-      header: "PO Number",
+      header: t("col_po_number"),
       render: (r) => (
         <Link
           href={`/app/purchase-orders/${r.po.id}`}
@@ -101,19 +103,19 @@ export default function OrderInformationPage() {
     },
     {
       key: "issued",
-      header: "Issue Date",
+      header: t("col_issue_date"),
       render: (r) => (
         <span className="tnum whitespace-nowrap">{formatDate(r.po.issuedDate)}</span>
       ),
     },
     {
       key: "items",
-      header: "Item Number",
+      header: t("col_item_number"),
       render: (r) => <span className="tnum">{r.po.itemCount ?? r.po.items.length}</span>,
     },
     {
       key: "vds",
-      header: "VDS Amount",
+      header: t("col_vds_amount"),
       render: (r) => (
         <span className="tnum whitespace-nowrap">
           {amount(r.po.vdsAmount ?? vdsAmount(r.po.subtotal))}
@@ -122,7 +124,7 @@ export default function OrderInformationPage() {
     },
     {
       key: "tds",
-      header: "TDS Amount",
+      header: t("col_tds_amount"),
       render: (r) => (
         <span className="tnum whitespace-nowrap">
           {amount(r.po.tdsAmount ?? tdsAmount(r.po.subtotal))}
@@ -131,34 +133,34 @@ export default function OrderInformationPage() {
     },
     {
       key: "total",
-      header: "Total",
+      header: t("col_total"),
       render: (r) => (
         <span className="tnum font-semibold whitespace-nowrap">{amount(r.po.grandTotal)}</span>
       ),
     },
     {
       key: "delivery",
-      header: "Expected Delivery Date",
+      header: t("col_expected_delivery"),
       render: (r) => (
         <span className="tnum whitespace-nowrap">{formatDate(r.po.requiredDeliveryDate)}</span>
       ),
     },
     {
       key: "status",
-      header: "Order Status",
+      header: t("col_order_status"),
       render: (r) => <StatusPill status={ORDER_STATUS[r.po.status]} variant="solid" />,
     },
     {
       key: "billed",
-      header: "Bill Submitted Amount",
+      header: t("col_bill_submitted_amount"),
       render: (r) => <span className="tnum whitespace-nowrap">{amount(r.billedAmount)}</span>,
     },
     {
       key: "bills",
-      header: "Bill Details",
+      header: t("col_bill_details"),
       render: (r) =>
         r.bills.length === 0 ? (
-          <span aria-label="No bill submitted" className="text-primary">
+          <span aria-label={t("no_bill_submitted")} className="text-primary">
             —
           </span>
         ) : (
@@ -177,7 +179,7 @@ export default function OrderInformationPage() {
     },
     {
       key: "paid",
-      header: "Paid Amount",
+      header: t("col_paid_amount"),
       render: (r) => (
         // Green reads as "money received" — nothing received isn't good news.
         <span
@@ -191,7 +193,7 @@ export default function OrderInformationPage() {
     },
     {
       key: "due",
-      header: "Payment Due Amount",
+      header: t("col_due_amount"),
       render: (r) => (
         <span
           className={`tnum font-semibold whitespace-nowrap ${
@@ -207,15 +209,15 @@ export default function OrderInformationPage() {
   return (
     <div className="mx-auto max-w-[1680px] space-y-5">
       <PageHeader
-        title="Order Information"
-        subtitle="View and acknowledge purchase orders from Kazi Farms Group"
+        title={t("nav_purchase_orders")}
+        subtitle={t("po_subtitle")}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by PO number or department…"
+            placeholder={t("po_search_ph")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 rounded-xl bg-card pl-10"
@@ -228,7 +230,7 @@ export default function OrderInformationPage() {
           <SelectContent>
             {PO_STATUSES.map((s) => (
               <SelectItem key={s.value} value={s.value}>
-                {s.label}
+                {t(s.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -241,7 +243,7 @@ export default function OrderInformationPage() {
         getRowKey={(r) => r.po.id}
         loading={isLoading}
         stickyFirstColumn
-        emptyLabel="No orders match your search."
+        emptyLabel={t("po_empty")}
       />
     </div>
   );

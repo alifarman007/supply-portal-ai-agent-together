@@ -18,6 +18,7 @@ import { useTender, useBidForTender, useSubmitBid } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate, daysUntil } from "@/lib/format/date";
 import { VAT_RATE, calcVAT } from "@/lib/format/tax";
+import { useLabels } from "@/lib/i18n/labels";
 import type { Tender } from "@/lib/mock/types";
 
 /** Header band shared with the tender and purchase order detail tables. */
@@ -45,6 +46,7 @@ export default function SubmitBidPage({ params }: { params: Promise<{ id: string
 
 function SubmitBidLoader({ tenderId }: { tenderId: string }) {
   const router = useRouter();
+  const { t } = useLabels();
   const { data: tender, isLoading } = useTender(tenderId);
   const { data: existingBid } = useBidForTender(tenderId);
 
@@ -65,16 +67,14 @@ function SubmitBidLoader({ tenderId }: { tenderId: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <p className="text-lg font-semibold text-foreground">
-          {existingBid
-            ? "You have already submitted a bid for this tender."
-            : "This tender is no longer open for bidding."}
+          {existingBid ? t("already_bid_msg") : t("tender_not_open_msg")}
         </p>
         <Button
           variant="outline"
           className="mt-4"
           onClick={() => router.push(`/app/tenders/${tenderId}`)}
         >
-          <ArrowLeft className="size-4" /> Back to Tender
+          <ArrowLeft className="size-4" /> {t("back_to_tender")}
         </Button>
       </div>
     );
@@ -85,6 +85,7 @@ function SubmitBidLoader({ tenderId }: { tenderId: string }) {
 
 function SubmitBidForm({ tender }: { tender: Tender }) {
   const router = useRouter();
+  const { t } = useLabels();
   const submitBid = useSubmitBid();
 
   const [technicalNotes, setTechnicalNotes] = useState("");
@@ -116,7 +117,7 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
 
   const onSubmit = async () => {
     if (items.some((i) => !i.specificationOffered || i.unitPrice <= 0)) {
-      toast.error("Please provide a specification and unit price for every item");
+      toast.error(t("toast_spec_price_required"));
       return;
     }
     try {
@@ -128,12 +129,12 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
         bidValidityDays,
         items,
       });
-      toast.success("Bid submitted", {
-        description: `${bid.bidNumber} has been submitted for evaluation.`,
+      toast.success(t("toast_bid_submitted"), {
+        description: `${bid.bidNumber} ${t("toast_bid_eval_desc")}`,
       });
       router.push(`/app/bids/${bid.id}`);
     } catch {
-      toast.error("Failed to submit bid");
+      toast.error(t("toast_bid_failed"));
     }
   };
 
@@ -146,54 +147,54 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
             <StatusPill status={tender.status} variant="solid" />
           </span>
         }
-        subtitle={`Submitting a bid  ·  Deadline: ${formatDate(tender.submissionDeadline)}  ·  Bid Opening: ${formatDate(tender.bidOpeningDate)}`}
+        subtitle={`${t("submitting_bid_lbl")}  ·  ${t("col_deadline")}: ${formatDate(tender.submissionDeadline)}  ·  ${t("bid_opening_colon")}: ${formatDate(tender.bidOpeningDate)}`}
         actions={
           <Button variant="outline" onClick={() => router.push(`/app/tenders/${tender.id}`)}>
-            <ArrowLeft className="size-4" /> Back to Tender
+            <ArrowLeft className="size-4" /> {t("back_to_tender")}
           </Button>
         }
       />
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Widget title="Tender Details" className="lg:col-span-2">
+        <Widget title={t("tender_details_title")} className="lg:col-span-2">
           <p className="font-heading text-base font-bold text-foreground">{tender.title}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
             {tender.description}
           </p>
 
           <dl className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            <Field label="Buyer Department" value={tender.buyerDepartment} />
-            <Field label="Category" value={tender.category} />
-            <Field label="Submission Deadline" value={formatDate(tender.submissionDeadline)} />
-            <Field label="Bid Opening Date" value={formatDate(tender.bidOpeningDate)} />
-            <Field label="Estimated Value" value={formatBDT(estimatedTotal)} />
-            <Field label="Line Items" value={`${tender.items.length}`} />
+            <Field label={t("lbl_buyer_department")} value={tender.buyerDepartment} />
+            <Field label={t("col_category")} value={tender.category} />
+            <Field label={t("lbl_submission_deadline")} value={formatDate(tender.submissionDeadline)} />
+            <Field label={t("lbl_bid_opening_date")} value={formatDate(tender.bidOpeningDate)} />
+            <Field label={t("lbl_estimated_value")} value={formatBDT(estimatedTotal)} />
+            <Field label={t("lbl_line_items")} value={`${tender.items.length}`} />
           </dl>
         </Widget>
 
-        <Widget title="Your Bid Summary">
+        <Widget title={t("your_bid_summary")}>
           <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-            Time Remaining
+            {t("time_remaining")}
           </div>
           <div className="font-heading mt-1 text-lg font-bold text-foreground">
             {daysLeft <= 0
-              ? "Submission closed"
-              : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`}
+              ? t("submission_closed")
+              : `${daysLeft} ${daysLeft === 1 ? t("day_word") : t("days_word")} ${t("days_left_suffix")}`}
           </div>
 
           <dl className="mt-5 space-y-3 border-t border-border pt-4 text-sm">
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-muted-foreground">Subtotal</dt>
+              <dt className="text-muted-foreground">{t("lbl_subtotal")}</dt>
               <dd className="tnum font-semibold whitespace-nowrap text-foreground">
                 {formatBDT(subtotal)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-muted-foreground">VAT ({(VAT_RATE * 100).toFixed(0)}%)</dt>
+              <dt className="text-muted-foreground">{t("col_vat")} ({(VAT_RATE * 100).toFixed(0)}%)</dt>
               <dd className="tnum whitespace-nowrap text-foreground">+{formatBDT(vatAmount)}</dd>
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-border pt-3">
-              <dt className="font-semibold text-foreground">Total Bid Amount</dt>
+              <dt className="font-semibold text-foreground">{t("lbl_total_bid_amount")}</dt>
               <dd className="tnum font-heading text-lg font-bold whitespace-nowrap text-foreground">
                 {formatBDT(totalBidAmount)}
               </dd>
@@ -201,15 +202,14 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
           </dl>
 
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Quote against every line before submitting. Your bid cannot be edited once it goes
-            in for evaluation.
+            {t("quote_every_line_hint")}
           </p>
         </Widget>
       </div>
 
       {/* Body bleeds to the card edges so the header band spans the full width. */}
       <Widget
-        title={`Technical Proposal (${items.length})`}
+        title={`${t("technical_proposal")} (${items.length})`}
         className="overflow-hidden"
         bodyClassName="-mx-6 -mb-6"
       >
@@ -217,12 +217,12 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
           <table className="w-full text-sm">
             <thead>
               <tr className={BAND}>
-                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">#</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Description</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Required Specification</th>
-                <th scope="col" className="w-full min-w-[18rem] py-3.5 pr-4 text-left">Specification Offered</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Unit</th>
-                <th scope="col" className="py-3.5 pr-6 text-left">Qty</th>
+                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">{t("col_hash")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_description")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_required_spec")}</th>
+                <th scope="col" className="w-full min-w-[18rem] py-3.5 pr-4 text-left">{t("col_spec_offered")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_unit")}</th>
+                <th scope="col" className="py-3.5 pr-6 text-left">{t("col_qty")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -237,8 +237,8 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
                   </td>
                   <td className="py-4 pr-4 align-top">
                     <Textarea
-                      aria-label={`Specification offered for ${item.description}`}
-                      placeholder="Describe the specification you are offering…"
+                      aria-label={`${t("col_spec_offered")} — ${item.description}`}
+                      placeholder={t("spec_offered_ph")}
                       value={item.specificationOffered}
                       onChange={(e) => updateItem(idx, "specificationOffered", e.target.value)}
                       rows={2}
@@ -259,7 +259,7 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
       </Widget>
 
       <Widget
-        title={`Financial Proposal (${items.length})`}
+        title={`${t("financial_proposal")} (${items.length})`}
         className="overflow-hidden"
         bodyClassName="-mx-6 -mb-6"
       >
@@ -267,13 +267,13 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
           <table className="w-full text-sm">
             <thead>
               <tr className={BAND}>
-                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">#</th>
-                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">Description</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Unit</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Qty</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Est. Unit Price</th>
-                <th scope="col" className="py-3.5 pr-4 text-left">Your Unit Price</th>
-                <th scope="col" className="py-3.5 pr-6 text-right">Line Total</th>
+                <th scope="col" className="py-3.5 pr-4 pl-6 text-left">{t("col_hash")}</th>
+                <th scope="col" className="w-full min-w-[15rem] py-3.5 pr-4 text-left">{t("col_description")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_unit")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_qty")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_est_unit_price")}</th>
+                <th scope="col" className="py-3.5 pr-4 text-left">{t("col_your_unit_price")}</th>
+                <th scope="col" className="py-3.5 pr-6 text-right">{t("col_line_total")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -296,7 +296,7 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
                     <Input
                       type="number"
                       min={0}
-                      aria-label={`Your unit price for ${item.description}`}
+                      aria-label={`${t("col_your_unit_price")} — ${item.description}`}
                       placeholder="0.00"
                       value={item.unitPrice || ""}
                       onChange={(e) => updateItem(idx, "unitPrice", Number(e.target.value))}
@@ -318,17 +318,17 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
 
         <dl className="space-y-2.5 border-t border-border px-6 py-4 text-sm">
           <div className="flex items-baseline justify-end gap-6">
-            <dt className="text-muted-foreground">Subtotal</dt>
+            <dt className="text-muted-foreground">{t("lbl_subtotal")}</dt>
             <dd className="tnum w-40 text-right font-semibold text-foreground">
               {formatBDT(subtotal)}
             </dd>
           </div>
           <div className="flex items-baseline justify-end gap-6">
-            <dt className="text-muted-foreground">VAT ({(VAT_RATE * 100).toFixed(0)}%)</dt>
+            <dt className="text-muted-foreground">{t("col_vat")} ({(VAT_RATE * 100).toFixed(0)}%)</dt>
             <dd className="tnum w-40 text-right text-foreground">+{formatBDT(vatAmount)}</dd>
           </div>
           <div className="flex items-baseline justify-end gap-6 border-t border-border pt-2.5">
-            <dt className="font-medium text-foreground">Total Bid Amount</dt>
+            <dt className="font-medium text-foreground">{t("lbl_total_bid_amount")}</dt>
             <dd className="tnum font-heading w-40 text-right text-lg font-bold text-foreground">
               {formatBDT(totalBidAmount)}
             </dd>
@@ -337,10 +337,10 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
       </Widget>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Widget title="Additional Technical Notes">
+        <Widget title={t("additional_tech_notes")}>
           <Textarea
-            aria-label="Additional technical notes"
-            placeholder="Delivery capability, lead time, quality assurance, warranty, etc…"
+            aria-label={t("additional_tech_notes")}
+            placeholder={t("tech_notes_ph")}
             value={technicalNotes}
             onChange={(e) => setTechnicalNotes(e.target.value)}
             rows={5}
@@ -348,13 +348,13 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
           />
         </Widget>
 
-        <Widget title="Bid Validity">
+        <Widget title={t("bid_validity_title")}>
           <div className="max-w-xs space-y-2">
             <Label
               htmlFor="bid-validity"
               className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase"
             >
-              Validity Period (days)
+              {t("validity_period_days")}
             </Label>
             <Input
               id="bid-validity"
@@ -366,15 +366,14 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
             />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            How long your quoted prices stay firm after the submission deadline. Most Kazi Farms
-            tenders expect at least 90 days.
+            {t("validity_hint")}
           </p>
         </Widget>
       </div>
 
       <div className="flex items-center justify-end gap-3">
         <Button variant="outline" onClick={() => router.push(`/app/tenders/${tender.id}`)}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button onClick={onSubmit} disabled={submitBid.isPending} className="gap-2">
           {submitBid.isPending ? (
@@ -382,7 +381,7 @@ function SubmitBidForm({ tender }: { tender: Tender }) {
           ) : (
             <Send className="size-4" />
           )}
-          Submit Bid
+          {t("submit_bid_btn")}
         </Button>
       </div>
     </div>

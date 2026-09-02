@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useDocuments } from "@/lib/query/hooks";
 import { formatDate } from "@/lib/format/date";
 import { usePermission } from "@/lib/rbac";
+import { useLabels, DOC_TYPE_LABEL_KEYS } from "@/lib/i18n/labels";
 import type { DocumentType } from "@/lib/mock/types";
 
 const DOC_ICONS: Record<DocumentType, typeof FileCheck> = {
@@ -20,15 +21,8 @@ const DOC_ICONS: Record<DocumentType, typeof FileCheck> = {
   iso_certification: FileCheck,
 };
 
-const DOC_LABELS: Record<DocumentType, string> = {
-  trade_license: "Trade License",
-  tin_certificate: "TIN Certificate",
-  vat_registration: "VAT Registration (BIN)",
-  bank_solvency: "Bank Solvency Certificate",
-  iso_certification: "ISO Certification",
-};
-
 export default function DocumentsPage() {
+  const { t } = useLabels();
   const { data: docs, isLoading } = useDocuments();
   const canUpload = usePermission("upload_documents");
 
@@ -38,16 +32,16 @@ export default function DocumentsPage() {
   return (
     <div className="mx-auto max-w-[1680px] space-y-6">
       <PageHeader
-        title="Compliance Documents"
-        subtitle="Manage your company's compliance documents and certifications"
+        title={t("nav_documents")}
+        subtitle={t("documents_subtitle")}
       />
 
       {expired.length > 0 && (
         <Alert className="border-danger/30 bg-danger/10 text-danger">
           <FileX className="size-4" />
           <AlertDescription>
-            <strong>{expired.length} document{expired.length > 1 ? "s" : ""} expired:</strong>{" "}
-            {expired.map((d) => DOC_LABELS[d.type]).join(", ")}. Please upload updated documents immediately.
+            <strong>{expired.length} {t("docs_expired_suffix")}</strong>{" "}
+            {expired.map((d) => t(DOC_TYPE_LABEL_KEYS[d.type])).join(", ")}. {t("docs_expired_action")}
           </AlertDescription>
         </Alert>
       )}
@@ -56,8 +50,8 @@ export default function DocumentsPage() {
         <Alert className="border-warn/30 bg-warn/10 text-warn">
           <FileWarning className="size-4" />
           <AlertDescription>
-            <strong>{expiring.length} document{expiring.length > 1 ? "s" : ""} expiring soon:</strong>{" "}
-            {expiring.map((d) => DOC_LABELS[d.type]).join(", ")}. Please renew before expiry.
+            <strong>{expiring.length} {t("docs_expiring_suffix")}</strong>{" "}
+            {expiring.map((d) => t(DOC_TYPE_LABEL_KEYS[d.type])).join(", ")}. {t("docs_expiring_action")}
           </AlertDescription>
         </Alert>
       )}
@@ -80,22 +74,22 @@ export default function DocumentsPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-foreground">{DOC_LABELS[doc.type]}</h3>
+                      <h3 className="font-semibold text-foreground">{t(DOC_TYPE_LABEL_KEYS[doc.type])}</h3>
                       <StatusPill status={doc.status} />
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">No. {doc.documentNumber}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t("doc_no_prefix")} {doc.documentNumber}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{doc.issuingAuthority}</p>
                   </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Issued</span>
+                    <span className="text-muted-foreground">{t("doc_issued")}</span>
                     <div className="font-medium text-foreground">{formatDate(doc.issuedDate)}</div>
                   </div>
                   <div>
                     <span className={doc.status === "expired" ? "text-danger" : doc.status === "expiring_soon" ? "text-warn" : "text-muted-foreground"}>
-                      Expires
+                      {t("doc_expires")}
                     </span>
                     <div className={`font-medium ${doc.status === "expired" ? "text-danger" : doc.status === "expiring_soon" ? "text-warn" : "text-foreground"}`}>
                       {formatDate(doc.expiryDate)}
@@ -103,7 +97,7 @@ export default function DocumentsPage() {
                   </div>
                   {doc.uploadedAt && (
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">Uploaded: </span>
+                      <span className="text-muted-foreground">{t("doc_uploaded_colon")}: </span>
                       <span className="text-foreground">{formatDate(doc.uploadedAt)}</span>
                       <span className="ml-2 text-muted-foreground">{doc.fileSize}</span>
                     </div>
@@ -116,18 +110,18 @@ export default function DocumentsPage() {
                       variant="outline"
                       size="sm"
                       className="flex-1 gap-1.5"
-                      onClick={() => toast.info("Upload functionality coming soon.")}
+                      onClick={() => toast.info(t("toast_upload_soon"))}
                     >
-                      <Upload className="size-3.5" /> Upload New
+                      <Upload className="size-3.5" /> {t("upload_new_btn")}
                     </Button>
                   )}
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex-1 gap-1.5"
-                    onClick={() => toast.info("Download functionality coming soon.")}
+                    onClick={() => toast.info(t("toast_download_soon"))}
                   >
-                    <Download className="size-3.5" /> Download
+                    <Download className="size-3.5" /> {t("download_btn")}
                   </Button>
                 </div>
               </div>

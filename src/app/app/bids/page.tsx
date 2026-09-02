@@ -17,25 +17,27 @@ import {
 import { useBids } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
+import { useLabels, type LabelKey } from "@/lib/i18n/labels";
 import type { Bid, BidStatus } from "@/lib/mock/types";
 
-const BID_STATUSES: { value: BidStatus | "all"; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "submitted", label: "Submitted" },
-  { value: "under_evaluation", label: "Under Evaluation" },
-  { value: "clarification_requested", label: "Clarification Requested" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "awarded", label: "Awarded" },
-  { value: "not_awarded", label: "Not Awarded" },
-  { value: "rejected", label: "Rejected" },
+const BID_STATUSES: { value: BidStatus | "all"; labelKey: LabelKey }[] = [
+  { value: "all", labelKey: "all_statuses" },
+  { value: "submitted", labelKey: "submitted" },
+  { value: "under_evaluation", labelKey: "under_evaluation" },
+  { value: "clarification_requested", labelKey: "clarification_requested" },
+  { value: "shortlisted", labelKey: "shortlisted" },
+  { value: "awarded", labelKey: "awarded" },
+  { value: "not_awarded", labelKey: "not_awarded" },
+  { value: "rejected", labelKey: "rejected" },
 ];
 
 /** The full wording overflows the pill in this table's Status column. */
-const SHORT_LABELS: Partial<Record<BidStatus, string>> = {
-  clarification_requested: "Clarify Req.",
+const SHORT_LABEL_KEYS: Partial<Record<BidStatus, LabelKey>> = {
+  clarification_requested: "clarify_req",
 };
 
 export default function BidsPage() {
+  const { t } = useLabels();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<BidStatus | "all">("all");
 
@@ -44,7 +46,7 @@ export default function BidsPage() {
   const columns: ReportColumn<Bid>[] = [
     {
       key: "bid",
-      header: "Bid #",
+      header: t("col_bid_number"),
       render: (b) => (
         <Link
           href={`/app/bids/${b.id}`}
@@ -56,7 +58,7 @@ export default function BidsPage() {
     },
     {
       key: "tender",
-      header: "Tender",
+      header: t("col_tender"),
       // Takes the slack left by the fixed-width columns so titles stay readable.
       cellClassName: "w-full min-w-[180px] whitespace-normal",
       render: (b) => (
@@ -71,14 +73,14 @@ export default function BidsPage() {
     },
     {
       key: "submitted",
-      header: "Submitted",
+      header: t("lbl_submitted"),
       render: (b) => (
         <span className="tnum whitespace-nowrap">{formatDate(b.submittedAt)}</span>
       ),
     },
     {
       key: "amount",
-      header: "Amount (BDT)",
+      header: t("col_amount_bdt"),
       render: (b) => (
         <span className="tnum font-semibold whitespace-nowrap">
           {formatBDT(b.totalBidAmount)}
@@ -87,25 +89,28 @@ export default function BidsPage() {
     },
     {
       key: "status",
-      header: "Status",
-      render: (b) => (
-        <StatusPill status={b.status} variant="solid" label={SHORT_LABELS[b.status]} />
-      ),
+      header: t("col_status"),
+      render: (b) => {
+        const shortKey = SHORT_LABEL_KEYS[b.status];
+        return (
+          <StatusPill status={b.status} variant="solid" label={shortKey ? t(shortKey) : undefined} />
+        );
+      },
     },
   ];
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-5">
       <PageHeader
-        title="My Bids"
-        subtitle="Track the status of bids you've submitted against published tenders"
+        title={t("nav_bids")}
+        subtitle={t("bid_subtitle")}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by bid # or tender…"
+            placeholder={t("bid_search_ph")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 rounded-xl bg-card pl-10"
@@ -118,7 +123,7 @@ export default function BidsPage() {
           <SelectContent>
             {BID_STATUSES.map((s) => (
               <SelectItem key={s.value} value={s.value}>
-                {s.label}
+                {t(s.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -130,7 +135,7 @@ export default function BidsPage() {
         rows={bids ?? []}
         getRowKey={(b) => b.id}
         loading={isLoading}
-        emptyLabel="No bids match your search."
+        emptyLabel={t("bid_empty")}
       />
     </div>
   );

@@ -17,14 +17,15 @@ import {
 import { usePurchaseOrders, useInvoices } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
+import { useLabels, type LabelKey } from "@/lib/i18n/labels";
 import type { Invoice, PurchaseOrder } from "@/lib/mock/types";
 
 type PendingFilter = "all" | "pending" | "billed";
 
-const FILTERS: { value: PendingFilter; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "pending", label: "Pending bill" },
-  { value: "billed", label: "Already billed" },
+const FILTERS: { value: PendingFilter; labelKey: LabelKey }[] = [
+  { value: "all", labelKey: "all_statuses" },
+  { value: "pending", labelKey: "pending_bill_filter" },
+  { value: "billed", labelKey: "already_billed_filter" },
 ];
 
 /** An invoice only counts as billed once it has actually been submitted. */
@@ -37,6 +38,7 @@ interface BillableRow {
 }
 
 export default function BillSubmissionPage() {
+  const { t } = useLabels();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<PendingFilter>("all");
 
@@ -62,7 +64,7 @@ export default function BillSubmissionPage() {
   const columns: ReportColumn<BillableRow>[] = [
     {
       key: "po",
-      header: "PO",
+      header: t("col_po"),
       render: (r) => (
         <Link
           href={`/app/purchase-orders/${r.po.id}`}
@@ -74,14 +76,14 @@ export default function BillSubmissionPage() {
     },
     {
       key: "issued",
-      header: "Issue Date",
+      header: t("col_issue_date"),
       render: (r) => (
         <span className="tnum whitespace-nowrap">{formatDate(r.po.issuedDate)}</span>
       ),
     },
     {
       key: "value",
-      header: "Total Purchase Value",
+      header: t("col_total_purchase_value"),
       cellClassName: "w-full min-w-[160px]",
       render: (r) => (
         <span className="tnum font-semibold whitespace-nowrap">
@@ -91,20 +93,20 @@ export default function BillSubmissionPage() {
     },
     {
       key: "pending",
-      header: "Pending Bill",
+      header: t("col_pending_bill"),
       render: (r) => (
         <span
           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
             r.pending ? "bg-warn text-white" : "bg-muted-foreground text-white"
           }`}
         >
-          {r.pending ? "Yes" : "No"}
+          {r.pending ? t("yes") : t("no")}
         </span>
       ),
     },
     {
       key: "amount",
-      header: "Amount",
+      header: t("col_amount"),
       render: (r) => (
         <span
           className={`tnum whitespace-nowrap ${
@@ -117,10 +119,10 @@ export default function BillSubmissionPage() {
     },
     {
       key: "action",
-      header: "Action",
+      header: t("col_action"),
       render: (r) => (
         <Button asChild size="sm" className="whitespace-nowrap">
-          <Link href={`/app/bills/${r.po.id}`}>Submit Bill</Link>
+          <Link href={`/app/bills/${r.po.id}`}>{t("submit_bill_btn")}</Link>
         </Button>
       ),
     },
@@ -129,15 +131,15 @@ export default function BillSubmissionPage() {
   return (
     <div className="mx-auto max-w-[1680px] space-y-5">
       <PageHeader
-        title="Bill Submission"
-        subtitle="Submit bills against your delivered purchase orders"
+        title={t("nav_bill_submission")}
+        subtitle={t("bill_subtitle")}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by PO number…"
+            placeholder={t("bill_search_ph")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 rounded-xl bg-card pl-10"
@@ -150,7 +152,7 @@ export default function BillSubmissionPage() {
           <SelectContent>
             {FILTERS.map((f) => (
               <SelectItem key={f.value} value={f.value}>
-                {f.label}
+                {t(f.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -163,7 +165,7 @@ export default function BillSubmissionPage() {
         getRowKey={(r) => r.po.id}
         loading={isLoading}
         stickyFirstColumn
-        emptyLabel="No purchase orders available to bill against."
+        emptyLabel={t("bill_empty")}
       />
     </div>
   );
