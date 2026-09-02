@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
@@ -8,16 +8,39 @@ import { SidebarNav } from "./SidebarNav";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export function Sidebar({ initialCollapsed }: { initialCollapsed: boolean }) {
-  const [collapsed, setCollapsed] = useState(initialCollapsed);
+const STORAGE_KEY = "kazifarms-sidebar-collapsed";
+const listeners = new Set<() => void>();
 
-  const toggle = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      document.cookie = `sfms-sidebar=${next ? "1" : "0"}; path=/; max-age=31536000; SameSite=Lax`;
-      return next;
-    });
-  };
+function getSnapshot() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+function setCollapsedStored(next: boolean) {
+  try {
+    localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+  } catch {}
+  listeners.forEach((notify) => notify());
+}
+
+export function Sidebar() {
+  // Sourced from localStorage rather than a cookie so the /app layout stays
+  // free of request-time APIs and can be statically prefetched.
+  const collapsed = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  const toggle = () => setCollapsedStored(!collapsed);
 
   return (
     <aside

@@ -7,10 +7,8 @@ import { useAuth } from "@/store/auth";
 
 export function AppLayoutClient({
   children,
-  sidebarCollapsed,
 }: {
   children: React.ReactNode;
-  sidebarCollapsed: boolean;
 }) {
   const isAuthed = useAuth((s) => s.isAuthed);
   const router = useRouter();
@@ -21,7 +19,5 @@ export function AppLayoutClient({
 
   if (!isAuthed) return null;
 
-  return (
-    <AppShell initialSidebarCollapsed={sidebarCollapsed}>{children}</AppShell>
-  );
+  return <AppShell>{children}</AppShell>;
 }
