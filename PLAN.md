@@ -52,8 +52,26 @@ export const TDS_RATE = 0.03;
 The agent's research into the FY2026-27 NBR gazettes found that TDS on goods is
 commodity-keyed across **20 serials** (0.5%–10%, residual 5%), TDS on services across
 **19 serials**, and VDS on services across **46 codes** (2%–15%) — and that the 7.5% VDS
-figure is explicitly a **guess** carried over from older placeholder data. So the
-portal's numbers are wrong for most real bills.
+figure is explicitly a **guess** carried over from older placeholder data.
+
+**A measured example**, from the round trip in `scripts/verify_portal_roundtrip.py` on
+PO-2026-0001 (ex-VAT subtotal 293,000 Tk, all packing materials):
+
+| | Portal, flat rates | Agent, cited rules |
+|---|---|---|
+| TDS | 3% → **8,790.00** | serial 17, packing materials, 3% → **8,790.00** |
+| VDS | 7.5% → **21,975.00** | valid Mushak 6.3 present → **0.00** |
+
+Be precise about what this shows. The **TDS figures agree here by coincidence** — packing
+materials happen to sit at 3%, the same as the portal's hard-coded AIT. Change the
+commodity and they diverge: cement and iron are 2%, MS scrap 0.5%, tobacco 10%, and
+anything unlisted 5%.
+
+The **VDS figures do not agree, and the gap is 21,975 Tk on this one order.** Under VDS
+Rules 2025 Rule 5, no VAT is deducted at source when the supplier issues a Mushak 6.3 —
+so the portal is showing a deduction that should not be taken at all. That is the real
+win, and it is worth more than the headline "flat rates are wrong" framing: the agent
+knows *when a deduction does not apply*, which no flat rate can express.
 
 Joined, the supplier sees the real deduction, computed from cited gazette rules, with the
 citation attached — before they submit.
@@ -97,7 +115,7 @@ still run exactly as before.
 **Exit:** `npm run dev` works in `portal/`; `pytest` passes in `agent/`; no secret in the
 merged history.
 
-### S1 — Data spine ⬅ NEXT
+### S1 — Data spine ✅ DONE
 
 One shared purchase-order universe, so a bill submitted in the portal is checkable by the
 agent. Without this, everything downstream returns `BLOCKED`.
@@ -118,11 +136,19 @@ What must line up:
 - **Supplier and PO ids must resolve.** `POST /bills` rejects an unknown PO or supplier
   outright with a 400.
 
-**Exit (prove with curl, before writing any React):** a portal-shaped payload posted to
-`POST /bills` returns 201, and `POST /bills/{id}/check?llm=false` returns a recommendation
-that is **not** `BLOCKED`.
+**Exit — PASSED.** `scripts/generate_portal_demo_seed.py` builds the agent seed from the
+portal's own mock data (verifying every figure against the source file's arithmetic
+before writing), `python -m app.cli seed --portal` loads it alongside the golden
+fixtures, and `scripts/verify_portal_roundtrip.py` proves the round trip over real HTTP:
+a portal-shaped bill posts `201`, checks `CLEAR`, net payable **328,160.00 Tk**, zero
+exceptions, TDS applied from `tds.goods.s89.serial_17` with its gazette citation.
+Proved before a line of React was written, exactly as intended.
 
-### S2 — Submit-through
+14 purchase orders, 23 lines, one supplier (Dhaka Packaging Industries Ltd.). Only the
+4 POs whose goods actually arrived have a GRN — billing the others returns the
+`missing_grn` BLOCKER, which is the correct answer and demonstrates both paths.
+
+### S2 — Submit-through ⬅ NEXT
 
 - `portal/src/lib/billcheck/{client,types,mappers}.ts` — typed client, wire types, and the
   mapping layer (ids, statuses, money).

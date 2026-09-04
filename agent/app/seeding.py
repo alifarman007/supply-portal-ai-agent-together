@@ -32,6 +32,11 @@ from app.models import (
 
 SEEDS_PATH = Path(__file__).resolve().parent.parent / "seeds" / "scenarios.json"
 
+# The portal-aligned demo universe: the same purchase orders the supplier portal
+# shows, so a bill submitted there is checkable here. Generated - regenerate with
+# `python scripts/generate_portal_demo_seed.py` from the repo root.
+PORTAL_SEEDS_PATH = Path(__file__).resolve().parent.parent / "seeds" / "portal_demo.json"
+
 
 def load_fixtures(path: Path | None = None) -> dict:
     raw = json.loads((path or SEEDS_PATH).read_text(encoding="utf-8"))
@@ -62,12 +67,19 @@ def bill_from_in(b: BillIn) -> Bill:
     return bill
 
 
-def seed(session: Session, path: Path | None = None) -> dict[str, int]:
+def seed(session: Session, path: Path | None = None, *, wipe: bool = True) -> dict[str, int]:
+    """Load a fixture file into the database.
+
+    `wipe=False` adds a second data set alongside what is already there, which is how the
+    portal-aligned demo universe is loaded on top of the golden S1-S12 fixtures. The two
+    sets use disjoint ids (PO-S* / BILL-S* versus po-* / GRN-PORTAL-*), so they coexist.
+    """
     fixtures = load_fixtures(path)
 
-    # Wipe fixture tables (children first) so reseeding is idempotent.
-    for table in (LedgerEntry, BillLine, Bill, GrnLine, Grn, PoLine, PurchaseOrder, Supplier):
-        session.execute(delete(table))
+    if wipe:
+        # Wipe fixture tables (children first) so reseeding is idempotent.
+        for table in (LedgerEntry, BillLine, Bill, GrnLine, Grn, PoLine, PurchaseOrder, Supplier):
+            session.execute(delete(table))
 
     for s in fixtures["suppliers"]:
         session.add(Supplier(**s.model_dump()))

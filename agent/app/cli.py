@@ -9,7 +9,7 @@ import argparse
 
 from app.engines.money import from_paisa
 from app.models import Bill, CheckingRun, init_db, make_engine, make_session_factory
-from app.seeding import seed
+from app.seeding import PORTAL_SEEDS_PATH, seed
 
 
 def _session():
@@ -18,12 +18,26 @@ def _session():
     return make_session_factory(engine)()
 
 
-def cmd_seed(_args: argparse.Namespace) -> int:
+def cmd_seed(args: argparse.Namespace) -> int:
     with _session() as session:
         counts = seed(session)
-    print("Seeded golden fixtures (S1-S12):")
-    for name, count in counts.items():
-        print(f"  {name:<16} {count}")
+        print("Seeded golden fixtures (S1-S12):")
+        for name, count in counts.items():
+            print(f"  {name:<16} {count}")
+
+        if getattr(args, "portal", False):
+            if not PORTAL_SEEDS_PATH.exists():
+                print(
+                    f"\n{PORTAL_SEEDS_PATH.name} not found. Generate it first, from the "
+                    "repo root:\n  python scripts/generate_portal_demo_seed.py"
+                )
+                return 1
+            # Additive: the portal universe sits alongside the golden fixtures rather
+            # than replacing them, so both demos work from one database.
+            portal_counts = seed(session, PORTAL_SEEDS_PATH, wipe=False)
+            print("\nSeeded the portal demo universe (matches the supplier portal):")
+            for name, count in portal_counts.items():
+                print(f"  {name:<16} {count}")
     return 0
 
 
@@ -265,7 +279,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("seed", help="create tables and load golden fixtures S1-S12")
+    seed_parser = sub.add_parser(
+        "seed", help="create tables and load golden fixtures S1-S12"
+    )
+    seed_parser.add_argument(
+        "--portal",
+        action="store_true",
+        help="also load the purchase orders the supplier portal shows, so a bill "
+             "submitted in the portal can be checked here",
+    )
     sub.add_parser("list-bills", help="show seeded bills")
     check_parser = sub.add_parser("check-bill", help="run the checking pipeline on one bill")
     check_parser.add_argument("bill_id", help="e.g. BILL-S2")

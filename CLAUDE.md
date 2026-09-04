@@ -47,10 +47,21 @@ already made, and the build order.
   effect) and 9 unused-variable warnings, all inherited from upstream. Left alone
   deliberately: they are upstream's code, not ours. Treat `tsc --noEmit` as the type gate
   and do not let the lint count grow.
-- **S1 — Data spine: NEXT.** Align one purchase-order universe across both sides so a
-  portal-submitted bill is actually checkable. See `PLAN.md` §3 — this must be done before
-  any UI work, or every bill comes back `BLOCKED`.
-- **S2 — Submit-through, S3 — Bill-checking tabs, S4 — Release:** not started.
+- **S1 — Data spine: DONE.** The agent now knows the portal's purchase orders.
+  `scripts/generate_portal_demo_seed.py` generates `agent/seeds/portal_demo.json` from
+  `portal/src/lib/mock/db.ts` (and refuses to write if the parse fails the source file's
+  own arithmetic); `python -m app.cli seed --portal` loads it *alongside* the golden
+  S1-S12 fixtures rather than replacing them. Proved over real HTTP by
+  `scripts/verify_portal_roundtrip.py`: portal-shaped bill -> `201` -> check -> `CLEAR`,
+  net **328,160.00 Tk**, 0 exceptions, TDS from `tds.goods.s89.serial_17` (3%, packing
+  materials) with its citation.
+  Two things this pinned down: the portal's `fulfilled` maps to the agent's `open`, NOT
+  `closed` (the agent only checks `open`/`partially_billed`, so `closed` would block every
+  real bill); and the VAT conversion is real money — 336,950 entered in the portal is
+  293,000 ex-VAT, a 43,950 Tk overstatement if sent unconverted, with no exception raised.
+- **S2 — Submit-through: NEXT.** Wire the portal's bill form to the agent through
+  server-side route handlers. See `PLAN.md` §3.
+- **S3 — Bill-checking tabs, S4 — Release:** not started.
 
 ### What each half already does
 
