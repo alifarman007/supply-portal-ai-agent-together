@@ -5,6 +5,7 @@ import {
   checkBill,
   createBill,
   isConfigured,
+  reviewDetail,
 } from "@/lib/billcheck/client";
 import type { AgentBillIn } from "@/lib/billcheck/types";
 
@@ -80,8 +81,25 @@ export async function POST(request: Request) {
       }
     }
 
+    const startedAt = Date.now();
     const result = await checkBill(bill.id, false);
-    return NextResponse.json({ ...result, bill_id: bill.id, created });
+    const elapsedMs = Date.now() - startedAt;
+
+    // Fetch the full breakdown too. The check response carries only a recommendation, a
+    // net payable and the exceptions; the progress screen shows what each step actually
+    // found — which quantities were cut, which VAT rate applied, which TDS serial the
+    // product falls under — and those live in the review payload. Both calls are
+    // deterministic and fast, so this stays one request from the browser's point of view.
+    let detail = null;
+    try {
+      detail = await reviewDetail(bill.id);
+    } catch (err) {
+      // A missing breakdown degrades the progress detail, not the result. The
+      // recommendation and the net payable above are already authoritative.
+      console.error("[billcheck] could not load the breakdown for the progress view", err);
+    }
+
+    return NextResponse.json({ ...result, bill_id: bill.id, created, detail, elapsedMs });
   } catch (err) {
     if (err instanceof BillCheckRejectedError) {
       // The agent's own validation refused it — a total that does not match the lines, an

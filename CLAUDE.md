@@ -87,6 +87,25 @@ already made, and the build order.
   **Gated server-side by `BILLCHECK_INTERNAL`** — verified by turning it off: both API
   routes 404. `NEXT_PUBLIC_BILLCHECK_INTERNAL` only shows the sidebar link and is
   documented as cosmetic.
+- **Checking progress screen — DONE.** Pressing *Submit and check* opens a checklist of
+  the eight checks the pipeline actually runs, each row filling in with what it really
+  found (`portal/src/lib/billcheck/steps.ts` + `components/billcheck/CheckProgress.tsx`).
+  **The reveal is paced, not simulated.** The deterministic check takes ~90 ms, so all
+  eight results would otherwise land in one frame; rows appear at reading speed while
+  the real answer, already in hand, fills them in, and the **true elapsed time** is
+  printed at the end rather than the animation's length. Do not add artificial delays.
+  Two honesty rules are enforced in code: a failed step shows its findings and NO
+  cheerful summary (it used to print "every billed quantity is covered by the goods
+  receipt" beside a blocker saying no goods receipt exists), and every step after a
+  blocker is marked **skipped**, because `_finalize_blocked` short-circuits the pipeline
+  and those steps never ran.
+  `agent/tests/golden/test_progress_steps.py` pins the mapping: every code in
+  `policies.yaml` must belong to exactly one row, no row may claim a code nothing
+  raises, and blockers must sit in the early rows. **It immediately caught six codes
+  with no row at all** — `missing_mushak_6_3`, two Mushak checks,
+  `tax_category_proposed`, `llm_node_failed` and `report_numeric_guard_failed` — which
+  would have been invisible to the supplier. **Add a new exception code to a step or
+  the suite fails.**
 - **S4 — Release: DONE.** `scripts/dev.ps1` starts both halves with one command
   (`-Reseed` to rebuild the database, `-Stop` to stop). README rewritten around what to
   actually try. **Clean-clone verified**: a fresh clone of the pushed repo installs,
@@ -102,7 +121,7 @@ Bilingual (English/Bangla), dark mode, RBAC-flavoured nav. **All data is in-memo
 (`portal/src/lib/mock/`) except one live integration: iDempiere ERP purchase orders, read
 server-side with a mock fallback when the host is unreachable.
 
-`agent/` — **318 tests passing, ruff clean**. Phases 0–4 and 6 complete:
+`agent/` — **323 tests passing, ruff clean**. Phases 0–4 and 6 complete:
 deterministic engines (matching incl. 3-way, VAT, VDS, TDS, netting, duplicates, policy,
 Mushak 6.3 validation), FY2026-27 NBR rate tables with page-level citations, LLM nodes
 A/B/C/E with a numeric guard, full audit log with offline replay, FastAPI + Jinja CFO

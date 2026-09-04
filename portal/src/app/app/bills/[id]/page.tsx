@@ -28,6 +28,7 @@ import {
   type DraftBillLine,
 } from "@/lib/billcheck/mappers";
 import type { AgentCheckResult, Recommendation } from "@/lib/billcheck/types";
+import { CheckProgress, type CheckOutcome } from "@/components/billcheck/CheckProgress";
 
 /** Bills fall due 30 days after submission, per the standard PO terms. */
 const PAYMENT_TERM_DAYS = 30;
@@ -104,6 +105,15 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<AgentCheckResult | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  // The progress screen owns the moment between pressing the button and having an
+  // answer. `outcome` stays null until the answer lands, which is what makes the last
+  // row wait rather than tick early.
+  const [checking, setChecking] = useState(false);
+  const [outcome, setOutcome] = useState<CheckOutcome | null>(null);
+  const [progressError, setProgressError] = useState<string | null>(null);
+  // Bumped per submission so the progress screen remounts fresh instead of being
+  // reset from inside an effect.
+  const [runKey, setRunKey] = useState(0);
 
   const dueDate = new Date(DEMO_NOW);
   dueDate.setDate(dueDate.getDate() + PAYMENT_TERM_DAYS);
@@ -133,6 +143,10 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
     setSubmitting(true);
     setFailure(null);
     setResult(null);
+    setOutcome(null);
+    setProgressError(null);
+    setChecking(true);
+    setRunKey((n) => n + 1);
 
     const payload = toAgentBill({
       billId: billIdFor(po, 1),
@@ -159,16 +173,25 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
       if (!response.ok) {
         // Deliberately NO fallback to the flat rates in lib/format/tax.ts. A confident
         // wrong number about a supplier's payment is worse than an honest failure.
-        setFailure(body?.error?.message ?? t("toast_bill_failed"));
+        const message = body?.error?.message ?? t("toast_bill_failed");
+        setFailure(message);
+        setProgressError(message);
         toast.error(t("check_unavailable_title"));
         return;
       }
 
       setResult(body as AgentCheckResult);
+      setOutcome({
+        recommendation: body.recommendation,
+        net_payable_tk: body.net_payable_tk,
+        detail: body.detail ?? null,
+        elapsedMs: body.elapsedMs,
+      });
       toast.success(t("toast_bill_submitted"));
     } catch (err) {
       console.error("[billcheck] submit failed", err);
       setFailure(t("toast_bill_failed"));
+      setProgressError(t("toast_bill_failed"));
       toast.error(t("toast_bill_failed"));
     } finally {
       setSubmitting(false);
@@ -321,6 +344,15 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
       )}
 
       {result && <CheckResult result={result} />}
+
+      <CheckProgress
+        key={runKey}
+        open={checking}
+        poNumber={po.poNumber}
+        outcome={outcome}
+        failure={progressError}
+        onClose={() => setChecking(false)}
+      />
     </div>
   );
 }
