@@ -123,3 +123,27 @@ export function checkBill(billId: string, llm = false): Promise<AgentCheckResult
 export function getBill(billId: string): Promise<AgentBillStatusResponse> {
   return call(`/bills/${encodeURIComponent(billId)}`);
 }
+
+/**
+ * The internal bill-checking section is OFF unless explicitly switched on.
+ *
+ * The portal has no authentication: `useAuth` starts already signed in, the login form
+ * validates nothing, and its four roles are supplier roles the viewer picks from a menu.
+ * Nav visibility is therefore decoration, not access control — so the internal routes
+ * refuse to serve at all unless a server-only flag is set, rather than relying on a
+ * sidebar link being hidden.
+ *
+ * Set BILLCHECK_INTERNAL=true in portal/.env.local to enable it locally. It must stay
+ * unset anywhere the portal is publicly reachable, until real authentication exists.
+ */
+export function internalSectionEnabled(): boolean {
+  return process.env.BILLCHECK_INTERNAL?.trim().toLowerCase() === "true";
+}
+
+export function reviewQueue(): Promise<import("./types").QueueRow[]> {
+  return call("/review?format=json");
+}
+
+export function reviewDetail(billId: string): Promise<import("./types").ReviewDetail> {
+  return call(`/review/${encodeURIComponent(billId)}?format=json`);
+}

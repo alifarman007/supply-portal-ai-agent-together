@@ -177,7 +177,7 @@ portal's frozen `DEMO_NOW` of 30 June 2026 is the last day of FY2025-26 — a ye
 rule tables — so every submitted bill produced an opaque 500. Bills now carry the real
 submission date, and the agent answers a missing-fiscal-year with a 422 that names it.
 
-### S3 — Bill-checking tabs (read-only) ⬅ NEXT
+### S3 — Bill-checking tabs (read-only) ✅ DONE
 
 - Agent: a `?format=json` branch on the review detail route. Cheap — the handler already
   assembles `breakdown`, `exceptions`, `rates_applied` (with citations and an `unverified`
@@ -190,10 +190,19 @@ submission date, and the agent answers a missing-fiscal-year with a 422 that nam
 - Internal routes must **404 unless a server-only env flag is set**, because the portal has
   no auth. Nav visibility is not access control.
 
-**Exit:** a checked bill is fully readable in the portal; approving still happens on the
-agent's UI.
+**Exit — PASSED.** `/app/billcheck` lists the queue and `/app/billcheck/{billId}` shows
+Summary / Tax rates / Findings. Verified live through the portal: the queue returns all
+three demo bills with their different outcomes, and the detail view shows claimed
+250,000 -> approved base 150,000 -> net 168,000 with all 4 applied rates badged NOT
+CONFIRMED and carrying their gazette citations.
 
-### S4 — Release
+**The gate is server-side and was tested by turning it off**: with `BILLCHECK_INTERNAL`
+unset, both API routes return 404 even though the pages exist. `NEXT_PUBLIC_BILLCHECK_
+INTERNAL` only hides the sidebar link and is explicitly documented as cosmetic — the
+portal's four roles are all supplier roles the viewer picks from a menu, so nav
+visibility could never have been the control.
+
+### S4 — Release ⬅ NEXT
 
 `npx tsc --noEmit` clean, `npm run build` succeeds, `ruff check .` clean, `pytest` passes,
 one contract test proving a portal-shaped payload round-trips, README a stranger can

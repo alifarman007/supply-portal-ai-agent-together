@@ -8,6 +8,7 @@ export const LABELS = {
   grp_finance: { en: "Finance", bn: "অর্থ" },
   grp_operations: { en: "Operations", bn: "পরিচালনা" },
   grp_compliance: { en: "Compliance", bn: "সম্মতি" },
+  grp_internal: { en: "Accounts (internal)", bn: "হিসাব (অভ্যন্তরীণ)" },
   grp_account: { en: "Account", bn: "অ্যাকাউন্ট" },
 
   nav_dashboard: { en: "Dashboard", bn: "ড্যাশবোর্ড" },
@@ -17,6 +18,7 @@ export const LABELS = {
   nav_invoices: { en: "Invoices", bn: "চালান" },
   nav_payments: { en: "Payments", bn: "পেমেন্ট" },
   nav_bill_submission: { en: "Bill Submission", bn: "বিল জমা" },
+  nav_bill_checking: { en: "Bill Checking", bn: "বিল যাচাই" },
   nav_documents: { en: "Documents", bn: "দলিল" },
   nav_reports: { en: "Reports", bn: "রিপোর্ট" },
   nav_notifications: { en: "Notifications", bn: "নোটিফিকেশন" },

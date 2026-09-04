@@ -297,6 +297,28 @@ def create_app(
                     "net_tk": _tk(result.net_payable_paisa) if result else None,
                 }
             )
+        if request.query_params.get("format") == "json":
+            return JSONResponse(
+                [
+                    {
+                        "bill_id": row["bill"].id,
+                        "supplier_id": row["bill"].supplier_id,
+                        "po_id": row["bill"].po_id,
+                        "supplier_invoice_no": row["bill"].supplier_invoice_no,
+                        "invoice_date": row["bill"].invoice_date.isoformat()
+                        if row["bill"].invoice_date
+                        else None,
+                        "status": row["bill"].status.value,
+                        "claimed_total_tk": row["claimed_tk"],
+                        "recommendation": None
+                        if row["recommendation"] == "-"
+                        else row["recommendation"],
+                        "net_payable_tk": row["net_tk"],
+                    }
+                    for row in rows
+                ]
+            )
+
         return templates.TemplateResponse(
             request, "review_queue.html", {"rows": rows}
         )
@@ -323,6 +345,63 @@ def create_app(
             .all()
         ]
         breakdown = result.breakdown if result is not None else {}
+        rates_applied = _rates_applied(breakdown)
+
+        # The supplier portal renders this same information as React tabs, so the whole
+        # payload is available as JSON. Deliberately the SAME assembled data the HTML page
+        # uses rather than a parallel implementation: two views of one bill that could
+        # disagree would be worse than one view.
+        if request.query_params.get("format") == "json":
+            return JSONResponse(
+                {
+                    "bill": {
+                        "id": bill.id,
+                        "status": bill.status.value,
+                        "supplier_id": bill.supplier_id,
+                        "supplier_name": supplier.name if supplier else None,
+                        "po_id": bill.po_id,
+                        "supplier_invoice_no": bill.supplier_invoice_no,
+                        "invoice_date": bill.invoice_date.isoformat()
+                        if bill.invoice_date
+                        else None,
+                        "mushak_6_3_no": bill.mushak_6_3_no,
+                        "claimed_total_tk": _tk(bill.claimed_total_paisa),
+                    },
+                    "run": None
+                    if run is None
+                    else {
+                        "run_id": run.run_id,
+                        "status": run.status.value,
+                        "started_at": run.started_at.isoformat(),
+                        "finished_at": run.finished_at.isoformat()
+                        if run.finished_at
+                        else None,
+                        "rules_version": run.rules_version,
+                        "llm_provider": run.llm_provider,
+                        "llm_model": run.llm_model,
+                    },
+                    "recommendation": result.recommendation.value
+                    if result is not None and result.recommendation is not None
+                    else None,
+                    "net_payable_tk": _tk(result.net_payable_paisa) if result else None,
+                    "gross_claimed_tk": _tk(result.gross_claimed_paisa) if result else None,
+                    "approved_base_tk": _tk(result.approved_base_paisa) if result else None,
+                    "breakdown": breakdown,
+                    "exceptions": result.exceptions if result is not None else [],
+                    "rates_applied": rates_applied,
+                    "report_md": result.report_md if result is not None else None,
+                    "approvals": [
+                        {**record, "decided_at": record["decided_at"].isoformat()}
+                        for record in approvals
+                    ],
+                    # Whether a decision can still be made, and where. Approval stays on
+                    # this service: it writes a payment instruction, and the portal has no
+                    # authentication to put in front of that.
+                    "decidable": bill.status == DECIDABLE_STATUS and result is not None,
+                    "review_url": str(request.url.remove_query_params("format")),
+                }
+            )
+
         return templates.TemplateResponse(
             request,
             "review_detail.html",
@@ -335,7 +414,7 @@ def create_app(
                 "exceptions": result.exceptions if result is not None else [],
                 "claimed_tk": _tk(bill.claimed_total_paisa),
                 "net_tk": _tk(result.net_payable_paisa) if result else None,
-                "rates_applied": _rates_applied(breakdown),
+                "rates_applied": rates_applied,
                 "decidable": bill.status == DECIDABLE_STATUS and result is not None,
                 "payable": result is not None and result.net_payable_paisa is not None,
                 "approvals": approvals,

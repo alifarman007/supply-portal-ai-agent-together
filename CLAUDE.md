@@ -73,9 +73,22 @@ already made, and the build order.
   reports what will be deducted from a supplier's payment, and falling back to the flat
   3%/7.5% in `format/tax.ts` would produce a confident wrong number that nobody could
   distinguish from a real one.
-- **S3 — Bill-checking tabs: NEXT.** Read-only internal view of a checked bill. See
-  `PLAN.md` §3.
-- **S4 — Release:** not started.
+- **S3 — Bill-checking tabs: DONE.** `/app/billcheck` (queue) and `/app/billcheck/{billId}`
+  with three tabs — Summary (lines billed vs approved, adjustments, the checker's
+  narrative, run metadata), Tax rates (every applied rate with rule id, base, amount,
+  full citation and a NOT CONFIRMED badge), Findings (severity-badged exceptions).
+  Fed by two new agent endpoints: `GET /review?format=json` and
+  `GET /review/{id}?format=json`, which reuse the SAME assembled data the Jinja pages
+  render rather than a parallel implementation — two views of one bill that could
+  disagree would be worse than one view.
+  **Read-only.** Approving writes a payment instruction, an outbox record and a treasury
+  webhook; the agent's own screen is already race-proof and CSRF-guarded, and the portal
+  has no authentication, so the page links out to approve instead of duplicating it.
+  **Gated server-side by `BILLCHECK_INTERNAL`** — verified by turning it off: both API
+  routes 404. `NEXT_PUBLIC_BILLCHECK_INTERNAL` only shows the sidebar link and is
+  documented as cosmetic.
+- **S4 — Release: NEXT.** See `PLAN.md` §3.
+
 
 ### What each half already does
 

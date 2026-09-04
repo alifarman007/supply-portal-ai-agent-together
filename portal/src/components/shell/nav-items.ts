@@ -4,6 +4,7 @@ import {
   FileSignature,
   ShoppingCart,
   ReceiptText,
+  ClipboardCheck,
   Banknote,
   FolderOpen,
   FileBarChart2,
@@ -57,6 +58,27 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/app/payments", icon: Banknote, label: "nav_payments", permission: "view_payments" },
     ],
   },
+  // The internal accounts section.
+  //
+  // This flag controls the SIDEBAR LINK ONLY. It is not access control and must not be
+  // mistaken for it: the portal has no real authentication, and the four roles above are
+  // all supplier roles that the viewer picks from the avatar menu. The actual gate is
+  // server-side - the /api/billcheck/* handlers return 404 unless BILLCHECK_INTERNAL is
+  // set, which the browser cannot influence. Hiding a link only removes the signpost.
+  ...(process.env.NEXT_PUBLIC_BILLCHECK_INTERNAL === "true"
+    ? [
+        {
+          label: "grp_internal" as const,
+          items: [
+            {
+              href: "/app/billcheck",
+              icon: ClipboardCheck,
+              label: "nav_bill_checking" as const,
+            },
+          ],
+        },
+      ]
+    : []),
   {
     label: "grp_compliance",
     items: [
