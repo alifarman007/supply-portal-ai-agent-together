@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>billcheck — {% block title %}review{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { font-family: system-ui, "Segoe UI", sans-serif; color: #1c2733; }
+    body { margin: 0; background: #f4f6f8; }
+    header { background: #12314f; color: #fff; padding: 0.7rem 1.2rem; }
+    header a { color: #fff; text-decoration: none; font-weight: 600; }
+    main { max-width: 68rem; margin: 1.2rem auto; padding: 0 1rem; }
+    table { border-collapse: collapse; width: 100%; background: #fff; margin: 0.6rem 0 1.2rem; }
+    th, td { border: 1px solid #d7dee6; padding: 0.42rem 0.6rem; text-align: left; font-size: 0.92rem; }
+    th { background: #e8eef4; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .badge { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 0.8rem; font-size: 0.8rem; font-weight: 700; }
+    .badge.CLEAR { background: #d8f2dc; color: #16601f; }
+    .badge.CLEAR_WITH_ADJUSTMENTS { background: #fdf3d0; color: #7a5c00; }
+    .badge.REVIEW_REQUIRED { background: #fde4c8; color: #8a4a00; }
+    .badge.BLOCKED { background: #f9d4d4; color: #8f1414; }
+    .badge.BLOCKER { background: #f9d4d4; color: #8f1414; }
+    .badge.REVIEW { background: #fdf3d0; color: #7a5c00; }
+    .badge.INFO { background: #dde8f6; color: #1f4e8c; }
+    pre.report { background: #fff; border: 1px solid #d7dee6; padding: 0.9rem; white-space: pre-wrap; font-size: 0.88rem; }
+    form.decision { background: #fff; border: 1px solid #d7dee6; padding: 1rem; }
+    form.decision label { display: block; margin: 0.45rem 0 0.15rem; font-weight: 600; font-size: 0.9rem; }
+    textarea, input[type=text] { width: 100%; box-sizing: border-box; padding: 0.35rem; }
+    button { background: #12314f; color: #fff; border: 0; padding: 0.5rem 1.1rem; border-radius: 0.3rem; cursor: pointer; margin-top: 0.7rem; }
+    .meta { color: #5a6b7c; font-size: 0.82rem; }
+    tr.srcrow td { background: #fbfcfd; border-top: 0; padding-top: 0.1rem; padding-bottom: 0.45rem; }
+    .ratewarn { background: #fdf3d0; border-left: 4px solid #d9a406; padding: 0.7rem 0.9rem; font-size: 0.9rem; }
+    code { background: #eef2f6; padding: 0.05rem 0.3rem; border-radius: 0.2rem; font-size: 0.86rem; }
+    h1 { font-size: 1.35rem; } h2 { font-size: 1.05rem; margin-top: 1.4rem; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/review">billcheck — CFO review</a>
+  <a href="/upload" style="margin-left:1.4rem;font-weight:400">+ upload a bill</a>
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

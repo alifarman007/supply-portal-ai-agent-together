@@ -1,0 +1,155 @@
+{
+  "_comment": "Golden scenarios S1-S12 (PLAN.md §10). Money is Tk as strings — the seed loader converts to integer paisa; floats are rejected. Every bill is seeded ASSIGNED (ready for checking).",
+  "suppliers": [
+    {"id": "SUP-S1", "name": "Rahim Traders Ltd.", "bin_no": "001234567-0101", "etin": "112233445566", "has_return_submission_proof": true, "bank_account_name": "Rahim Traders Ltd.", "bank_account_no": "0110012345001", "bank_name": "Standard Chartered Bank", "bank_branch": "Gulshan", "status": "active"},
+    {"id": "SUP-S2", "name": "Karim Supplies Ltd.", "bin_no": "001234568-0102", "etin": "112233445577", "has_return_submission_proof": true, "bank_account_name": "Karim Supplies Ltd.", "bank_account_no": "0110012345002", "bank_name": "BRAC Bank", "bank_branch": "Motijheel", "status": "active"},
+    {"id": "SUP-S3", "name": "Delta Hardware Co.", "bin_no": "001234569-0103", "etin": "112233445588", "has_return_submission_proof": true, "bank_account_name": "Delta Hardware Co.", "bank_account_no": "0110012345003", "bank_name": "Dutch-Bangla Bank", "bank_branch": "Uttara", "status": "active"},
+    {"id": "SUP-S4", "name": "Meghna Packaging Ltd.", "bin_no": "001234570-0104", "etin": "112233445599", "has_return_submission_proof": true, "bank_account_name": "Meghna Packaging Ltd.", "bank_account_no": "0110012345004", "bank_name": "Eastern Bank", "bank_branch": "Tejgaon", "status": "active"},
+    {"id": "SUP-S5", "name": "Padma Stationers", "bin_no": "001234571-0105", "etin": "112233445600", "has_return_submission_proof": true, "bank_account_name": "Padma Stationers", "bank_account_no": "0110012345005", "bank_name": "City Bank", "bank_branch": "Dhanmondi", "status": "active"},
+    {"id": "SUP-S6", "name": "Jamuna Textiles Ltd.", "bin_no": "001234572-0106", "etin": "112233445611", "has_return_submission_proof": true, "bank_account_name": "Jamuna Textiles Ltd.", "bank_account_no": "0110012345006", "bank_name": "Prime Bank", "bank_branch": "Narayanganj", "status": "active"},
+    {"id": "SUP-S7", "name": "Surma Enterprises", "bin_no": "001234573-0107", "etin": "112233445622", "has_return_submission_proof": false, "bank_account_name": "Surma Enterprises", "bank_account_no": "0110012345007", "bank_name": "Islami Bank", "bank_branch": "Sylhet", "status": "active", "notes": "No income-tax return submission proof on file (S7: TDS uplift applies)."},
+    {"id": "SUP-S8", "name": "Karnaphuli Foods Ltd.", "bin_no": "001234574-0108", "etin": "112233445633", "has_return_submission_proof": true, "bank_account_name": "Karnaphuli Foods Ltd.", "bank_account_no": "0110012345008", "bank_name": "Mutual Trust Bank", "bank_branch": "Agrabad", "status": "active"},
+    {"id": "SUP-S9", "name": "Buriganga Metals", "bin_no": "001234575-0109", "etin": "112233445644", "has_return_submission_proof": true, "bank_account_name": "Buriganga Metals", "bank_account_no": "0110012345009", "bank_name": "Southeast Bank", "bank_branch": "Keraniganj", "status": "hold", "notes": "On hold by Accounts pending dispute resolution (S9)."},
+    {"id": "SUP-S10", "name": "Titas Chemicals Ltd.", "bin_no": "001234576-0110", "etin": "112233445655", "has_return_submission_proof": true, "bank_account_name": "Titas Chemicals Ltd.", "bank_account_no": "0110012345010", "bank_name": "Bank Asia", "bank_branch": "Savar", "status": "active"},
+    {"id": "SUP-S11", "name": "Sitalakhya Cement Agency", "bin_no": "001234577-0111", "etin": "112233445666", "has_return_submission_proof": true, "bank_account_name": "Sitalakhya Cement Agency", "bank_account_no": "0110012345011", "bank_name": "NCC Bank", "bank_branch": "Demra", "status": "active"},
+    {"id": "SUP-S12", "name": "Halda Printing Press", "bin_no": "001234578-0112", "etin": "112233445677", "has_return_submission_proof": true, "bank_account_name": "Halda Printing Press", "bank_account_no": "0110012345012", "bank_name": "Pubali Bank", "bank_branch": "Chattogram", "status": "active"}
+  ],
+  "purchase_orders": [
+    {"id": "PO-S1", "supplier_id": "SUP-S1", "order_date": "2026-08-20", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"},
+      {"line_no": 2, "product_code": "PRO-Y", "description": "Pro Y industrial unit", "uom": "pcs", "qty": "5", "unit_price_tk": "100.00", "vat_category_id": "vat.reduced_10", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S2", "supplier_id": "SUP-S2", "order_date": "2026-08-20", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"},
+      {"line_no": 2, "product_code": "PRO-Y", "description": "Pro Y industrial unit", "uom": "pcs", "qty": "5", "unit_price_tk": "100.00", "vat_category_id": "vat.reduced_10", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S3", "supplier_id": "SUP-S3", "order_date": "2026-08-21", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "12", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S4", "supplier_id": "SUP-S4", "order_date": "2026-08-21", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S5", "supplier_id": "SUP-S5", "order_date": "2026-08-22", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S6", "supplier_id": "SUP-S6", "order_date": "2026-08-22", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"},
+      {"line_no": 2, "product_code": "PRO-Y", "description": "Pro Y industrial unit", "uom": "pcs", "qty": "1", "unit_price_tk": "100.00", "vat_category_id": "vat.reduced_10", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S7", "supplier_id": "SUP-S7", "order_date": "2026-08-23", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S8", "supplier_id": "SUP-S8", "order_date": "2026-08-23", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-A", "description": "Grade A processing unit", "uom": "pcs", "qty": "4", "unit_price_tk": "250.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"},
+      {"line_no": 2, "product_code": "PRO-B", "description": "Grade B packing carton", "uom": "pcs", "qty": "10", "unit_price_tk": "50.00", "vat_category_id": "vat.reduced_10", "tds_category_id": "tds.supply_of_goods.s89"},
+      {"line_no": 3, "product_code": "PRO-C", "description": "Grade C sealing kit", "uom": "pcs", "qty": "2", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S9", "supplier_id": "SUP-S9", "order_date": "2026-08-24", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S10", "supplier_id": "SUP-S10", "order_date": "2026-08-24", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "ADH-20L", "description": "Industrial adhesive 20 litre drum", "uom": "drum", "qty": "5", "unit_price_tk": "400.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"},
+      {"line_no": 2, "product_code": "SOL-5L", "description": "Solvent cleaner 5 litre can", "uom": "can", "qty": "10", "unit_price_tk": "80.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S11", "supplier_id": "SUP-S11", "order_date": "2026-08-25", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]},
+    {"id": "PO-S12", "supplier_id": "SUP-S12", "order_date": "2026-08-25", "status": "open", "lines": [
+      {"line_no": 1, "product_code": "PRO-X", "description": "Pro X industrial unit", "uom": "pcs", "qty": "10", "unit_price_tk": "100.00", "vat_category_id": "vat.standard_15", "tds_category_id": "tds.supply_of_goods.s89"}
+    ]}
+  ],
+  "grns": [
+    {"id": "GRN-S1", "po_id": "PO-S1", "grn_date": "2026-08-28", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"},
+      {"po_line_no": 2, "qty_received": "5", "qty_accepted": "5", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S2", "po_id": "PO-S2", "grn_date": "2026-08-28", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"},
+      {"po_line_no": 2, "qty_received": "5", "qty_accepted": "5", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S3", "po_id": "PO-S3", "grn_date": "2026-08-29", "lines": [
+      {"po_line_no": 1, "qty_received": "12", "qty_accepted": "10", "qty_rejected": "2"}
+    ]},
+    {"id": "GRN-S5", "po_id": "PO-S5", "grn_date": "2026-08-29", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S6", "po_id": "PO-S6", "grn_date": "2026-08-30", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"},
+      {"po_line_no": 2, "qty_received": "1", "qty_accepted": "1", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S7", "po_id": "PO-S7", "grn_date": "2026-08-30", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S8", "po_id": "PO-S8", "grn_date": "2026-08-31", "lines": [
+      {"po_line_no": 1, "qty_received": "4", "qty_accepted": "4", "qty_rejected": "0"},
+      {"po_line_no": 2, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"},
+      {"po_line_no": 3, "qty_received": "2", "qty_accepted": "2", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S9", "po_id": "PO-S9", "grn_date": "2026-08-31", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S10", "po_id": "PO-S10", "grn_date": "2026-09-01", "lines": [
+      {"po_line_no": 1, "qty_received": "5", "qty_accepted": "5", "qty_rejected": "0"},
+      {"po_line_no": 2, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S11", "po_id": "PO-S11", "grn_date": "2026-09-01", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"}
+    ]},
+    {"id": "GRN-S12", "po_id": "PO-S12", "grn_date": "2026-09-02", "lines": [
+      {"po_line_no": 1, "qty_received": "10", "qty_accepted": "10", "qty_rejected": "0"}
+    ]}
+  ],
+  "bills": [
+    {"id": "BILL-S1", "scenario_tag": "S1", "supplier_id": "SUP-S1", "po_id": "PO-S1", "supplier_invoice_no": "INV-S1-001", "invoice_date": "2026-09-01", "mushak_6_3_no": "M63-S1-001", "claimed_total_tk": "1500.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"},
+      {"line_no": 2, "description": "Pro Y industrial unit", "product_code": "PRO-Y", "qty": "5", "unit_price_tk": "100.00", "amount_tk": "500.00"}
+    ]},
+    {"id": "BILL-S2", "scenario_tag": "S2", "supplier_id": "SUP-S2", "po_id": "PO-S2", "supplier_invoice_no": "INV-S2-001", "invoice_date": "2026-09-01", "mushak_6_3_no": "M63-S2-001", "claimed_total_tk": "1600.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"},
+      {"line_no": 2, "description": "Pro Y industrial unit", "product_code": "PRO-Y", "qty": "5", "unit_price_tk": "120.00", "amount_tk": "600.00"}
+    ]},
+    {"id": "BILL-S3", "scenario_tag": "S3", "supplier_id": "SUP-S3", "po_id": "PO-S3", "supplier_invoice_no": "INV-S3-001", "invoice_date": "2026-09-02", "mushak_6_3_no": "M63-S3-001", "claimed_total_tk": "1200.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "12", "unit_price_tk": "100.00", "amount_tk": "1200.00"}
+    ]},
+    {"id": "BILL-S4", "scenario_tag": "S4", "supplier_id": "SUP-S4", "po_id": "PO-S4", "supplier_invoice_no": "INV-S4-001", "invoice_date": "2026-09-02", "mushak_6_3_no": "M63-S4-001", "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]},
+    {"id": "BILL-S5A", "scenario_tag": "S5", "supplier_id": "SUP-S5", "po_id": "PO-S5", "supplier_invoice_no": "INV-DUP-001", "invoice_date": "2026-09-03", "mushak_6_3_no": "M63-S5-001", "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]},
+    {"id": "BILL-S5B", "scenario_tag": "S5", "supplier_id": "SUP-S5", "po_id": "PO-S5", "supplier_invoice_no": "INV-DUP-001", "invoice_date": "2026-09-04", "mushak_6_3_no": "M63-S5-001", "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]},
+    {"id": "BILL-S6", "scenario_tag": "S6", "supplier_id": "SUP-S6", "po_id": "PO-S6", "supplier_invoice_no": "INV-S6-001", "invoice_date": "2026-09-05", "mushak_6_3_no": "M63-S6-001", "claimed_total_tk": "1100.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"},
+      {"line_no": 2, "description": "Pro Y industrial unit", "product_code": "PRO-Y", "qty": "1", "unit_price_tk": "100.00", "amount_tk": "100.00"}
+    ]},
+    {"id": "BILL-S7", "scenario_tag": "S7", "supplier_id": "SUP-S7", "po_id": "PO-S7", "supplier_invoice_no": "INV-S7-001", "invoice_date": "2026-09-05", "mushak_6_3_no": "M63-S7-001", "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]},
+    {"id": "BILL-S8", "scenario_tag": "S8", "supplier_id": "SUP-S8", "po_id": "PO-S8", "supplier_invoice_no": "INV-S8-001", "invoice_date": "2026-09-06", "mushak_6_3_no": "M63-S8-001", "claimed_total_tk": "1700.00", "lines": [
+      {"line_no": 1, "description": "Grade A processing unit", "product_code": "PRO-A", "qty": "4", "unit_price_tk": "250.00", "amount_tk": "1000.00"},
+      {"line_no": 2, "description": "Grade B packing carton", "product_code": "PRO-B", "qty": "10", "unit_price_tk": "50.00", "amount_tk": "500.00"},
+      {"line_no": 3, "description": "Grade C sealing kit", "product_code": "PRO-C", "qty": "2", "unit_price_tk": "100.00", "amount_tk": "200.00"}
+    ]},
+    {"id": "BILL-S9", "scenario_tag": "S9", "supplier_id": "SUP-S9", "po_id": "PO-S9", "supplier_invoice_no": "INV-S9-001", "invoice_date": "2026-09-06", "mushak_6_3_no": "M63-S9-001", "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]},
+    {"id": "BILL-S10", "scenario_tag": "S10", "supplier_id": "SUP-S10", "po_id": "PO-S10", "supplier_invoice_no": "INV-S10-001", "invoice_date": "2026-09-07", "mushak_6_3_no": "M63-S10-001", "claimed_total_tk": "2800.00", "lines": [
+      {"line_no": 1, "description": "Industrial adhesive, twenty litre drum", "product_code": null, "qty": "5", "unit_price_tk": "400.00", "amount_tk": "2000.00"},
+      {"line_no": 2, "description": "Solvent cleaner, five litre can", "product_code": null, "qty": "10", "unit_price_tk": "80.00", "amount_tk": "800.00"}
+    ]},
+    {"id": "BILL-S11A", "scenario_tag": "S11", "supplier_id": "SUP-S11", "po_id": "PO-S11", "supplier_invoice_no": "INV-S11-001", "invoice_date": "2026-09-01", "mushak_6_3_no": "M63-S11-001", "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]},
+    {"id": "BILL-S11B", "scenario_tag": "S11", "supplier_id": "SUP-S11", "po_id": "PO-S11", "supplier_invoice_no": "INV-S11-002", "invoice_date": "2026-09-04", "mushak_6_3_no": "M63-S11-002", "claimed_total_tk": "995.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "99.50", "amount_tk": "995.00"}
+    ]},
+    {"id": "BILL-S12", "scenario_tag": "S12", "supplier_id": "SUP-S12", "po_id": "PO-S12", "supplier_invoice_no": "INV-S12-001", "invoice_date": "2026-09-08", "mushak_6_3_no": null, "claimed_total_tk": "1000.00", "lines": [
+      {"line_no": 1, "description": "Pro X industrial unit", "product_code": "PRO-X", "qty": "10", "unit_price_tk": "100.00", "amount_tk": "1000.00"}
+    ]}
+  ],
+  "ledger_entries": [
+    {"supplier_id": "SUP-S6", "po_id": "PO-S6", "entry_type": "advance", "amount_tk": "500.00", "entry_date": "2026-08-15", "ref": "ADV-S6-001"}
+  ]
+}

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{ bill.id }}{% endblock %}
+{% block content %}
+<h1>{{ bill.id }} — {{ supplier.name if supplier else bill.supplier_id }}</h1>
+<p class="meta">
+  Invoice {{ bill.supplier_invoice_no }} · dated {{ bill.invoice_date }} ·
+  PO {{ bill.po_id }} · Mushak 6.3: {{ bill.mushak_6_3_no or "MISSING" }} ·
+  status <strong>{{ bill.status.value }}</strong>
+</p>
+
+{% if result %}
+  <p>
+    <span class="badge {{ result.recommendation.value }}">{{ result.recommendation.value }}</span>
+    &nbsp;Claimed <strong>{{ claimed_tk }}</strong> Tk
+    {% if net_tk is not none %} · Net payable <strong>{{ net_tk }}</strong> Tk{% endif %}
+  </p>
+
+  {% if breakdown.get("lines") %}
+  <h2>Lines (3-way matched)</h2>
+  <table>
+    <tr>
+      <th>Bill line</th><th>PO line</th><th>Product</th>
+      <th class="num">Billed qty</th><th class="num">Approved qty</th>
+      <th class="num">Billed unit</th><th class="num">Approved unit</th>
+      <th class="num">Billed Tk</th><th class="num">Approved Tk</th>
+    </tr>
+    {% for line in breakdown["lines"] %}
+    <tr>
+      <td>{{ line.bill_line_no }}</td><td>{{ line.po_line_no }}</td><td>{{ line.product_code }}</td>
+      <td class="num">{{ line.billed_qty }}</td><td class="num">{{ line.approved_qty }}</td>
+      <td class="num">{{ line.billed_unit_price }}</td><td class="num">{{ line.approved_unit_price }}</td>
+      <td class="num">{{ line.billed_amount }}</td><td class="num">{{ line.approved_amount }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if breakdown.get("netting_order") %}
+  <h2>Computation → net payable</h2>
+  <table>
+    <tr><th>Item</th><th class="num">Amount Tk</th><th>Rule / Ref</th></tr>
+    {% for line in breakdown["netting_order"] %}
+    <tr>
+      <td>{{ line.label }}</td>
+      <td class="num">{{ line.amount }}</td>
+      <td class="meta">{{ line.rule_id or line.ref or "" }}</td>
+    </tr>
+    {% endfor %}
+    <tr><th>NET PAYABLE</th><th class="num">{{ breakdown["net_payable"] }}</th><th></th></tr>
+  </table>
+  {% endif %}
+
+  {% if exceptions %}
+  <h2>Exceptions</h2>
+  <table>
+    <tr><th>Severity</th><th>Code</th><th>Message</th><th>Rule / Ref</th></tr>
+    {% for exc in exceptions %}
+    <tr>
+      <td><span class="badge {{ exc.severity }}">{{ exc.severity }}</span></td>
+      <td>{{ exc.code }}</td>
+      <td>{{ exc.message }}</td>
+      <td class="meta">{{ exc.rule_id or exc.ref or "" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if rates_applied %}
+  <h2>Tax rates applied — for accountant verification</h2>
+  {% set unverified_count = rates_applied | selectattr("unverified") | list | length %}
+  {% if unverified_count %}
+  <p class="ratewarn">
+    <strong>{{ unverified_count }} of {{ rates_applied | length }} rates on this bill
+    have not been confirmed by an accountant.</strong>
+    Each was read from the official NBR gazette PDF and independently re-read, but
+    nobody has signed it off. Check the rate against the cited page below; when all
+    are confirmed, remove the DRAFT marker from the matching entry in
+    <code>app/rules/fy2026_27/*.yaml</code>.
+  </p>
+  {% endif %}
+  <table>
+    <tr>
+      <th>Tax</th><th>Rule</th><th class="num">Rate</th><th>Applies to</th>
+      <th class="num">Base Tk</th><th class="num">Amount Tk</th><th>Confirmed?</th>
+    </tr>
+    {% for r in rates_applied %}
+    <tr>
+      <td><strong>{{ r.tax }}</strong></td>
+      <td><code>{{ r.rule_id }}</code>{% if r.law %}<div class="meta">{{ r.law }}</div>{% endif %}</td>
+      <td class="num">{{ r.rate }}</td>
+      <td>{{ r.applies_to }}</td>
+      <td class="num">{{ r.base if r.base is not none else "—" }}</td>
+      <td class="num">{{ r.amount if r.amount is not none else "—" }}</td>
+      <td>
+        {% if r.unverified %}<span class="badge REVIEW">NOT CONFIRMED</span>
+        {% else %}<span class="badge CLEAR">confirmed</span>{% endif %}
+      </td>
+    </tr>
+    <tr class="srcrow">
+      <td colspan="7" class="meta"><em>Source:</em> {{ r.source_doc or "no citation recorded" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <h2>Report</h2>
+  <pre class="report">{{ result.report_md }}</pre>
+
+  <p class="meta">
+    Run {{ run.run_id }} · started {{ run.started_at }} ·
+    rules {{ run.rules_version[:12] if run.rules_version else "?" }} ·
+    git {{ run.git_sha or "n/a" }} ·
+    LLM {{ run.llm_provider or "off" }}{% if run.llm_model %} / {{ run.llm_model }}{% endif %}
+  </p>
+{% else %}
+  <p>This bill has not been checked yet.</p>
+{% endif %}
+
+{% if bill.status.value in ("ASSIGNED", "RETURNED", "CHECKED") or not result %}
+  <form method="post" action="/bills/{{ bill.id }}/check">
+    <button type="submit">Run checking now</button>
+  </form>
+{% endif %}
+
+{% if decidable %}
+  <h2>Decision</h2>
+  <form class="decision" method="post" action="/review/{{ bill.id }}/decision">
+    <input type="hidden" name="run_id" value="{{ run.run_id }}">
+    {% if payable %}
+    <label><input type="radio" name="decision" value="approved" checked> Approve (pay {{ net_tk }} Tk)</label>
+    <label><input type="radio" name="decision" value="approved_with_changes"> Approve with changes</label>
+    <label>Adjusted net payable (Tk) — only for approve-with-changes</label>
+    <input type="text" name="adjusted_net_payable_tk" placeholder="e.g. {{ net_tk }}">
+    {% else %}
+    <p><strong>Checking is BLOCKED — nothing computed to pay. Return or reject.</strong></p>
+    {% endif %}
+    <label><input type="radio" name="decision" value="returned" {% if not payable %}checked{% endif %}> Return to submitter</label>
+    <label><input type="radio" name="decision" value="rejected"> Reject</label>
+    <label>Comment (required for return / approve-with-changes)</label>
+    <textarea name="comment" rows="3"></textarea>
+    <label>Decided by</label>
+    <input type="text" name="decided_by" value="CFO">
+    <button type="submit">Submit decision</button>
+  </form>
+{% endif %}
+
+{% if approvals %}
+  <h2>Decision history</h2>
+  <table>
+    <tr><th>When</th><th>Decision</th><th>By</th><th class="num">Final Tk</th><th>Comment</th></tr>
+    {% for a in approvals %}
+    <tr>
+      <td>{{ a.decided_at }}</td><td>{{ a.decision }}</td><td>{{ a.decided_by }}</td>
+      <td class="num">{{ a.final_tk if a.final_tk is not none else "—" }}</td>
+      <td>{{ a.comment or "" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endif %}
+{% endblock %}

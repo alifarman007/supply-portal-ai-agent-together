@@ -1,0 +1,29 @@
+# Secrets — never commit real keys
+.env
+
+# Local data / artifacts
+billcheck.db
+*.db
+outbox/
+audit_log/
+
+# Source tax documents: often large and marked for internal use. The YAML
+# citations that reference them ARE committed; the PDFs themselves are not.
+nbr_documents/*.pdf
+nbr_documents/*.PDF
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# OS cruft
+Thumbs.db
+.DS_Store
+
+# Company-internal working papers. Kept local by default: these are real
+# internal tax workings, not something to publish to a code host. Remove this
+# line deliberately if the repo is private and you want them versioned.
+application_example/

@@ -1,0 +1,3016 @@
+{
+  "cases": [
+    {
+      "case_id": "E01",
+      "title": "Clean three-line construction bill, exact PO and full GRN acceptance",
+      "purpose": "Baseline three-way match happy path. Probes that a bill matching the PO on every product_code, price and quantity, with a GRN that accepted the full ordered quantity, produces CLEAR with zero exceptions and correct multi-rate VAT (two standard_15 lines plus one reduced_10 line). Any exception raised here is a false positive; the case also pins the per-line VAT rate lookup so a single blanket 15% would be caught.",
+      "supplier": {
+        "id": "SUP-E01",
+        "name": "Padma Building Materials Ltd.",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E01",
+        "order_date": "2026-07-06",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Portland Composite Cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "20",
+            "unit_price_tk": "520.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "MSR-12MM",
+            "description": "MS Deformed Rod 12 mm, 60 grade",
+            "uom": "kg",
+            "qty": "50",
+            "unit_price_tk": "95.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "PKG-CTN-5",
+            "description": "Corrugated packaging carton, 5-ply",
+            "uom": "pcs",
+            "qty": "25",
+            "unit_price_tk": "40.00",
+            "vat_category_id": "vat.reduced_10",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E01",
+          "grn_date": "2026-07-12",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "20",
+              "qty_accepted": "20",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "25",
+              "qty_accepted": "25",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E01",
+        "supplier_invoice_no": "PBM-2026-0417",
+        "invoice_date": "2026-07-14",
+        "mushak_6_3_no": "MSK-6.3-PBM-1188",
+        "claimed_total_tk": "16150.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland Composite Cement, 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "20",
+            "unit_price_tk": "520.00",
+            "amount_tk": "10400.00"
+          },
+          {
+            "line_no": 2,
+            "description": "MS Deformed Rod 12 mm, 60 grade",
+            "product_code": "MSR-12MM",
+            "qty": "50",
+            "unit_price_tk": "95.00",
+            "amount_tk": "4750.00"
+          },
+          {
+            "line_no": 3,
+            "description": "Corrugated packaging carton, 5-ply",
+            "product_code": "PKG-CTN-5",
+            "qty": "25",
+            "unit_price_tk": "40.00",
+            "amount_tk": "1000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "17715.00",
+        "approved_base_tk": "16150.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "duplicate_exact",
+          "unclassified_item",
+          "po_not_open"
+        ],
+        "arithmetic": "FIXTURE INTEGRITY: L1 20 x 520.00 = 10400.00; L2 50 x 95.00 = 4750.00; L3 25 x 40.00 = 1000.00. Sum = 16150.00 = claimed_total_tk 16150.00. Consistent.\nGATES: supplier status active (no supplier_on_hold / supplier_blacklisted); PO status 'open' (no po_not_open); GRN-E01 exists for the PO (no missing_grn); ledger has no other bill with supplier_invoice_no PBM-2026-0417 (no duplicate_exact / duplicate_fuzzy). No BLOCKER.\nMATCH: every bill line carries a product_code that exists exactly once on the PO -> L1->PO1 (CEM-OPC-50), L2->PO2 (MSR-12MM), L3->PO3 (PKG-CTN-5). No null product_code, so Node A is not invoked; no unmapped_line / mapping_low_confidence / ambiguous_mapping / proposal_mapping_suspect.\nLINE 1: billed 520.00 == PO 520.00 -> approved_unit_price 520.00, neither price_over_po nor price_under_po. allowed_qty = min(PO 20, cumulative GRN accepted 20) = 20; approved_qty = min(billed 20, 20) = 20, not over -> no qty_over_grn. approved_amount = 20 x 520.00 = 10400.00.\nLINE 2: billed 95.00 == PO 95.00. allowed_qty = min(50, 50) = 50; approved_qty = min(50, 50) = 50. approved_amount = 50 x 95.00 = 4750.00.\nLINE 3: billed 40.00 == PO 40.00. allowed_qty = min(25, 25) = 25; approved_qty = min(25, 25) = 25. approved_amount = 25 x 40.00 = 1000.00.\nAPPROVED BASE = 10400.00 + 4750.00 + 1000.00 = 16150.00 (equals the claimed total, nothing cut, so no adjustment exists).\nVAT (per line, per PO category; both ids exist in the FY2026-27 tables so no unclassified_item): L1 vat.standard_15 -> 10400.00 x 0.15 = 1560.00; L2 vat.standard_15 -> 4750.00 x 0.15 = 712.50; L3 vat.reduced_10 -> 1000.00 x 0.10 = 100.00. TOTAL VAT = 2372.50. (A blanket 15% would give 2422.50, so the reduced-rate line is pinned.)\nVDS: mushak_6_3_no = 'MSK-6.3-PBM-1188' is present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 does not fire.\nTDS: single category tds.supply_of_goods.s89; aggregated VAT-EXCLUSIVE base = 16150.00; has_return_submission_proof = true so no x1.5 uplift; flat 5% -> 16150.00 x 0.05 = 807.50.\nNETTING (order per §5): 16150.00 + 2372.50 = 18522.50; - VDS 0.00 = 18522.50; - TDS 807.50 = 17715.00; no advances, retention_pct = 0, no penalties, no prior payments (ledger_entries empty). NET PAYABLE = 17715.00.\nRECOMMENDATION: no BLOCKER, no REVIEW exception, and no price or qty adjustment was applied -> CLEAR. net_payable_tk = '17715.00'.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E02",
+      "title": "Unit price billed above PO on one line only, with an advance to net off",
+      "purpose": "Probes the price-only overbilling path: the billed unit price exceeds the PO price with price_tolerance_tk = 0, so the line must be cut back to the PO price, price_over_po (INFO) raised, and the recommendation must still be CLEAR_WITH_ADJUSTMENTS because the ADJUSTMENT drives it. A second, correctly priced line must be left untouched. A fully absorbable advance is attached to check that netting happens AFTER taxes and does not trip the advance_partially_offset / advance_not_fully_offset INFO flags.",
+      "supplier": {
+        "id": "SUP-E02",
+        "name": "Jamuna Electricals & Hardware",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E02",
+        "order_date": "2026-07-02",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CBL-4C-6",
+            "description": "4-core 6 sq mm copper armoured cable",
+            "uom": "metre",
+            "qty": "100",
+            "unit_price_tk": "85.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "GIP-25MM",
+            "description": "GI pipe 25 mm, Class B, 20 ft length",
+            "uom": "length",
+            "qty": "20",
+            "unit_price_tk": "310.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E02",
+          "grn_date": "2026-07-09",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "100",
+              "qty_accepted": "100",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "20",
+              "qty_accepted": "20",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E02",
+        "supplier_invoice_no": "JEH/26/0912",
+        "invoice_date": "2026-07-11",
+        "mushak_6_3_no": "MSK-6.3-JEH-0451",
+        "claimed_total_tk": "15400.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "4-core 6 sq mm copper armoured cable",
+            "product_code": "CBL-4C-6",
+            "qty": "100",
+            "unit_price_tk": "92.00",
+            "amount_tk": "9200.00"
+          },
+          {
+            "line_no": 2,
+            "description": "GI pipe 25 mm, Class B, 20 ft length",
+            "product_code": "GIP-25MM",
+            "qty": "20",
+            "unit_price_tk": "310.00",
+            "amount_tk": "6200.00"
+          }
+        ]
+      },
+      "ledger_entries": [
+        {
+          "entry_type": "advance",
+          "amount_tk": "5000.00",
+          "entry_date": "2026-07-03",
+          "ref": "ADV-JEH-0031",
+          "scope": "this_po"
+        }
+      ],
+      "expectations": {
+        "recommendation": "CLEAR_WITH_ADJUSTMENTS",
+        "net_payable_tk": "11170.00",
+        "approved_base_tk": "14700.00",
+        "must_raise_codes": [
+          "price_over_po"
+        ],
+        "must_not_raise_codes": [
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "advance_partially_offset",
+          "advance_not_fully_offset",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open"
+        ],
+        "arithmetic": "FIXTURE CONSISTENCY: L1 100 x 92.00 = 9200.00 (matches amount_tk); L2 20 x 310.00 = 6200.00 (matches amount_tk); 9200.00 + 6200.00 = 15400.00 = claimed_total_tk -> no line_amount_mismatch, no invalid_bill.\nMATCH: both bill lines carry product_codes matching PO lines 1 and 2 deterministically -> no Node A, no unmapped_line / mapping_low_confidence / ambiguous_mapping. PO status = open -> no po_not_open. Supplier active -> no supplier_on_hold / supplier_blacklisted. A GRN exists for the PO -> no missing_grn.\nLINE 1 (CBL-4C-6): billed 100 x 92.00 = 9200.00. Billed unit price 92.00 > PO unit price 85.00 with price_tolerance_tk = 0 -> raise price_over_po (INFO) and CUT approved_unit_price to 85.00. allowed_qty = min(PO 100, cumulative GRN qty_accepted 100) = 100; approved_qty = min(billed 100, 100) = 100, so no qty_over_grn. approved_amount = 100 x 85.00 = 8500.00. Amount cut = 9200.00 - 8500.00 = 700.00.\nLINE 2 (GIP-25MM): billed 20 x 310.00 = 6200.00. Billed price EQUALS PO price 310.00 -> neither price_over_po nor price_under_po. allowed_qty = min(PO 20, GRN accepted 20) = 20; approved_qty = min(20, 20) = 20 -> no qty_over_grn. approved_amount = 20 x 310.00 = 6200.00.\nAPPROVED BASE = 8500.00 + 6200.00 = 14700.00 (= claimed 15400.00 - 700.00 price cut).\nVAT (per line, both vat.standard_15 = 15%): L1 8500.00 x 0.15 = 1275.00; L2 6200.00 x 0.15 = 930.00. TOTAL VAT = 2205.00 (cross-check: 14700.00 x 0.15 = 2205.00).\nVDS: mushak_6_3_no = MSK-6.3-JEH-0451 is present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 is NOT raised.\nTDS: one category only, tds.supply_of_goods.s89, aggregated VAT-EXCLUSIVE base = 14700.00. has_return_submission_proof = true -> no x1.5 uplift, flat 5%. TDS = 14700.00 x 0.05 = 735.00. Both vat/tds category ids exist in the FY2026-27 tables -> no unclassified_item.\nNETTING (order per rule 5): running payable = approved_base 14700.00 + VAT 2205.00 - VDS 0.00 - TDS 735.00 = 16170.00. Retention 0 (retention_pct = 0), no penalties, no prior payments. Advance ADV-JEH-0031 = 5000.00, scope this_po, advance_max_offset_pct = 1.00 -> full offset; 5000.00 <= 16170.00 so the never-negative cap does not bind and the advance is exhausted -> NEITHER advance_partially_offset NOR advance_not_fully_offset fires.\nNET PAYABLE = 16170.00 - 5000.00 = 11170.00.\nDUPLICATES: single bill for this supplier/invoice no -> no duplicate_exact / duplicate_fuzzy.\nRECOMMENDATION: no BLOCKER, no REVIEW (price_over_po is INFO and cannot escalate on its own), but a price ADJUSTMENT was applied -> CLEAR_WITH_ADJUSTMENTS (not CLEAR).",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E03",
+      "title": "Billed quantity exceeds GRN-accepted quantity after a partial rejection",
+      "purpose": "Probes the quantity leg of the three-way match. The GRN received the full ordered quantity but REJECTED part of it, so allowed_qty must come from qty_accepted (not qty_received, not PO qty). The bill claims the full ordered quantity, so it must be trimmed to the accepted quantity and qty_over_grn (REVIEW) raised, forcing REVIEW_REQUIRED. Critically, amounts must STILL be computed (only a BLOCKER nulls net_payable). A clean second line guards against over-trimming.",
+      "supplier": {
+        "id": "SUP-E03",
+        "name": "Meghna Safety Products",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E03",
+        "order_date": "2026-07-08",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "SFT-HLMT-Y",
+            "description": "Industrial safety helmet, yellow, with chin strap",
+            "uom": "pcs",
+            "qty": "60",
+            "unit_price_tk": "250.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "SFT-GLOV-CR",
+            "description": "Cut-resistant hand gloves, level 3",
+            "uom": "pair",
+            "qty": "40",
+            "unit_price_tk": "120.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E03",
+          "grn_date": "2026-07-15",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "60",
+              "qty_accepted": "45",
+              "qty_rejected": "15"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "40",
+              "qty_accepted": "40",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E03",
+        "supplier_invoice_no": "MSP-INV-2201",
+        "invoice_date": "2026-07-17",
+        "mushak_6_3_no": "MSK-6.3-MSP-3390",
+        "claimed_total_tk": "19800.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Industrial safety helmet, yellow, with chin strap",
+            "product_code": "SFT-HLMT-Y",
+            "qty": "60",
+            "unit_price_tk": "250.00",
+            "amount_tk": "15000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Cut-resistant hand gloves, level 3",
+            "product_code": "SFT-GLOV-CR",
+            "qty": "40",
+            "unit_price_tk": "120.00",
+            "amount_tk": "4800.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "REVIEW_REQUIRED",
+        "net_payable_tk": "17655.00",
+        "approved_base_tk": "16050.00",
+        "must_raise_codes": [
+          "qty_over_grn"
+        ],
+        "must_not_raise_codes": [
+          "price_over_po",
+          "price_under_po",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open",
+          "duplicate_exact"
+        ],
+        "arithmetic": "FIXTURE INTEGRITY: L1 60 x 250.00 = 15000.00 OK; L2 40 x 120.00 = 4800.00 OK; sum 19800.00 = claimed_total_tk 19800.00 OK.\nMATCH: both bill lines carry product_code and match PO lines 1 and 2 exactly -> no Node A needed, no unmapped_line.\nLINE 1 (SFT-HLMT-Y): billed 60 x 250.00 = 15000.00. Billed price 250.00 == PO price 250.00 -> approved_unit_price = 250.00, neither price_over_po nor price_under_po fires. Cumulative GRN qty_accepted for PO line 1 = 45 (60 received, 15 rejected). allowed_qty = min(PO qty 60, accepted 45) = 45. billed_qty 60 > allowed_qty 45 -> qty_over_grn (REVIEW). approved_qty = min(60, 45) = 45. approved_amount = 45 x 250.00 = 11250.00 (cut of 15 pcs = 3750.00).\nLINE 2 (SFT-GLOV-CR): billed 40 x 120.00 = 4800.00. Price equal -> no price flag. allowed_qty = min(40, 40) = 40; approved_qty = min(40, 40) = 40 -> no qty flag (no over-trimming). approved_amount = 40 x 120.00 = 4800.00.\nAPPROVED BASE = 11250.00 + 4800.00 = 16050.00 (= claimed 19800.00 - 3750.00 quantity cut).\nVAT (both lines vat.standard_15 = 15%): L1 11250.00 x 0.15 = 1687.50; L2 4800.00 x 0.15 = 720.00. TOTAL VAT = 2407.50 (cross-check: 16050.00 x 0.15 = 2407.50).\nVDS: mushak_6_3_no present (MSK-6.3-MSP-3390) -> vds.standard_goods, action no_deduction -> VDS = 0.00; missing_mushak_6_3 does NOT fire.\nTDS: single category tds.supply_of_goods.s89, aggregated VAT-exclusive base = 16050.00; has_return_submission_proof = true -> no x1.5 uplift -> flat 5%. TDS = 16050.00 x 0.05 = 802.50.\nNETTING: ledger_entries empty -> no advances, retention (retention_pct = 0), penalties or prior payments.\nNET PAYABLE = 16050.00 + 2407.50 - 0.00 (VDS) - 802.50 (TDS) = 18457.50 - 802.50 = 17655.00.\nSEVERITY: no BLOCKER (GRN exists, supplier active, PO open, no duplicate, bill arithmetic valid) so amounts ARE computed and net_payable is NOT null. One REVIEW-severity exception (qty_over_grn) is present -> REVIEW_REQUIRED, which outranks the CLEAR_WITH_ADJUSTMENTS that the quantity cut alone would give.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E04",
+      "title": "Same line billed at both the wrong price and the wrong quantity",
+      "purpose": "Probes that the two adjustment legs compose correctly on ONE line rather than one masking the other: the price must be cut to the PO price AND the quantity trimmed to GRN-accepted, with the approved amount computed from BOTH corrected figures (a naive implementation that cuts only the amount, or applies the trimmed quantity to the inflated price, gets a different number). Also probes severity precedence: price_over_po (INFO) plus qty_over_grn (REVIEW) must land on REVIEW_REQUIRED, not CLEAR_WITH_ADJUSTMENTS.",
+      "supplier": {
+        "id": "SUP-E04",
+        "name": "Karnaphuli Chemicals & Stationers",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E04",
+        "order_date": "2026-07-04",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CHM-CAUS-25",
+            "description": "Caustic soda flakes, 25 kg bag",
+            "uom": "bag",
+            "qty": "12",
+            "unit_price_tk": "900.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "STN-A4-80",
+            "description": "A4 offset paper 80 gsm, 500-sheet ream",
+            "uom": "ream",
+            "qty": "20",
+            "unit_price_tk": "480.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E04",
+          "grn_date": "2026-07-13",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "12",
+              "qty_accepted": "8",
+              "qty_rejected": "4"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "20",
+              "qty_accepted": "20",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E04",
+        "supplier_invoice_no": "KCS-2026-0155",
+        "invoice_date": "2026-07-16",
+        "mushak_6_3_no": "MSK-6.3-KCS-7712",
+        "claimed_total_tk": "21000.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Caustic soda flakes, 25 kg bag",
+            "product_code": "CHM-CAUS-25",
+            "qty": "12",
+            "unit_price_tk": "950.00",
+            "amount_tk": "11400.00"
+          },
+          {
+            "line_no": 2,
+            "description": "A4 offset paper 80 gsm, 500-sheet ream",
+            "product_code": "STN-A4-80",
+            "qty": "20",
+            "unit_price_tk": "480.00",
+            "amount_tk": "9600.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "REVIEW_REQUIRED",
+        "net_payable_tk": "18480.00",
+        "approved_base_tk": "16800.00",
+        "must_raise_codes": [
+          "price_over_po",
+          "qty_over_grn"
+        ],
+        "must_not_raise_codes": [
+          "price_under_po",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open",
+          "proposal_mapping_suspect"
+        ],
+        "arithmetic": "FIXTURE SELF-CONSISTENCY: L1 12 x 950.00 = 11400.00 = amount_tk; L2 20 x 480.00 = 9600.00 = amount_tk; 11400.00 + 9600.00 = 21000.00 = claimed_total_tk. Consistent, so no line_amount_mismatch and no invalid_bill.\nMATCH: bill L1 product_code CHM-CAUS-25 -> PO line 1; bill L2 product_code STN-A4-80 -> PO line 2. Both matched deterministically by code, so no Node A, no unmapped_line, no mapping_low_confidence, no proposal_mapping_suspect.\nLINE 1 (CHM-CAUS-25) - both legs wrong: billed_amount = 12 x 950.00 = 11400.00.\n  Price leg: billed 950.00 > PO 900.00 with price_tolerance_tk = 0 -> raise price_over_po (INFO); approved_unit_price = 900.00.\n  Qty leg: cumulative GRN qty_accepted for PO line 1 = 8 (received 12, rejected 4). allowed_qty = min(PO qty 12, 8) = 8. billed 12 > 8 -> raise qty_over_grn (REVIEW); approved_qty = min(12, 8) = 8.\n  approved_amount = 8 x 900.00 = 7200.00 (NOT 8 x 950.00 = 7600.00, NOT 12 x 900.00 = 10800.00). Cut on this line = 11400.00 - 7200.00 = 4200.00.\nLINE 2 (STN-A4-80): billed_amount = 20 x 480.00 = 9600.00. Billed price equals PO price exactly -> neither price_over_po nor price_under_po. allowed_qty = min(PO 20, GRN accepted 20) = 20; approved_qty = min(20, 20) = 20 -> no qty_over_grn. approved_amount = 20 x 480.00 = 9600.00.\nAPPROVED BASE = 7200.00 + 9600.00 = 16800.00 (= claimed 21000.00 - 4200.00).\nVAT (per line, both vat.standard_15 = 15%): L1 7200.00 x 0.15 = 1080.00; L2 9600.00 x 0.15 = 1440.00. TOTAL VAT = 2520.00 (= 16800.00 x 0.15).\nVDS: mushak_6_3_no = MSK-6.3-KCS-7712 is present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 does NOT fire.\nTDS: single category tds.supply_of_goods.s89 aggregated over both lines on the VAT-exclusive base 16800.00; flat 5%; has_return_submission_proof = true so no x1.5 uplift. TDS = 16800.00 x 0.05 = 840.00.\nNETTING (order): ledger_entries is empty -> advances 0.00, prior payments 0.00, penalties 0.00; retention_pct = 0 -> retention 0.00.\nNET PAYABLE = 16800.00 + 2520.00 - 0.00 (VDS) - 840.00 (TDS) - 0.00 - 0.00 - 0.00 = 19320.00 - 840.00 = 18480.00.\nRECOMMENDATION: no BLOCKER (GRN exists, PO status open, supplier active, no duplicate). qty_over_grn is REVIEW -> REVIEW_REQUIRED. The INFO price_over_po and the price/qty adjustments would only give CLEAR_WITH_ADJUSTMENTS, which REVIEW outranks.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E05",
+      "title": "Supplier bills BELOW the PO price - pay the lower price, INFO only",
+      "purpose": "The mirror of E02 and the sharpest discriminator in this set. When the billed unit price is LOWER than the PO price we keep the billed price and pay less, raising price_under_po (INFO). Because nothing is cut, there is NO adjustment, so the recommendation must be plain CLEAR, not CLEAR_WITH_ADJUSTMENTS - an implementation that treats any price mismatch as an adjustment, or that 'corrects' the price upward to the PO price (inflating what we owe), fails here. The PO is in partially_billed status to confirm that state is still checkable and does not raise po_not_open.",
+      "supplier": {
+        "id": "SUP-E05",
+        "name": "Buriganga Pipe & Cable House",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E05",
+        "order_date": "2026-07-01",
+        "status": "partially_billed",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "GIP-50MM",
+            "description": "GI pipe 50 mm, Class B, 20 ft length",
+            "uom": "length",
+            "qty": "15",
+            "unit_price_tk": "640.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "CBL-2C-25",
+            "description": "2-core 2.5 sq mm copper flexible cable",
+            "uom": "metre",
+            "qty": "200",
+            "unit_price_tk": "42.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E05",
+          "grn_date": "2026-07-10",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "15",
+              "qty_accepted": "15",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "200",
+              "qty_accepted": "200",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E05",
+        "supplier_invoice_no": "BPC-0788",
+        "invoice_date": "2026-07-12",
+        "mushak_6_3_no": "MSK-6.3-BPC-2043",
+        "claimed_total_tk": "17400.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "GI pipe 50 mm, Class B, 20 ft length",
+            "product_code": "GIP-50MM",
+            "qty": "15",
+            "unit_price_tk": "600.00",
+            "amount_tk": "9000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "2-core 2.5 sq mm copper flexible cable",
+            "product_code": "CBL-2C-25",
+            "qty": "200",
+            "unit_price_tk": "42.00",
+            "amount_tk": "8400.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "19140.00",
+        "approved_base_tk": "17400.00",
+        "must_raise_codes": [
+          "price_under_po"
+        ],
+        "must_not_raise_codes": [
+          "price_over_po",
+          "qty_over_grn",
+          "po_not_open",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "BILL SELF-CONSISTENCY: L1 15 x 600.00 = 9000.00; L2 200 x 42.00 = 8400.00; 9000.00 + 8400.00 = 17400.00 = claimed_total_tk -> no line_amount_mismatch, no invalid_bill.\nGATES: supplier active (no supplier_on_hold / supplier_blacklisted); PO status partially_billed, which is a checkable status (only a status outside open/partially_billed is po_not_open), so no BLOCKER; a GRN exists for the PO (no missing_grn); no other bill in the fixture, so no duplicate_exact / duplicate_fuzzy.\nMATCH: both bill lines carry product_codes that match PO lines 1 and 2 -> no unmapped_line, no Node A needed.\nLINE 1 (GIP-50MM): billed 15 x 600.00 = 9000.00. Billed unit price 600.00 < PO unit price 640.00 -> raise price_under_po (INFO) and KEEP the billed price: approved_unit_price = 600.00 (we pay the lower price; the price is never revised UP to 640.00). allowed_qty = min(PO 15, GRN accepted 15) = 15; approved_qty = min(15, 15) = 15 -> no qty_over_grn. approved_amount = 15 x 600.00 = 9000.00 - exactly the billed amount, so NOTHING is cut.\nLINE 2 (CBL-2C-25): billed 200 x 42.00 = 8400.00, price equal to PO 42.00 (no price flag either way), allowed_qty = min(200, 200) = 200, approved_qty = min(200, 200) = 200. approved_amount = 8400.00.\nAPPROVED BASE = 9000.00 + 8400.00 = 17400.00, which EQUALS the claimed total 17400.00 - the proof that no adjustment occurred.\nVAT: both lines are vat.standard_15 (a category present in the FY table, so no unclassified_item). L1 15% of 9000.00 = 1350.00; L2 15% of 8400.00 = 1260.00. TOTAL VAT = 2610.00 (= 17400.00 x 0.15).\nVDS: mushak_6_3_no = MSK-6.3-BPC-2043 is present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and no missing_mushak_6_3.\nTDS: both lines are tds.supply_of_goods.s89, aggregated per category on the VAT-EXCLUSIVE base 17400.00; has_return_submission_proof = true so NO x1.5 uplift -> flat 5%. TDS = 17400.00 x 0.05 = 870.00. (Note the underbilling lowers the TDS base too: on the PO price the base would have been 18000.00.)\nNETTING: ledger is empty - no advances, no retention (retention_pct = 0), no penalties, no prior payments.\nNET PAYABLE = 17400.00 + 2610.00 - 0.00 (VDS) - 870.00 (TDS) = 20010.00 - 870.00 = 19140.00.\nRECOMMENDATION: no BLOCKER, no REVIEW, and NO price/qty adjustment was applied (approved_base 17400.00 == claimed_total 17400.00) -> CLEAR. price_under_po is INFO and cannot escalate on its own; unlike price_over_po it comes with no cut, so it does not trigger CLEAR_WITH_ADJUSTMENTS.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E06",
+      "title": "Half-up rounding at 2 decimals on line amounts, VAT and TDS",
+      "purpose": "Pure arithmetic probe with no matching defects. Both lines are built so qty x unit_price lands exactly on a half-paisa tie (4166.875 and 277.875), which must round HALF-UP to 4166.88 and 277.88 - binary floats would give 4166.87 / 277.87 or a .00000001 drift, and ROUND_HALF_EVEN would give 4166.88 / 277.88 only by luck on one of them. The TDS then lands on another tie-adjacent value (222.238). Also checks that a correctly rounded claimed line amount does NOT trip line_amount_mismatch, and that summing rounded line amounts agrees with the base-level rate application (per-line VAT 625.03 + 41.68 = 666.71 = 15% of 4444.76).",
+      "supplier": {
+        "id": "SUP-E06",
+        "name": "Titas Metals & Chemicals",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E06",
+        "order_date": "2026-07-07",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "MSR-10MM",
+            "description": "MS deformed rod 10 mm, sold by weight",
+            "uom": "kg",
+            "qty": "125",
+            "unit_price_tk": "33.33",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "CHM-BLCH-1L",
+            "description": "Industrial bleaching liquid, 1 litre",
+            "uom": "litre",
+            "qty": "22.5",
+            "unit_price_tk": "12.35",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E06",
+          "grn_date": "2026-07-14",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "125",
+              "qty_accepted": "125",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "22.5",
+              "qty_accepted": "22.5",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E06",
+        "supplier_invoice_no": "TMC/26/0330",
+        "invoice_date": "2026-07-16",
+        "mushak_6_3_no": "MSK-6.3-TMC-5561",
+        "claimed_total_tk": "694.51",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "MS deformed rod 10 mm, sold by weight",
+            "product_code": "MSR-10MM",
+            "qty": "12.5",
+            "unit_price_tk": "33.33",
+            "amount_tk": "416.63"
+          },
+          {
+            "line_no": 2,
+            "description": "Industrial bleaching liquid, 1 litre",
+            "product_code": "CHM-BLCH-1L",
+            "qty": "22.5",
+            "unit_price_tk": "12.35",
+            "amount_tk": "277.88"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "763.95",
+        "approved_base_tk": "694.51",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "line_amount_mismatch",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "invalid_bill",
+          "unclassified_item"
+        ],
+        "arithmetic": "ROUND_HALF_UP to 0.01 Tk throughout; unit prices are paisa-denominated (max 2 dp), so the rounding tie is created by a FRACTIONAL QUANTITY.\nL1: 12.5 x 33.33 = 416.625 exactly -> half-paisa tie -> 416.63 (not 416.62).\nL2: 22.5 x 12.35 = 277.875 exactly -> half-paisa tie -> 277.88 (not 277.87).\nAPPROVED BASE = 416.63 + 277.88 = 694.51.\nVAT is computed PER LINE then summed: 62.49 + 41.68 = 104.17. (Computing on the base instead gives 104.18 — this case pins the per-line route, so a refactor to base-level VAT would be caught.)\nVDS: mushak present -> 0.00. TDS: 694.51 x 0.05 = 34.7255 -> 34.73.\nNET = 694.51 + 104.17 - 34.73 = 763.95. No adjustments, no REVIEW -> CLEAR.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E07",
+      "title": "Partial delivery across two GRNs, bill claims exactly the cumulative accepted quantity",
+      "purpose": "False-positive guard for partial fulfilment. The PO is only partly delivered, across TWO separate GRNs, and the supplier has correctly billed exactly the cumulative accepted quantity (25+15 = 40 of 100 bags; 10+8 = 18 of 30 rolls). allowed_qty must be the SUM of qty_accepted over all GRNs for that PO line, so no qty_over_grn may fire and the outcome must be CLEAR. An implementation that reads only the first GRN, or that compares the billed quantity against the PO quantity and flags the shortfall, fails here.",
+      "supplier": {
+        "id": "SUP-E07",
+        "name": "Surma Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E07",
+        "order_date": "2026-07-03",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-PCC-50",
+            "description": "PCC cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "100",
+            "unit_price_tk": "505.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "PKG-STRP-BND",
+            "description": "PP strapping band, 15 mm roll",
+            "uom": "roll",
+            "qty": "30",
+            "unit_price_tk": "340.00",
+            "vat_category_id": "vat.reduced_10",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E07-1",
+          "grn_date": "2026-07-09",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "25",
+              "qty_accepted": "25",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "10",
+              "qty_accepted": "10",
+              "qty_rejected": "0"
+            }
+          ]
+        },
+        {
+          "id": "GRN-E07-2",
+          "grn_date": "2026-07-15",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "15",
+              "qty_accepted": "15",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "8",
+              "qty_accepted": "8",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E07",
+        "supplier_invoice_no": "ST-2026-1042",
+        "invoice_date": "2026-07-18",
+        "mushak_6_3_no": "MSK-6.3-ST-9007",
+        "claimed_total_tk": "26320.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "PCC cement, 50 kg bag",
+            "product_code": "CEM-PCC-50",
+            "qty": "40",
+            "unit_price_tk": "505.00",
+            "amount_tk": "20200.00"
+          },
+          {
+            "line_no": 2,
+            "description": "PP strapping band, 15 mm roll",
+            "product_code": "PKG-STRP-BND",
+            "qty": "18",
+            "unit_price_tk": "340.00",
+            "amount_tk": "6120.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "28646.00",
+        "approved_base_tk": "26320.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "qty_over_grn",
+          "missing_grn",
+          "price_over_po",
+          "price_under_po",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open",
+          "invalid_bill"
+        ],
+        "arithmetic": "BILL INTEGRITY: L1 40 x 505.00 = 20200.00; L2 18 x 340.00 = 6120.00; sum = 26320.00 = claimed_total_tk 26320.00 -> no line_amount_mismatch, no invalid_bill.\nGRN AGGREGATION: two GRNs exist for PO-E07, so cumulative qty_accepted per PO line = GRN-E07-1 + GRN-E07-2. PO line 1: 25 + 15 = 40 bags accepted (of 100 ordered). PO line 2: 10 + 8 = 18 rolls accepted (of 30 ordered). A GRN exists, so no missing_grn. PO status = open -> no po_not_open. Supplier active -> no hold/blacklist blocker. No other bill with supplier_invoice_no ST-2026-1042 -> no duplicate.\nMATCH: both bill lines carry product_codes that match PO lines 1 and 2 exactly -> no Node A, no unmapped_line / mapping_low_confidence / ambiguous_mapping.\nLINE 1 (CEM-PCC-50): billed 40 x 505.00 = 20200.00. Billed price 505.00 == PO price 505.00 -> approved_unit_price = 505.00, neither price_over_po nor price_under_po. allowed_qty = min(PO qty 100, cumulative GRN accepted 40) = 40. billed_qty 40 is NOT greater than allowed_qty 40, so qty_over_grn must NOT fire. approved_qty = min(40, 40) = 40. approved_amount = 40 x 505.00 = 20200.00 - the full billed amount, nothing cut. The 60 undelivered bags simply remain open on the PO; an under-delivery is not an exception.\nLINE 2 (PKG-STRP-BND): billed 18 x 340.00 = 6120.00. Price 340.00 equal to PO 340.00 -> no price flag. allowed_qty = min(30, 10 + 8 = 18) = 18; approved_qty = min(18, 18) = 18 -> no qty_over_grn. approved_amount = 18 x 340.00 = 6120.00.\nAPPROVED BASE = 20200.00 + 6120.00 = 26320.00, equal to the claimed total 26320.00 -> no adjustment of any kind.\nVAT (rates differ per line): L1 vat.standard_15 -> 20200.00 x 0.15 = 3030.00; L2 vat.reduced_10 -> 6120.00 x 0.10 = 612.00. TOTAL VAT = 3030.00 + 612.00 = 3642.00. (A blanket 15% would wrongly give 3948.00.) Both category ids exist in the FY2026-27 tables -> no unclassified_item.\nVDS: mushak_6_3_no = MSK-6.3-ST-9007 present -> vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 must NOT fire.\nTDS: both lines are tds.supply_of_goods.s89, so ONE aggregated VAT-exclusive base = 20200.00 + 6120.00 = 26320.00; has_return_submission_proof = true -> 5% flat, no x1.5 uplift. TDS = 26320.00 x 0.05 = 1316.00.\nNETTING: ledger_entries empty -> no advances, no prior payments, no penalties; retention_pct = 0 -> retention 0.00.\nNET PAYABLE = 26320.00 + 3642.00 - 0.00 (VDS) - 1316.00 (TDS) - 0.00 (advances/retention/penalties/prior payments) = 29962.00 - 1316.00 = 28646.00.\nRECOMMENDATION: no BLOCKER, no REVIEW, no price or quantity adjustment -> CLEAR (net_payable_tk non-null, as nothing blocks).",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E08",
+      "title": "Easy mapping — free-text \"Portland cement 50kg bag\" against PO \"Cement, Portland, 50kg bag\"",
+      "purpose": "Floor of the Node A difficulty ladder: the free-text description is a word-order permutation of the PO description with no synonyms or jargon. Establishes a baseline mapping accuracy — any failure here is a broken prompt, not a hard inference. The PO carries two distractor lines (sand, bricks) so the choice is real, and the bricks line is already claimed deterministically by a product_code, leaving cement vs sand as the actual decision. Also checks that allowed_qty uses GRN qty_accepted (20) and not qty_received (22).",
+      "supplier": {
+        "id": "SUP-E08",
+        "name": "Titas Building Materials Ltd.",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E08",
+        "order_date": "2026-07-06",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-PC-50",
+            "description": "Cement, Portland, 50kg bag",
+            "uom": "bag",
+            "qty": "100",
+            "unit_price_tk": "560.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "SND-CS-CFT",
+            "description": "Sand, coarse, river",
+            "uom": "cft",
+            "qty": "200",
+            "unit_price_tk": "45.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "BRK-1CL",
+            "description": "Bricks, first class",
+            "uom": "pcs",
+            "qty": "500",
+            "unit_price_tk": "12.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E08",
+          "grn_date": "2026-07-19",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "22",
+              "qty_accepted": "20",
+              "qty_rejected": "2"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "500",
+              "qty_accepted": "500",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E08",
+        "supplier_invoice_no": "INV-E08-1147",
+        "invoice_date": "2026-07-24",
+        "mushak_6_3_no": "M63-E08-0441",
+        "claimed_total_tk": "17200.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland cement 50kg bag",
+            "product_code": null,
+            "qty": "20",
+            "unit_price_tk": "560.00",
+            "amount_tk": "11200.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Bricks, first class",
+            "product_code": "BRK-1CL",
+            "qty": "500",
+            "unit_price_tk": "12.00",
+            "amount_tk": "6000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "18920.00",
+        "approved_base_tk": "17200.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "mapping_low_confidence",
+          "ambiguous_mapping",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "LINE CHECK: bill L1 20 x 560.00 = 11,200.00 = amount_tk OK; bill L2 500 x 12.00 = 6,000.00 = amount_tk OK; sum = 17,200.00 = claimed_total_tk 17,200.00 OK -> no line_amount_mismatch, no invalid_bill.\nGATES: supplier active (no hold/blacklist); PO status open (no po_not_open); GRN-E08 exists for PO-E08 (no missing_grn); no other bill for SUP-E08/INV-E08-1147 in the fixture (no duplicate_exact / duplicate_fuzzy). No BLOCKER, so amounts are computed.\nMATCHING: bill L2 product_code BRK-1CL -> PO line 3 deterministically (claims PO3 before any proposal). Bill L1 product_code = null -> Node A proposes from the unclaimed PO lines {1 cement, 2 sand}; correct answer PO line 1 (CEM-PC-50), a pure word-order permutation.\nPER-LINE APPROVAL:\n  L1 -> PO1: billed unit price 560.00 = PO unit price 560.00 -> no price_over_po / price_under_po. allowed_qty = min(PO qty 100, cumulative GRN qty_accepted 20) = 20 (qty_accepted 20, NOT qty_received 22). approved_qty = min(billed 20, allowed 20) = 20 -> no qty_over_grn. approved_amount = 20 x 560.00 = 11,200.00. No price/qty adjustment on a proposal-mapped line -> no proposal_mapping_suspect.\n  L2 -> PO3: billed 12.00 = PO 12.00 -> no price flag. allowed_qty = min(PO 500, GRN accepted 500) = 500. approved_qty = min(500, 500) = 500. approved_amount = 500 x 12.00 = 6,000.00.\nAPPROVED BASE = 11,200.00 + 6,000.00 = 17,200.00.\nVAT (per line, on approved_amount): L1 vat.standard_15 -> 11,200.00 x 0.15 = 1,680.00; L2 vat.standard_15 -> 6,000.00 x 0.15 = 900.00. TOTAL VAT = 2,580.00. Both category ids exist in the FY2026-27 tables -> no unclassified_item.\nVDS: mushak_6_3_no = M63-E08-0441 present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and no missing_mushak_6_3.\nTDS: one category only, tds.supply_of_goods.s89; aggregated VAT-exclusive base = 17,200.00; flat 5%; has_return_submission_proof = true so no x1.5 uplift -> 17,200.00 x 0.05 = 860.00.\nOFFSETS: ledger_entries empty -> advances 0.00, prior payments 0.00, penalties 0.00; retention_pct = 0 -> retention 0.00.\nNET PAYABLE = 17,200.00 + 2,580.00 - 0.00 (VDS) - 860.00 (TDS) - 0.00 - 0.00 - 0.00 - 0.00 = 18,920.00.\nRECOMMENDATION: no BLOCKER, no REVIEW, no price or qty adjustment -> CLEAR.\nWRONG-MAPPING SIGNAL: if Node A maps L1 to PO line 2 (sand @ 45.00), billed 560.00 > 45.00 triggers price_over_po with the price cut to 45.00, and allowed_qty = min(PO 200, GRN accepted 0 — no GRN line for PO2) = 0 triggers qty_over_grn (REVIEW); the resulting recommendation would be REVIEW_REQUIRED with a net payable far below 18,920.00 — unmissable.",
+        "node_a_difficulty": "easy",
+        "node_a_ground_truth": {
+          "1": 1
+        }
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E09",
+      "title": "Medium mapping — \"half-inch GI pipe, 20 foot length\" against PO \"GI PIPE 1/2IN 20FT\"",
+      "purpose": "Tests unit-notation normalisation: spelled-out imperial units and fractions in the bill (\"half-inch\", \"20 foot\") versus compressed uppercase PO shorthand (1/2IN, 20FT). The PO deliberately contains the same pipe in a 3/4IN size, so the model must resolve the bore size rather than settle for the first pipe it sees. A size confusion is caught because the 3/4IN line has a different price (1,580.00 vs 1,150.00) and zero GRN receipts.",
+      "supplier": {
+        "id": "SUP-E09",
+        "name": "Delta Sanitary & Hardware",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E09",
+        "order_date": "2026-07-11",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "GIP-050-20",
+            "description": "GI PIPE 1/2IN 20FT",
+            "uom": "length",
+            "qty": "40",
+            "unit_price_tk": "1150.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "GIP-075-20",
+            "description": "GI PIPE 3/4IN 20FT",
+            "uom": "length",
+            "qty": "25",
+            "unit_price_tk": "1580.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "ELB-050-GI",
+            "description": "GI ELBOW 1/2IN",
+            "uom": "pcs",
+            "qty": "100",
+            "unit_price_tk": "35.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E09",
+          "grn_date": "2026-07-23",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "10",
+              "qty_accepted": "10",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "60",
+              "qty_accepted": "60",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E09",
+        "supplier_invoice_no": "INV-E09-0872",
+        "invoice_date": "2026-07-28",
+        "mushak_6_3_no": "M63-E09-0117",
+        "claimed_total_tk": "11300.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "half-inch GI pipe, 20 foot length",
+            "product_code": null,
+            "qty": "8",
+            "unit_price_tk": "1150.00",
+            "amount_tk": "9200.00"
+          },
+          {
+            "line_no": 2,
+            "description": "GI ELBOW 1/2IN",
+            "product_code": "ELB-050-GI",
+            "qty": "60",
+            "unit_price_tk": "35.00",
+            "amount_tk": "2100.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "12430.00",
+        "approved_base_tk": "11300.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "mapping_low_confidence",
+          "ambiguous_mapping",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "LINE CHECK: bill L1 8 x 1,150.00 = 9,200.00; bill L2 60 x 35.00 = 2,100.00; sum = 11,300.00 = claimed_total_tk. OK.\nMATCHING: bill L2 carries product_code ELB-050-GI -> PO line 3 deterministically. Bill L1 has product_code = null -> Node A proposes PO line 1 (GIP-050-20, the 1/2IN 20FT pipe); PO line 2 is the 3/4IN distractor.\nPER-LINE APPROVAL:\n  L1 -> PO1: billed price 1,150.00 = PO price 1,150.00, no price flag. allowed_qty = min(PO qty 40, GRN qty_accepted 10) = 10. approved_qty = min(billed 8, 10) = 8, no qty_over_grn. approved_amount = 8 x 1,150.00 = 9,200.00.\n  L2 -> PO3: billed price 35.00 = PO price 35.00. allowed_qty = min(100, 60) = 60. approved_qty = min(60, 60) = 60. approved_amount = 60 x 35.00 = 2,100.00.\nAPPROVED BASE = 9,200.00 + 2,100.00 = 11,300.00.\nVAT: both lines vat.standard_15 -> 9,200.00 x 0.15 = 1,380.00 and 2,100.00 x 0.15 = 315.00. TOTAL VAT = 1,695.00.\nVDS: mushak_6_3_no present -> vds.standard_goods, no_deduction -> VDS = 0.00.\nTDS: single category tds.supply_of_goods.s89, aggregated VAT-exclusive base = 11,300.00, flat 5%, return proof on file so no x1.5 uplift -> 11,300.00 x 0.05 = 565.00.\nOFFSETS: none (no ledger entries, retention_pct 0, no advances, no prior payments, no penalties).\nNET PAYABLE = 11,300.00 + 1,695.00 - 0.00 (VDS) - 565.00 (TDS) - 0.00 = 12,430.00.\nRECOMMENDATION: no BLOCKER (GRN exists for the PO, supplier active, PO open, no duplicate), no REVIEW, no price/qty adjustment -> CLEAR.\nWRONG-MAPPING SIGNAL: mapping L1 to PO line 2 (3/4IN @ 1,580.00) makes billed 1,150.00 < PO 1,580.00 -> price_under_po (INFO), and allowed_qty = min(25, GRN accepted 0) = 0 -> qty_over_grn (REVIEW), flipping the case to REVIEW_REQUIRED.",
+        "node_a_difficulty": "medium",
+        "node_a_ground_truth": {
+          "1": 1
+        }
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E10",
+      "title": "Medium mapping, two free-text lines — packaging synonym plus chemical-name synonym (caustic soda / sodium hydroxide)",
+      "purpose": "Two null-code lines on one bill, so a single lucky guess is not enough. L1 is a descriptive synonym (\"Five ply corrugated shipping carton\" vs \"Carton box, 5-ply\") and L2 requires the chemical-name equivalence caustic soda flakes = sodium hydroxide flakes. Also exercises three secondary mechanics that must not be disturbed by the mapping work: cumulative qty_accepted across TWO GRNs, a reduced-rate 10% VAT line mixed with 15% lines, and a prior part-payment netted off the payable. PO line 4 (PP strapping) is an unbilled, never-received distractor.",
+      "supplier": {
+        "id": "SUP-E10",
+        "name": "Meghna Packaging & Chemicals Ltd.",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E10",
+        "order_date": "2026-07-08",
+        "status": "partially_billed",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CTN-5PLY-A",
+            "description": "Carton box, 5-ply, 18x12x10 inch",
+            "uom": "pcs",
+            "qty": "500",
+            "unit_price_tk": "42.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "TAPE-BOPP-48",
+            "description": "BOPP adhesive tape, 48mm x 100m",
+            "uom": "roll",
+            "qty": "120",
+            "unit_price_tk": "68.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "CAUS-SODA-25",
+            "description": "Caustic soda flakes, 25kg bag",
+            "uom": "bag",
+            "qty": "40",
+            "unit_price_tk": "3100.00",
+            "vat_category_id": "vat.reduced_10",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 4,
+            "product_code": "STRAP-PP-12",
+            "description": "PP strapping roll, 12mm",
+            "uom": "roll",
+            "qty": "30",
+            "unit_price_tk": "850.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E10-A",
+          "grn_date": "2026-07-18",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "120",
+              "qty_accepted": "120",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "4",
+              "qty_accepted": "4",
+              "qty_rejected": "0"
+            }
+          ]
+        },
+        {
+          "id": "GRN-E10-B",
+          "grn_date": "2026-07-26",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "80",
+              "qty_accepted": "80",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E10",
+        "supplier_invoice_no": "INV-E10-3390",
+        "invoice_date": "2026-07-30",
+        "mushak_6_3_no": "M63-E10-0925",
+        "claimed_total_tk": "24200.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Five ply corrugated shipping carton 18x12x10",
+            "product_code": null,
+            "qty": "200",
+            "unit_price_tk": "42.00",
+            "amount_tk": "8400.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Sodium hydroxide flakes 25 kg sack",
+            "product_code": null,
+            "qty": "4",
+            "unit_price_tk": "3100.00",
+            "amount_tk": "12400.00"
+          },
+          {
+            "line_no": 3,
+            "description": "BOPP adhesive tape, 48mm x 100m",
+            "product_code": "TAPE-BOPP-48",
+            "qty": "50",
+            "unit_price_tk": "68.00",
+            "amount_tk": "3400.00"
+          }
+        ]
+      },
+      "ledger_entries": [
+        {
+          "entry_type": "payment",
+          "amount_tk": "3000.00",
+          "entry_date": "2026-07-21",
+          "ref": "PAY-E10-0061",
+          "scope": "this_bill"
+        }
+      ],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "23000.00",
+        "approved_base_tk": "24200.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "mapping_low_confidence",
+          "ambiguous_mapping",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "LINE CHECK: L1 200 x 42.00 = 8,400.00; L2 4 x 3,100.00 = 12,400.00; L3 50 x 68.00 = 3,400.00; sum = 24,200.00 = claimed_total_tk. OK.\nMATCHING: bill L3 carries product_code TAPE-BOPP-48 -> PO line 2 deterministically, leaving PO lines 1, 3, 4 available to Node A. Node A maps L1 -> PO line 1 (5-ply carton) and L2 -> PO line 3 (caustic soda = sodium hydroxide).\nCUMULATIVE GRN ACCEPTED: PO1 = 120 (GRN-E10-A) + 80 (GRN-E10-B) = 200; PO2 = 50; PO3 = 4; PO4 = 0.\nPER-LINE APPROVAL:\n  L1 -> PO1: price 42.00 = PO 42.00. allowed_qty = min(PO qty 500, accepted 200) = 200. approved_qty = min(200, 200) = 200. approved_amount = 8,400.00.\n  L2 -> PO3: price 3,100.00 = PO 3,100.00. allowed_qty = min(40, 4) = 4. approved_qty = min(4, 4) = 4. approved_amount = 12,400.00.\n  L3 -> PO2: price 68.00 = PO 68.00. allowed_qty = min(120, 50) = 50. approved_qty = min(50, 50) = 50. approved_amount = 3,400.00.\nNo line needs a price or qty adjustment, so no price_over_po / price_under_po / qty_over_grn, and no proposal_mapping_suspect on the two Node A lines.\nAPPROVED BASE = 8,400.00 + 12,400.00 + 3,400.00 = 24,200.00.\nVAT (per line, at the mapped PO line's category): L1 vat.standard_15 -> 8,400.00 x 0.15 = 1,260.00; L2 vat.reduced_10 -> 12,400.00 x 0.10 = 1,240.00; L3 vat.standard_15 -> 3,400.00 x 0.15 = 510.00. TOTAL VAT = 3,010.00.\nVDS: mushak_6_3_no present -> vds.standard_goods, no_deduction -> VDS = 0.00.\nTDS: all three lines are tds.supply_of_goods.s89, so one aggregated VAT-exclusive base = 24,200.00 at flat 5% (return proof on file, no x1.5 uplift) -> 1,210.00.\nOFFSETS: no advance, retention 0, no penalty. Prior payment PAY-E10-0061 = 3,000.00 scoped this_po.\nRunning payable before offsets = 24,200.00 + 3,010.00 - 0.00 (VDS) - 1,210.00 (TDS) = 26,000.00. Less prior payment 3,000.00 -> NET PAYABLE = 23,000.00.\nRECOMMENDATION: supplier active, PO partially_billed, GRNs exist, no duplicate, all category ids known -> no BLOCKER; no REVIEW; no price/qty adjustment -> CLEAR.\nWRONG-MAPPING SIGNAL: PO line 4 (PP strapping @ 850.00) is the trap — either free-text line mapped there produces a price flag (12,400.00 line: 3,100.00 > 850.00 -> price_over_po and the amount is cut) plus qty_over_grn, since PO4 has zero accepted qty.",
+        "node_a_difficulty": "medium",
+        "node_a_ground_truth": {
+          "1": 1,
+          "2": 3
+        }
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E11",
+      "title": "Hard mapping — construction trade shorthand \"R/F rod 12 dia, Gr-60\" against PO \"MS deformed bar, B500DWR grade, 12mm dia\"",
+      "purpose": "Trade jargon a human buyer resolves from context but a literal string matcher cannot: R/F = reinforcement, Gr-60 = Grade 60 which is the ASTM equivalent of the B500DWR grade on the PO, and \"12 dia\" = 12mm diameter. The PO holds a 16mm bar of the same grade at a near-identical price (91.50 vs 92.00 per kg), so a diameter slip produces only a 0.50/kg gap — a deliberately quiet price signal that is nevertheless caught by the zero-GRN test on the 16mm line. Also nets a PO-scoped advance.",
+      "supplier": {
+        "id": "SUP-E11",
+        "name": "Buriganga Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E11",
+        "order_date": "2026-07-14",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "MSR-B500-12",
+            "description": "MS deformed bar, B500DWR grade, 12mm dia",
+            "uom": "kg",
+            "qty": "1000",
+            "unit_price_tk": "92.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "MSR-B500-16",
+            "description": "MS deformed bar, B500DWR grade, 16mm dia",
+            "uom": "kg",
+            "qty": "800",
+            "unit_price_tk": "91.50",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "MSA-40X40X5",
+            "description": "MS angle 40x40x5mm",
+            "uom": "kg",
+            "qty": "300",
+            "unit_price_tk": "88.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E11",
+          "grn_date": "2026-07-27",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "100",
+              "qty_accepted": "100",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E11",
+        "supplier_invoice_no": "INV-E11-5204",
+        "invoice_date": "2026-08-01",
+        "mushak_6_3_no": "M63-E11-0338",
+        "claimed_total_tk": "13600.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "R/F rod 12 dia, Gr-60, local mill",
+            "product_code": null,
+            "qty": "100",
+            "unit_price_tk": "92.00",
+            "amount_tk": "9200.00"
+          },
+          {
+            "line_no": 2,
+            "description": "MS angle 40x40x5mm",
+            "product_code": "MSA-40X40X5",
+            "qty": "50",
+            "unit_price_tk": "88.00",
+            "amount_tk": "4400.00"
+          }
+        ]
+      },
+      "ledger_entries": [
+        {
+          "entry_type": "advance",
+          "amount_tk": "5000.00",
+          "entry_date": "2026-07-16",
+          "ref": "ADV-E11-0012",
+          "scope": "this_po"
+        }
+      ],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "9960.00",
+        "approved_base_tk": "13600.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "mapping_low_confidence",
+          "ambiguous_mapping",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item",
+          "advance_partially_offset",
+          "advance_not_fully_offset"
+        ],
+        "arithmetic": "LINE CHECK: L1 100 x 92.00 = 9,200.00; L2 50 x 88.00 = 4,400.00; sum = 13,600.00 = claimed_total_tk. OK (no line_amount_mismatch, no invalid_bill).\nMATCHING (two-pass): bill L2 carries product_code MSA-40X40X5 -> claims PO line 3 deterministically. Bill L1 has product_code = null -> Node A resolves the trade shorthand against the unclaimed PO lines {1, 2} to PO line 1 (MSR-B500-12, 12mm); PO line 2 (16mm) is the distractor. Every bill line is mapped -> no unmapped_line.\nPER-LINE APPROVAL:\n  L1 -> PO1: billed price 92.00 = PO price 92.00 -> neither price_over_po nor price_under_po. allowed_qty = min(PO qty 1000, cumulative GRN qty_accepted 100) = 100. approved_qty = min(billed 100, 100) = 100, so no qty_over_grn. approved_amount = 100 x 92.00 = 9,200.00. Because the proposal-mapped line needs NO price or qty adjustment, proposal_mapping_suspect does not fire.\n  L2 -> PO3: billed price 88.00 = PO price 88.00. allowed_qty = min(300, 50) = 50. approved_qty = min(50, 50) = 50. approved_amount = 50 x 88.00 = 4,400.00.\nAPPROVED BASE = 9,200.00 + 4,400.00 = 13,600.00.\nVAT (per line, vat.standard_15 = 15% on both): 9,200.00 x 0.15 = 1,380.00; 4,400.00 x 0.15 = 660.00. TOTAL VAT = 2,040.00.\nVDS: mushak_6_3_no = M63-E11-0338 is present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 does not fire.\nTDS: one category only (tds.supply_of_goods.s89) across both lines; aggregated VAT-EXCLUSIVE base = 13,600.00; flat 5% -> 680.00. has_return_submission_proof = true, so no x1.5 uplift. Both vat/tds category ids exist in the FY2026-27 tables -> no unclassified_item.\nNETTING (order per rule 5): 13,600.00 (base) + 2,040.00 (VAT) - 0.00 (VDS) - 680.00 (TDS) = 14,960.00 running payable. Advance ADV-E11-0012 = 5,000.00 scoped this_po, advance_max_offset_pct = 1.00 -> full offset; 5,000.00 <= 14,960.00 so the zero-floor cap never binds and the advance is fully absorbed -> neither advance_partially_offset nor advance_not_fully_offset. Retention 0 (retention_pct = 0), no penalties, no prior payments.\nNET PAYABLE = 14,960.00 - 5,000.00 = 9,960.00.\nGATING: supplier active (no supplier_on_hold / supplier_blacklisted); PO status open; a GRN exists for the PO (no missing_grn); supplier_invoice_no INV-E11-5204 is unique and there is no near-duplicate bill -> no duplicate_exact / duplicate_fuzzy. No BLOCKER, no REVIEW, and no price or qty adjustment was applied -> CLEAR (not CLEAR_WITH_ADJUSTMENTS).\nWRONG-MAPPING SIGNAL: mapping L1 to PO line 2 (16mm @ 91.50) makes billed 92.00 > 91.50 -> price_over_po with the amount cut to 100 x 91.50 = 9,150.00, and allowed_qty = min(800, GRN accepted 0) = 0 -> approved_qty 0 with qty_over_grn (REVIEW), plus proposal_mapping_suspect (REVIEW) because a proposal-mapped line required adjustment. Either way the run lands on REVIEW_REQUIRED, distinguishable from the CLEAR expected here.",
+        "node_a_difficulty": "hard",
+        "node_a_ground_truth": {
+          "1": 1
+        }
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E12",
+      "title": "Hard mapping — Bangla-English (Banglish) transliterated safety-gear descriptions, plus TDS uplift for a supplier with no return proof",
+      "purpose": "Both bill lines are free text written the way a Dhaka supplier actually types an invoice: \"Mathay porar\" (worn on the head) and \"holud rong\" (yellow colour) for the helmet, \"Hater glove\" (hand glove) with \"lvl-5\" for the cut-resistant gloves. Mapping requires reading transliterated Bangla mixed into English product names. A cross-swap of the two lines is loudly detectable because the prices differ 320.00 vs 145.00. Secondary purpose: this supplier has has_return_submission_proof = false, so the s89 flat 5% takes the 1.5x uplift to 7.5% — confirming the mapping path does not disturb the TDS uplift rule. GRN also carries a rejected unit so allowed_qty must follow qty_accepted.",
+      "supplier": {
+        "id": "SUP-E12",
+        "name": "Surma Safety House",
+        "has_return_submission_proof": false,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E12",
+        "order_date": "2026-07-09",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "HELM-IND-Y",
+            "description": "Safety helmet, industrial, yellow",
+            "uom": "pcs",
+            "qty": "100",
+            "unit_price_tk": "320.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "GLV-CUT5",
+            "description": "Cut-resistant gloves, level 5",
+            "uom": "pair",
+            "qty": "200",
+            "unit_price_tk": "145.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "BOOT-STL-9",
+            "description": "Safety boot, steel toe, size 9",
+            "uom": "pair",
+            "qty": "50",
+            "unit_price_tk": "1450.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E12",
+          "grn_date": "2026-07-22",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "26",
+              "qty_accepted": "25",
+              "qty_rejected": "1"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "40",
+              "qty_accepted": "40",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E12",
+        "supplier_invoice_no": "INV-E12-0619",
+        "invoice_date": "2026-07-27",
+        "mushak_6_3_no": "M63-E12-0752",
+        "claimed_total_tk": "13800.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Mathay porar safety helmet, holud rong (industrial grade)",
+            "product_code": null,
+            "qty": "25",
+            "unit_price_tk": "320.00",
+            "amount_tk": "8000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Hater glove, cut-resistant lvl-5",
+            "product_code": null,
+            "qty": "40",
+            "unit_price_tk": "145.00",
+            "amount_tk": "5800.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "14835.00",
+        "approved_base_tk": "13800.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "mapping_low_confidence",
+          "ambiguous_mapping",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "LINE CHECK: L1 25 x 320.00 = 8,000.00; L2 40 x 145.00 = 5,800.00; sum = 13,800.00 = claimed_total_tk. OK.\nMATCHING: both bill lines have product_code = null, so Node A must map BOTH. All three PO lines are unclaimed and on offer (no deterministic product_code match can pre-claim any). Correct mapping: bill L1 -> PO line 1 (helmet), bill L2 -> PO line 2 (gloves); PO line 3 (safety boot) is the unbilled distractor. Node A ground truth is therefore a two-entry map {\"1\": 1, \"2\": 2}.\nPER-LINE APPROVAL:\n  L1 -> PO1: billed price 320.00 = PO price 320.00, no price flag. allowed_qty = min(PO qty 100, GRN qty_accepted 25 — note 26 received, 1 rejected) = 25. approved_qty = min(billed 25, 25) = 25, no qty_over_grn. approved_amount = 25 x 320.00 = 8,000.00.\n  L2 -> PO2: billed price 145.00 = PO price 145.00. allowed_qty = min(200, 40) = 40. approved_qty = min(40, 40) = 40. approved_amount = 40 x 145.00 = 5,800.00.\nAPPROVED BASE = 8,000.00 + 5,800.00 = 13,800.00.\nVAT: both lines vat.standard_15 -> 8,000.00 x 0.15 = 1,200.00 and 5,800.00 x 0.15 = 870.00. TOTAL VAT = 2,070.00.\nVDS: mushak_6_3_no = M63-E12-0752 present -> vds.standard_goods, no_deduction -> VDS = 0.00, and no missing_mushak_6_3 exception.\nTDS: single category tds.supply_of_goods.s89, aggregated VAT-exclusive base = 13,800.00. Base rate flat 5%, but supplier.has_return_submission_proof = false so the 1.5x uplift applies: 0.05 x 1.5 = 0.075. TDS = 13,800.00 x 0.075 = 1,035.00.\nOFFSETS: none (no ledger entries, retention 0, no penalties, no prior payments).\nNET PAYABLE = 13,800.00 + 2,070.00 - 0.00 (VDS) - 1,035.00 (TDS) = 14,835.00.\nRECOMMENDATION: no BLOCKER, no REVIEW, no price/qty adjustment -> CLEAR. (The TDS uplift is a rate rule, not an exception, so it does not affect the recommendation.)\nWRONG-MAPPING SIGNAL: swapping the two lines makes L1 320.00 > gloves PO 145.00 -> price_over_po with a cut, and L2 145.00 < helmet PO 320.00 -> price_under_po; both also breach the per-line accepted quantities, so qty_over_grn escalates to REVIEW_REQUIRED.",
+        "node_a_difficulty": "hard",
+        "node_a_ground_truth": {
+          "1": 1,
+          "2": 2
+        }
+      },
+      "ground_truth_verified": true,
+      "verification_note": "All arithmetic, matching, tax, netting and severity logic in E12 recompute EXACTLY as the author stated — one field was wrong.\n\nVERIFIED UNCHANGED:\n- Line check: L1 25 x 320.00 = 8,000.00; L2 40 x 145.00 = 5,800.00; sum 13,800.00 = claimed_total_tk. Internally consistent.\n- Matching: both bill lines have product_code = null, so both go to Node A. All 3 PO lines unclaimed (no deterministic code match can pre-claim any). Correct mapping is bill L1 -> PO 1 (helmet), bill L2 -> PO 2 (gloves); PO 3 (steel-toe boot) is the unbilled distractor.\n- Per line: L1 billed 320.00 == PO 320.00 (no price flag); allowed_qty = min(PO 100, GRN qty_accepted 25) = 25; approved_qty = min(25, 25) = 25 -> 8,000.00, no qty_over_grn (the 1 rejected unit is correctly excluded because allowed_qty follows qty_accepted, not qty_received). L2 billed 145.00 == PO 145.00; allowed_qty = min(200, 40) = 40; approved_qty = 40 -> 5,800.00.\n- approved_base = 13,800.00.\n- VAT: 8,000.00 x 0.15 = 1,200.00; 5,800.00 x 0.15 = 870.00; total 2,070.00.\n- VDS: mushak_6_3_no present -> vds.standard_goods, no_deduction, VDS = 0.00, no missing_mushak_6_3.\n- TDS: single category tds.supply_of_goods.s89, VAT-exclusive aggregated base 13,800.00, flat 5% x 1.5 uplift (has_return_submission_proof = false) = 7.5% -> 1,035.00. Confirmed with Decimal.\n- Netting: no ledger entries, retention 0, no penalties/prior payments. Net = 13,800.00 + 2,070.00 - 0.00 - 1,035.00 = 14,835.00. Matches.\n- Recommendation: no BLOCKER, no REVIEW, no price/qty adjustment (billed prices equal PO prices, billed qty equals allowed qty) -> CLEAR. Correct; the TDS uplift is a rate rule, not an exception. net_payable_tk is non-null, which is right since there is no BLOCKER.\n- must_raise_codes = [] is right; every code in must_not_raise_codes genuinely would not fire.\n\nFIXED (1 defect):\n- expectations.node_a_ground_truth was {\"1\": 2}, which asserts bill line 1 maps to PO line 2 (the gloves). That contradicts the case's own arithmetic narrative (\"L1 -> PO line 1 (helmet), L2 -> PO line 2 (gloves)\") and contradicts the money: bill L1 is 25 x 320.00, and 320.00 is the helmet's PO price (PO 1), while PO 2 is 145.00. It also omitted bill line 2 entirely, even though BOTH bill lines have product_code = null and therefore both require a Node A proposal. As written it would score a correctly-mapping system as wrong on line 1 and would not score line 2 at all. Corrected to {\"1\": 1, \"2\": 2}.\n- Kept node_a_difficulty = \"hard\" (transliterated Banglish descriptions with no product codes, and a 3-line PO offering a same-family distractor), and appended one sentence to the arithmetic narrative recording the explicit two-line Node A ground truth."
+    },
+    {
+      "case_id": "E13",
+      "title": "Ambiguous mapping — \"Electrical cable, copper — 2 coil\" where the PO holds both 2.5mm2 and 4.0mm2 coils",
+      "purpose": "The description alone cannot decide between PO line 1 (2.5mm2) and PO line 2 (4.0mm2): the bill omits the conductor size entirely. Only the corroborating evidence resolves it — the billed unit price 6,350.00 is an exact match for the 4.0mm2 line (2.5mm2 is 4,200.00), and the GRN records receipts against PO line 2 only. Ground truth is therefore PO line 2. The case measures two things at once: whether the model reaches for the price/GRN evidence rather than guessing on text, and whether it reports honest confidence when the text is genuinely under-determined. Note on grading: a mapping_low_confidence flag here is a defensible conservative outcome (it would make the run REVIEW_REQUIRED), which is why that code is deliberately absent from must_not_raise_codes — but the mapping itself must still land on PO line 2.",
+      "supplier": {
+        "id": "SUP-E13",
+        "name": "Padma Electric Supply",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E13",
+        "order_date": "2026-07-12",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CBL-025-CU",
+            "description": "Electric cable, copper, 2.5mm2, 100 yd coil",
+            "uom": "coil",
+            "qty": "20",
+            "unit_price_tk": "4200.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "CBL-040-CU",
+            "description": "Electric cable, copper, 4.0mm2, 100 yd coil",
+            "uom": "coil",
+            "qty": "10",
+            "unit_price_tk": "6350.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "TAPE-INS-PVC",
+            "description": "PVC insulation tape",
+            "uom": "pcs",
+            "qty": "100",
+            "unit_price_tk": "25.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E13",
+          "grn_date": "2026-07-25",
+          "lines": [
+            {
+              "po_line_no": 2,
+              "qty_received": "2",
+              "qty_accepted": "2",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "40",
+              "qty_accepted": "40",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E13",
+        "supplier_invoice_no": "INV-E13-2044",
+        "invoice_date": "2026-07-29",
+        "mushak_6_3_no": "M63-E13-0503",
+        "claimed_total_tk": "13700.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Electrical cable, copper — 2 coil",
+            "product_code": null,
+            "qty": "2",
+            "unit_price_tk": "6350.00",
+            "amount_tk": "12700.00"
+          },
+          {
+            "line_no": 2,
+            "description": "PVC insulation tape",
+            "product_code": "TAPE-INS-PVC",
+            "qty": "40",
+            "unit_price_tk": "25.00",
+            "amount_tk": "1000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "15070.00",
+        "approved_base_tk": "13700.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "LINE CHECK: L1 2 x 6,350.00 = 12,700.00; L2 40 x 25.00 = 1,000.00; sum = 13,700.00 = claimed_total_tk. OK.\nMATCHING: bill L2 carries product_code TAPE-INS-PVC -> PO line 3 deterministically. Bill L1 has product_code = null and its text (\"Electrical cable, copper\") fits PO line 1 and PO line 2 equally. Disambiguation is by evidence: billed unit price 6,350.00 equals PO line 2 exactly (PO line 1 is 4,200.00), and the only cable receipt on the GRN is 2 coils against PO line 2. Ground truth = PO line 2.\nPER-LINE APPROVAL:\n  L1 -> PO2: billed price 6,350.00 = PO price 6,350.00, no price flag. allowed_qty = min(PO qty 10, GRN qty_accepted 2) = 2. approved_qty = min(billed 2, 2) = 2, so billed_qty is NOT > allowed_qty and no qty_over_grn fires (exact-boundary consumption). approved_amount = 2 x 6,350.00 = 12,700.00.\n  L2 -> PO3: billed price 25.00 = PO price 25.00. allowed_qty = min(100, 40) = 40. approved_qty = min(40, 40) = 40. approved_amount = 40 x 25.00 = 1,000.00.\nAPPROVED BASE = 12,700.00 + 1,000.00 = 13,700.00.\nVAT: both lines vat.standard_15 -> 12,700.00 x 0.15 = 1,905.00 and 1,000.00 x 0.15 = 150.00. TOTAL VAT = 2,055.00.\nVDS: mushak_6_3_no present (M63-E13-0503) -> vds.standard_goods, no_deduction -> VDS = 0.00, and missing_mushak_6_3 cannot fire.\nTDS: single category tds.supply_of_goods.s89, aggregated VAT-exclusive base = 13,700.00, flat 5%, has_return_submission_proof = true so no x1.5 uplift -> 685.00.\nOFFSETS: ledger_entries empty -> no advances, no retention (retention_pct = 0), no penalties, no prior payments.\nNET PAYABLE = 13,700.00 + 2,055.00 - 0.00 (VDS) - 685.00 (TDS) = 15,070.00.\nSEVERITY: supplier active, PO status open, a GRN exists for the PO, no duplicate invoice -> no BLOCKER. On a confident correct mapping no REVIEW code fires. Both billed prices equal their PO prices and both approved quantities equal the billed quantities, so there is NO price or qty adjustment -> recommendation CLEAR (not CLEAR_WITH_ADJUSTMENTS).\nGRADING NOTE: if the model instead reports confidence < mapping_confidence_min 0.75 or flags ambiguous_mapping, the run becomes REVIEW_REQUIRED with the same underlying amounts; that is acceptable conservative behaviour on a genuinely under-determined line and is scored separately from mapping accuracy — which is why mapping_low_confidence and ambiguous_mapping are deliberately omitted from must_not_raise_codes.\nWRONG-MAPPING SIGNAL: mapping L1 to PO line 1 (2.5mm2 @ 4,200.00) makes billed 6,350.00 > 4,200.00 -> price_over_po, cutting the line to 2 x 4,200.00 = 8,400.00, and allowed_qty = min(20, GRN accepted 0) = 0 -> qty_over_grn (REVIEW).",
+        "node_a_difficulty": "ambiguous",
+        "node_a_ground_truth": {
+          "1": 2
+        }
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E14",
+      "title": "Ambiguous mapping — \"A4 offset paper, 500 sheet ream\" where the PO holds both 70 GSM and 80 GSM reams",
+      "purpose": "The bill omits the one attribute that separates the two candidate PO lines: paper weight (70 GSM vs 80 GSM). Everything the bill does state — A4, 500-sheet ream — is true of both. Resolution again comes from evidence: the billed 510.00 per ream matches the 80 GSM line exactly (70 GSM is 430.00) and the GRN records receipts against PO line 2 only, so ground truth is PO line 2. Adds a VAT-exempt line (box file at 0%) to confirm that a zero-rate line contributes to the approved base and the TDS base while adding no VAT, and that vat.exempt is a known category rather than an unclassified_item. As with E13, an honest low-confidence flag is an acceptable outcome and is excluded from must_not_raise_codes.",
+      "supplier": {
+        "id": "SUP-E14",
+        "name": "Karnaphuli Paper & Office Supply",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E14",
+        "order_date": "2026-07-15",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "A4-70GSM-RM",
+            "description": "A4 paper 70 GSM, ream of 500",
+            "uom": "ream",
+            "qty": "100",
+            "unit_price_tk": "430.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "A4-80GSM-RM",
+            "description": "A4 paper 80 GSM, ream of 500",
+            "uom": "ream",
+            "qty": "60",
+            "unit_price_tk": "510.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "TNR-BK-CART",
+            "description": "Toner cartridge, black",
+            "uom": "pcs",
+            "qty": "10",
+            "unit_price_tk": "6800.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 4,
+            "product_code": "FILE-BOX-LG",
+            "description": "Box file, large",
+            "uom": "pcs",
+            "qty": "50",
+            "unit_price_tk": "165.00",
+            "vat_category_id": "vat.exempt",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E14",
+          "grn_date": "2026-07-28",
+          "lines": [
+            {
+              "po_line_no": 2,
+              "qty_received": "24",
+              "qty_accepted": "24",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 4,
+              "qty_received": "20",
+              "qty_accepted": "20",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E14",
+        "supplier_invoice_no": "INV-E14-7781",
+        "invoice_date": "2026-08-02",
+        "mushak_6_3_no": "M63-E14-0284",
+        "claimed_total_tk": "15540.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "A4 offset paper, 500 sheet ream — office use",
+            "product_code": null,
+            "qty": "24",
+            "unit_price_tk": "510.00",
+            "amount_tk": "12240.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Box file, large",
+            "product_code": "FILE-BOX-LG",
+            "qty": "20",
+            "unit_price_tk": "165.00",
+            "amount_tk": "3300.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "16599.00",
+        "approved_base_tk": "15540.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unmapped_line",
+          "proposal_mapping_suspect",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "line_amount_mismatch",
+          "unclassified_item"
+        ],
+        "arithmetic": "LINE CHECK: L1 24 x 510.00 = 12,240.00; L2 20 x 165.00 = 3,300.00; sum = 15,540.00 = claimed_total_tk. OK.\nBLOCKER SCREEN: supplier active, PO status open, a GRN exists for the PO, no other bill with this supplier + supplier_invoice_no. Nothing short-circuits, so amounts are computed.\nMATCHING: bill L2 carries product_code FILE-BOX-LG -> PO line 4 deterministically. Bill L1 has product_code = null and its text fits PO line 1 (70 GSM) and PO line 2 (80 GSM) equally — the GSM is simply not stated. Disambiguation is by evidence: billed unit price 510.00 equals PO line 2 exactly (PO line 1 is 430.00), and the GRN shows 24 reams accepted against PO line 2 and nothing against PO line 1. Ground truth = PO line 2.\nPER-LINE APPROVAL:\n  L1 -> PO2: billed price 510.00 = PO price 510.00, no price flag. allowed_qty = min(PO qty 60, GRN qty_accepted 24) = 24. approved_qty = min(billed 24, 24) = 24, no qty_over_grn. approved_amount = 24 x 510.00 = 12,240.00. No adjustment on this proposal-mapped line, so proposal_mapping_suspect does not fire.\n  L2 -> PO4: billed price 165.00 = PO price 165.00. allowed_qty = min(50, 20) = 20. approved_qty = min(20, 20) = 20. approved_amount = 20 x 165.00 = 3,300.00.\nAPPROVED BASE = 12,240.00 + 3,300.00 = 15,540.00 (the VAT-exempt line still counts toward the base).\nVAT: L1 vat.standard_15 -> 12,240.00 x 0.15 = 1,836.00; L2 vat.exempt -> 3,300.00 x 0 = 0.00. TOTAL VAT = 1,836.00. Both vat.exempt and tds.supply_of_goods.s89 exist in the FY2026-27 tables, so no unclassified_item.\nVDS: mushak_6_3_no present -> vds.standard_goods, no_deduction -> VDS = 0.00.\nTDS: both lines are tds.supply_of_goods.s89, so one aggregated VAT-exclusive base = 15,540.00 (exempt line included, since the TDS base is the approved base, not the VAT-bearing amount), flat 5%, has_return_submission_proof = true so no x1.5 uplift -> 777.00.\nOFFSETS: none (no ledger entries; retention_pct = 0, no penalties, no prior payments).\nNET PAYABLE = 15,540.00 + 1,836.00 - 0.00 (VDS) - 777.00 (TDS) = 16,599.00.\nRECOMMENDATION: no BLOCKER, no REVIEW, and no price/qty adjustment was made — assuming Node A maps correctly and with confidence >= mapping_confidence_min 0.75 -> CLEAR. A mapping_low_confidence or ambiguous_mapping flag would make this REVIEW_REQUIRED with identical amounts; that is acceptable conservative behaviour on an under-determined line and is graded separately from mapping accuracy.\nWRONG-MAPPING SIGNAL: mapping L1 to PO line 1 (70 GSM @ 430.00) makes billed 510.00 > 430.00 -> price_over_po, cutting the line to 24 x 430.00 = 10,320.00, and allowed_qty = min(100, GRN accepted 0) = 0 -> qty_over_grn (REVIEW).",
+        "node_a_difficulty": "ambiguous",
+        "node_a_ground_truth": {
+          "1": 2
+        }
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E15",
+      "title": "Exact duplicate - the original copy, retroactively blocked (and masking two fuzzy hits)",
+      "purpose": "Probes duplicate_exact symmetry and BLOCKER precedence. All seven cases E15-E21 deliberately share ONE supplier id (SUP-E15) because duplicate detection is supplier-scoped: sibling bills must belong to the same supplier to be visible to each other as 'prior bills'. BILL-E15 is the hub every other case is measured against (cement, 25,000.00 Tk, 2026-08-05). Its twin BILL-E16 carries the IDENTICAL supplier_invoice_no 'MCB-2261', so this bill is itself flagged duplicate_exact even though it was submitted first - the rule says 'same supplier + same supplier_invoice_no as ANOTHER bill', with no ordering, so detection is symmetric and BOTH copies are blocked. It additionally sits inside the fuzzy window of BILL-E17 (0.60% / 3 days) and BILL-E18 (0.96% / 7 days), so it carries two duplicate_fuzzy REVIEW flags as well. The tuner should see BLOCKER outrank REVIEW: net_payable null, no VAT/VDS/TDS computed at all, even though a fully clean 27,500.00 Tk payment was on the table.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E15",
+        "order_date": "2026-07-20",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Portland composite cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "60",
+            "unit_price_tk": "500.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E15",
+          "grn_date": "2026-08-03",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E15",
+        "supplier_invoice_no": "MCB-2261",
+        "invoice_date": "2026-08-05",
+        "mushak_6_3_no": "M63-E15-01",
+        "claimed_total_tk": "25000.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland composite cement, 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "50",
+            "unit_price_tk": "500.00",
+            "amount_tk": "25000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "BLOCKED",
+        "net_payable_tk": null,
+        "approved_base_tk": null,
+        "must_raise_codes": [
+          "duplicate_exact",
+          "duplicate_fuzzy"
+        ],
+        "must_not_raise_codes": [
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open",
+          "supplier_on_hold"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 50 x 500.00 = 25,000.00 = claimed_total 25,000.00 (consistent, no line_amount_mismatch). DUPLICATE CHECK (runs before any money math): prior bills for SUP-E15 include BILL-E16 with supplier_invoice_no 'MCB-2261' == this bill's 'MCB-2261' -> duplicate_exact, severity BLOCKER (the exact test keys on supplier + invoice no only, with no ordering, so detection is symmetric; E16's different amount 21,000.00, different date 2026-09-14 and different goods are irrelevant). ALSO inside the fuzzy window: (a) vs BILL-E17 25,150.00 on 2026-08-02 -> |25,150.00-25,000.00| = 150.00; 150.00/25,150.00 = 0.5964% <= 1.00% (0.60% if measured on the smaller total - inside either way); dates 3 days apart <= 7; product signature {CEM-OPC-50} identical (Jaccard 1.00 >= 0.5) -> duplicate_fuzzy (REVIEW). (b) vs BILL-E18 24,760.00 on 2026-07-29 -> diff 240.00; 240.00/25,000.00 = 0.96% <= 1.00%; dates exactly 7 days apart <= 7 (inclusive) -> inside; same signature -> duplicate_fuzzy (REVIEW). NON-HITS (so exactly two fuzzy flags): BILL-E19 24,375.00 on 2026-08-06 -> diff 625.00 = 2.50% > 1.00%; BILL-E20 25,000.00 on 2026-08-15 -> 10 days > 7; BILL-E21 25,000.00 on 2026-08-05 -> amount and date identical but signature {MSR-16MM, BND-WIRE-20} is disjoint (Jaccard 0.00 < 0.5). RECOMMENDATION: a BLOCKER is present, so it short-circuits everything and outranks the two REVIEW flags -> BLOCKED, approved_base = null, VAT/VDS/TDS not computed, net_payable = null. FOR REFERENCE ONLY (the agent must NOT compute these): had the duplicate not existed, allowed_qty = min(PO 60, GRN accepted 50) = 50, billed 50 <= 50, billed price 500.00 == PO price 500.00, base 25,000.00; VAT 15% = 3,750.00; mushak present -> VDS 0.00; TDS 5% flat (return proof held, no 1.5x uplift) = 1,250.00; net would have been 25,000.00 + 3,750.00 - 0.00 - 1,250.00 = 27,500.00.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E16",
+      "title": "Exact duplicate by invoice-number re-use - different goods, different amount, five weeks later",
+      "purpose": "Probes whether duplicate_exact is keyed on supplier + invoice number ONLY. This is a genuinely different, later delivery (GI pipe, 21,000.00 Tk, 2026-09-14) on a different PO, but the supplier clerically re-used invoice number 'MCB-2261', already used by BILL-E15 (same supplier SUP-E15). Under the stated rule that is duplicate_exact -> BLOCKED, regardless of the 16% amount gap, the 40-day date gap and the disjoint product signature. A detector that only blocks when amount AND date also match will wrongly clear this. It is deliberately far from every sibling on both axes so it must raise duplicate_exact and NOTHING else - it is the clean, single-code BLOCKER of the set, and its null net proves no tax is computed on a bill that is otherwise perfectly matched.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E16",
+        "order_date": "2026-09-01",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "GIP-25MM",
+            "description": "GI pipe 25 mm, 6 m length",
+            "uom": "length",
+            "qty": "60",
+            "unit_price_tk": "350.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E16",
+          "grn_date": "2026-09-12",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "60",
+              "qty_accepted": "60",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E16",
+        "supplier_invoice_no": "MCB-2261",
+        "invoice_date": "2026-09-14",
+        "mushak_6_3_no": "M63-E16-01",
+        "claimed_total_tk": "21000.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "GI pipe 25 mm, 6 m length",
+            "product_code": "GIP-25MM",
+            "qty": "60",
+            "unit_price_tk": "350.00",
+            "amount_tk": "21000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "BLOCKED",
+        "net_payable_tk": null,
+        "approved_base_tk": null,
+        "must_raise_codes": [
+          "duplicate_exact"
+        ],
+        "must_not_raise_codes": [
+          "duplicate_fuzzy",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 60 x 350.00 = 21,000.00 = claimed_total 21,000.00 (consistent). DUPLICATE CHECK: supplier_invoice_no 'MCB-2261' is already on BILL-E15 for the same supplier SUP-E15 -> duplicate_exact (BLOCKER). NO fuzzy hit against anything: vs E15/E20/E21 (25,000.00) diff 4,000.00 / 25,000.00 = 16.00% > 1% and 40/30/40 days > 7; vs E17 (25,150.00) 16.50% and 43 days; vs E18 (24,760.00) 15.19% and 47 days; vs E19 (24,375.00) 13.85% and 39 days. Product signature {GIP-25MM} is disjoint from every sibling (Jaccard 0.00), so the signature test fails too - three independent reasons no duplicate_fuzzy may be raised. RECOMMENDATION: BLOCKER present -> BLOCKED; approved_base = null; VAT/VDS/TDS not computed; net_payable = null. FOR REFERENCE ONLY (not computed): allowed_qty = min(PO 60, GRN accepted 60) = 60, billed 60, price 350.00 == PO 350.00 -> base 21,000.00; VAT 15% = 3,150.00; VDS 0.00 (mushak M63-E16-01 present); TDS 5% = 1,050.00; net would have been 21,000.00 + 3,150.00 - 0.00 - 1,050.00 = 23,100.00.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E17",
+      "title": "Fuzzy duplicate just INSIDE the window - 0.60% on amount, 3 days on date",
+      "purpose": "The canonical TRUE near-duplicate: the same 50-bag cement consignment re-invoiced under a new invoice number 'MCB-2274' three days before BILL-E15, at 25,150.00 vs 25,000.00 (0.60% apart). Both fuzzy conditions are comfortably inside the tuning window (<= 1% amount, <= 7 days) and the product signature is identical, so duplicate_fuzzy must fire -> REVIEW_REQUIRED. Because duplicate_fuzzy is REVIEW and not BLOCKER, the amounts ARE still computed - this case pins down that a fuzzy hit routes the bill to the CFO with a full net payable attached, unlike E15/E16 where the payable is null. It must NOT raise duplicate_exact: the invoice number differs from every sibling.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E17",
+        "order_date": "2026-07-20",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Portland composite cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "60",
+            "unit_price_tk": "503.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E17",
+          "grn_date": "2026-07-31",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E17",
+        "supplier_invoice_no": "MCB-2274",
+        "invoice_date": "2026-08-02",
+        "mushak_6_3_no": "M63-E17-01",
+        "claimed_total_tk": "25150.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland composite cement, 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "50",
+            "unit_price_tk": "503.00",
+            "amount_tk": "25150.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "REVIEW_REQUIRED",
+        "net_payable_tk": "27665.00",
+        "approved_base_tk": "25150.00",
+        "must_raise_codes": [
+          "duplicate_fuzzy"
+        ],
+        "must_not_raise_codes": [
+          "duplicate_exact",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 50 x 503.00 = 25,150.00 = claimed_total 25,150.00 (consistent -> no line_amount_mismatch, no invalid_bill). MATCH: product_code CEM-OPC-50 matches PO-E17 line 1 deterministically (no Node A -> no unmapped_line / mapping_low_confidence / ambiguous_mapping / proposal_mapping_suspect). PRICE: billed 503.00 == PO 503.00 -> no price_over_po / price_under_po, no adjustment. QTY: allowed_qty = min(PO 60, GRN-E17 cumulative accepted 50) = 50; billed 50 <= 50 -> no qty_over_grn. GRN-E17 exists -> no missing_grn. Supplier active, PO status open -> no supplier_on_hold / supplier_blacklisted / po_not_open. approved_amount = 50 x 503.00 = 25,150.00 -> approved_base = 25,150.00. VAT: vat.standard_15 -> 25,150.00 x 0.15 = 3,772.50. VDS: mushak_6_3_no 'M63-E17-01' present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00 (and no missing_mushak_6_3). TDS: tds.supply_of_goods.s89, flat 5% on the VAT-EXCLUSIVE aggregated per-category base (one line, one category); supplier has_return_submission_proof = true so NO 1.5x uplift -> 25,150.00 x 0.05 = 1,257.50. Advances / retention / penalties / prior payments = 0.00 (ledger empty). NET = 25,150.00 + 3,772.50 - 0.00 (VDS) - 1,257.50 (TDS) - 0.00 = 27,665.00. DUPLICATE: vs BILL-E15 (25,000.00, 2026-08-05, same supplier SUP-E15, signature {CEM-OPC-50}) -> diff 150.00; 150.00/25,150.00 = 0.5964% and 150.00/25,000.00 = 0.6000%, both <= 1.00% (inside under either convention); |2026-08-02 - 2026-08-05| = 3 days <= 7; identical product signature -> duplicate_fuzzy (REVIEW). Invoice no 'MCB-2274' differs from every sibling -> no duplicate_exact. No other sibling qualifies: vs E18 1.55% amount, vs E19 3.08% amount, vs E20 13 days, vs E21 signature disjoint, vs E16 16.50% and 43 days. RECOMMENDATION: no BLOCKER, one REVIEW -> REVIEW_REQUIRED, and since duplicate_fuzzy is REVIEW (not BLOCKER) the amounts are computed and the payable is shown to the CFO. NOTE: duplicate_fuzzy is a cross-case expectation - it requires BILL-E15 to be present in the same database at check time.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E18",
+      "title": "Borderline - amount 0.96% apart and dates EXACTLY 7 days apart: falls INSIDE, flags",
+      "purpose": "The knife-edge tuning case. BILL-E18 (24,760.00, 2026-07-29) sits 240.00 Tk below the hub BILL-E15 (25,000.00, 2026-08-05) and exactly 7 calendar days before it. WHICH SIDE OF THE LINE AND WHY: INSIDE, so duplicate_fuzzy fires -> REVIEW_REQUIRED. (1) Date: the rule is 'invoice dates within 7 days'; 7 days is within 7 - the comparison is <=, not <, so a gap of exactly 7 is included and only a gap of 8+ escapes (that is the only knife-edge in this case, and it is unambiguous from the rule text). (2) Amount: deliberately set just under 1% under EITHER denominator convention - 240.00/25,000.00 = 0.9600% measured on the larger total, 240.00/24,760.00 = 0.9693% measured on the smaller - so the verdict cannot flip on how the percentage is normalised, and the case isolates the date boundary cleanly. Had I placed the amount at exactly 1.00% of the larger total (24,750.00), the two conventions would disagree (1.0000% vs 1.0101%) and the ground truth would be contested; that ambiguity is documented here rather than encoded.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E18",
+        "order_date": "2026-07-15",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Portland composite cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "60",
+            "unit_price_tk": "495.20",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E18",
+          "grn_date": "2026-07-27",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E18",
+        "supplier_invoice_no": "MCB-2240",
+        "invoice_date": "2026-07-29",
+        "mushak_6_3_no": "M63-E18-01",
+        "claimed_total_tk": "24760.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland composite cement, 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "50",
+            "unit_price_tk": "495.20",
+            "amount_tk": "24760.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "REVIEW_REQUIRED",
+        "net_payable_tk": "27236.00",
+        "approved_base_tk": "24760.00",
+        "must_raise_codes": [
+          "duplicate_fuzzy"
+        ],
+        "must_not_raise_codes": [
+          "duplicate_exact",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 50 x 495.20 = 24,760.00 = claimed_total 24,760.00 (consistent). MATCH: CEM-OPC-50 matches PO-E18 line 1. PRICE: billed 495.20 == PO 495.20 -> no adjustment. QTY: allowed_qty = min(PO 60, GRN accepted 50) = 50; billed 50 -> no qty_over_grn. approved_base = 50 x 495.20 = 24,760.00. VAT: 24,760.00 x 0.15 = 3,714.00. VDS: mushak present -> vds.standard_goods no_deduction -> 0.00. TDS: tds.supply_of_goods.s89 flat 5%, no uplift (return proof held) -> 24,760.00 x 0.05 = 1,238.00. No advances / retention / penalties / prior payments. NET = 24,760.00 + 3,714.00 - 0.00 - 1,238.00 = 27,236.00. DUPLICATE (the boundary test): vs BILL-E15 24,760.00 vs 25,000.00 -> diff 240.00 -> 0.9600% of the larger total and 0.9693% of the smaller: BOTH <= 1% -> amount condition PASSES either way. Dates 2026-07-29 -> 2026-08-05 = exactly 7 days, and the window is 'within 7 days' (inclusive) -> date condition PASSES. Signature {CEM-OPC-50} identical -> duplicate_fuzzy raised (REVIEW). Cross-checks that must NOT fire: vs E17 (25,150.00, 2026-08-02) amount 1.5507% > 1% -> clear; vs E19 (24,375.00, 2026-08-06) 8 days > 7 AND 1.5549% > 1% -> clear on both axes; vs E20 (25,000.00, 2026-08-15) 17 days > 7 -> clear; vs E21 (25,000.00, 2026-08-05) 0.96% and exactly 7 days BUT signature {MSR-16MM, BND-WIRE-20} is disjoint (Jaccard 0.00 < 0.5) -> clear on the signature test alone; vs E16 15.19% and 47 days -> clear. RECOMMENDATION: no BLOCKER, one REVIEW -> REVIEW_REQUIRED, payable 27,236.00 computed and presented.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E19",
+      "title": "Near miss on AMOUNT - 2.50% apart, only 1 day apart, same goods: must NOT flag",
+      "purpose": "Isolates the amount axis. This is the supplier's next consignment on a running cement PO (PO-E19, status partially_billed, 100 bags ordered, 50 delivered so far), invoiced as 'MCB-2265' one day after the hub BILL-E15 - so the date and the product signature both look exactly like a duplicate and ONLY the amount separates them: 24,375.00 vs 25,000.00 = 2.50%, comfortably outside the 1% tuning band (2.56% if measured on the smaller total - outside under either convention). A detector with a loose amount band (or one that ignores the amount when the date and goods match) will produce a false positive here and hold up a legitimate payment. Expected outcome: no duplicate code of any kind, no adjustments, straight CLEAR at 26,812.50 Tk.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E19",
+        "order_date": "2026-07-22",
+        "status": "partially_billed",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Portland composite cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "100",
+            "unit_price_tk": "487.50",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E19",
+          "grn_date": "2026-08-04",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E19",
+        "supplier_invoice_no": "MCB-2265",
+        "invoice_date": "2026-08-06",
+        "mushak_6_3_no": "M63-E19-01",
+        "claimed_total_tk": "24375.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland composite cement, 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "50",
+            "unit_price_tk": "487.50",
+            "amount_tk": "24375.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "26812.50",
+        "approved_base_tk": "24375.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "duplicate_fuzzy",
+          "duplicate_exact",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 50 x 487.50 = 24,375.00; sum of line amounts 24,375.00 = claimed_total 24,375.00 -> internally consistent, no line_amount_mismatch, no invalid_bill. SUPPLIER: SUP-E15 status active -> no supplier_on_hold / supplier_blacklisted. PO: status partially_billed is checkable -> no po_not_open. GRN: GRN-E19 exists for PO-E19 -> no missing_grn. MATCH: bill line 1 product_code CEM-OPC-50 matches PO-E19 line 1 by code (no Node A needed) -> no unmapped_line / mapping_low_confidence / ambiguous_mapping / proposal_mapping_suspect. PRICE: billed 487.50 == PO 487.50 -> neither price_over_po nor price_under_po; approved_unit_price = 487.50; no adjustment. QTY: allowed_qty = min(PO qty 100, cumulative GRN qty_accepted 50) = 50; approved_qty = min(billed 50, allowed 50) = 50; billed 50 is NOT > allowed 50 -> no qty_over_grn (the PO deliberately carries 100 bags so a second consignment can follow). approved_amount = 50 x 487.50 = 24,375.00. approved_base = 24,375.00. VAT: line 1 is vat.standard_15 -> 24,375.00 x 0.15 = 3,656.25; total VAT = 3,656.25. VDS: mushak_6_3_no 'M63-E19-01' is present -> rule vds.standard_goods, action no_deduction, VDS = 0.00, no missing_mushak_6_3. TDS: single category tds.supply_of_goods.s89 aggregated base = 24,375.00 (VAT-exclusive); has_return_submission_proof = true so NO x1.5 uplift; flat 5% -> 24,375.00 x 0.05 = 1,218.75. Both category ids exist in the FY2026-27 tables -> no unclassified_item. NETTING: ledger_entries is empty -> advances 0.00, retention 0.00 (retention_pct = 0), penalties 0.00, prior payments 0.00. NET = 24,375.00 + 3,656.25 - 0.00 (VDS) - 1,218.75 (TDS) - 0.00 - 0.00 - 0.00 - 0.00 = 26,812.50. DUPLICATE - THE NEGATIVE BEING PROBED: vs BILL-E15 (25,000.00, 2026-08-05) the date gap is 1 day (<= 7, condition met) and the product signature is identical (condition met), but the amount diff = 25,000.00 - 24,375.00 = 625.00 -> 625.00/25,000.00 = 2.5000% and 625.00/24,375.00 = 2.5641%, both > 1.00% -> the AND-condition fails under either denominator convention -> NO duplicate_fuzzy. Other siblings: vs E17 3.08%, vs E18 8 days and 1.55%, vs E20 9 days, vs E21 2.50% and disjoint signature, vs E16 13.85% and 39 days - none satisfy all three legs. supplier_invoice_no 'MCB-2265' is unique for SUP-E15 -> no duplicate_exact. RECOMMENDATION: no BLOCKER, no REVIEW, and no price or qty adjustment was applied (approved amount equals billed amount exactly) -> CLEAR, net_payable_tk = 26,812.50.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E20",
+      "title": "Near miss on DATE - identical 25,000.00 total, same goods, 10 days apart: must NOT flag",
+      "purpose": "Isolates the date axis, and doubles as the legitimate-repeat-business negative in its HARDEST form. BILL-E20 ('MCB-2301', 2026-08-15) is the second consignment on a running cement PO (PO-E20, partially_billed, 100 bags ordered, 50 delivered against GRN-E20) - different invoice number, its own GRN, genuine second delivery. Rather than the easy version of this negative (a clearly different amount weeks later), the total is deliberately IDENTICAL to the hub BILL-E15 at 25,000.00 and the goods identical, so amount (0.00%) and product signature both satisfy the fuzzy test and the 10-day gap is the ONLY thing keeping it out of the 7-day window. This is the highest false-positive risk in the whole set: a detector that widens the window even to 10 days, or that treats an exact amount match as sufficient on its own, will block a perfectly legitimate repeat payment. Expected: no duplicate code, straight CLEAR at 27,500.00 Tk.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E20",
+        "order_date": "2026-07-22",
+        "status": "partially_billed",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Portland composite cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "100",
+            "unit_price_tk": "500.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E20",
+          "grn_date": "2026-08-13",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E20",
+        "supplier_invoice_no": "MCB-2301",
+        "invoice_date": "2026-08-15",
+        "mushak_6_3_no": "M63-E20-01",
+        "claimed_total_tk": "25000.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Portland composite cement, 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "50",
+            "unit_price_tk": "500.00",
+            "amount_tk": "25000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "27500.00",
+        "approved_base_tk": "25000.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "duplicate_fuzzy",
+          "duplicate_exact",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch",
+          "po_not_open"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 50 x 500.00 = 25,000.00 = claimed_total 25,000.00 (consistent, no line_amount_mismatch / invalid_bill). GATES: supplier SUP-E15 active (no hold/blacklist blocker); PO-E20 status partially_billed -> checkable, no po_not_open. MATCH: bill line 1 product_code CEM-OPC-50 matches PO-E20 line 1 deterministically -> no Node A needed, no unmapped_line. PRICE: billed 500.00 == PO 500.00 -> neither price_over_po nor price_under_po; approved_unit_price = 500.00, zero adjustments. QTY: allowed_qty = min(PO 100, cumulative GRN-E20 qty_accepted 50) = 50; billed 50 <= 50 -> approved_qty = 50, no qty_over_grn. GRN-E20 exists -> no missing_grn. (3-way cumulative prior-billed qty is unaffected by the sibling bills: none is APPROVED or PAYMENT_INSTRUCTED, so no allowance is consumed.) approved_amount = 50 x 500.00 = 25,000.00; approved_base = 25,000.00. VAT: line 1 vat.standard_15 -> 25,000.00 x 0.15 = 3,750.00; total VAT = 3,750.00. VDS: mushak_6_3_no 'M63-E20-01' present -> vds.standard_goods, action no_deduction -> VDS = 0.00, no missing_mushak_6_3. TDS: single category tds.supply_of_goods.s89, aggregated VAT-exclusive base 25,000.00 x 0.05 = 1,250.00; has_return_submission_proof = true -> no 1.5x uplift. NETTING: ledger_entries empty -> no advances, prior payments, retention (retention_pct = 0) or penalties. NET = 25,000.00 + 3,750.00 - 0.00 (VDS) - 1,250.00 (TDS) - 0.00 = 27,500.00. DUPLICATE - THE NEGATIVE BEING PROBED: vs BILL-E15 (25,000.00, 2026-08-05, {CEM-OPC-50}) the amount is IDENTICAL (diff 0.00 -> 0.00% <= 1%, condition met) and the product signature is IDENTICAL (Jaccard 1.00, condition met), but |2026-08-05 - 2026-08-15| = 10 days > 7 -> the date condition FAILS, so the AND-chain fails -> NO duplicate_fuzzy. Other siblings: vs E17 13 days, vs E18 17 days, vs E19 9 days, vs E21 10 days and disjoint signature, vs E16 30 days and 16.00% - none satisfies all three conditions. Invoice no 'MCB-2301' is unique for SUP-E15 -> no duplicate_exact. RECOMMENDATION: no BLOCKER, no REVIEW, no price/qty adjustment -> CLEAR, net_payable 27,500.00 (non-null, correct since nothing short-circuits).",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E21",
+      "title": "Near miss on GOODS - same 25,000.00 total, same invoice date, genuinely different products: must NOT flag",
+      "purpose": "Isolates the product-signature axis. BILL-E21 ('MCB-2269') carries the SAME total (25,000.00) on the SAME invoice date (2026-08-05) as the hub BILL-E15, from the same supplier - amount 0.00% apart and 0 days apart, so both numeric fuzzy conditions are fully satisfied. Only the goods differ: MS deformed rod and GI binding wire (MSR-16MM, BND-WIRE-20) against E15's cement (CEM-OPC-50), a Jaccard overlap of 0.00 which is below the 0.5 similar-signature threshold. A detector that drops the signature test, or that treats an unknown/empty signature as 'similar', will block a genuine second-trade invoice on identical numbers alone. The same test carries this bill past BILL-E18 too (0.96% apart, exactly 7 days apart - inside on both numeric axes, saved only by the disjoint signature). Also the only multi-line bill in the set, so per-line VAT summing is exercised alongside the per-category TDS aggregation.",
+      "supplier": {
+        "id": "SUP-E15",
+        "name": "Meghna Cement & Steel Traders",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E21",
+        "order_date": "2026-07-25",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "MSR-16MM",
+            "description": "MS deformed rod 16 mm, 60 grade",
+            "uom": "kg",
+            "qty": "300",
+            "unit_price_tk": "92.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "BND-WIRE-20",
+            "description": "GI binding wire, 20 SWG",
+            "uom": "kg",
+            "qty": "50",
+            "unit_price_tk": "50.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E21",
+          "grn_date": "2026-08-03",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "250",
+              "qty_accepted": "250",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "40",
+              "qty_accepted": "40",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E21",
+        "supplier_invoice_no": "MCB-2269",
+        "invoice_date": "2026-08-05",
+        "mushak_6_3_no": "M63-E21-01",
+        "claimed_total_tk": "25000.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "MS deformed rod 16 mm, 60 grade",
+            "product_code": "MSR-16MM",
+            "qty": "250",
+            "unit_price_tk": "92.00",
+            "amount_tk": "23000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "GI binding wire, 20 SWG",
+            "product_code": "BND-WIRE-20",
+            "qty": "40",
+            "unit_price_tk": "50.00",
+            "amount_tk": "2000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "27500.00",
+        "approved_base_tk": "25000.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "duplicate_fuzzy",
+          "duplicate_exact",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_grn",
+          "missing_mushak_6_3",
+          "unmapped_line",
+          "line_amount_mismatch"
+        ],
+        "arithmetic": "BILL LINE CHECK: line 1 = 250 x 92.00 = 23,000.00 = stated amount_tk; line 2 = 40 x 50.00 = 2,000.00 = stated amount_tk; sum = 25,000.00 = claimed_total 25,000.00 -> internally consistent, no line_amount_mismatch, no invalid_bill. GATES: supplier SUP-E15 active (no hold/blacklist), PO-E21 status open, GRN-E21 exists for the PO -> no BLOCKER, so amounts ARE computed. MATCH: both bill lines carry a product_code -> MSR-16MM -> PO line 1, BND-WIRE-20 -> PO line 2, deterministic, no Node A, no unmapped_line / mapping_low_confidence / ambiguous_mapping / proposal_mapping_suspect. PRICE: 92.00 == PO 92.00 and 50.00 == PO 50.00 -> neither above nor below -> no price_over_po, no price_under_po, no adjustment. QTY: line 1 allowed = min(PO 300, GRN accepted 250) = 250; billed 250 <= 250 -> approved_qty 250, no qty_over_grn. Line 2 allowed = min(PO 50, GRN accepted 40) = 40; billed 40 <= 40 -> approved_qty 40, no qty_over_grn. APPROVED AMOUNTS: 250 x 92.00 = 23,000.00; 40 x 50.00 = 2,000.00 -> approved_base = 25,000.00. VAT (per line, both vat.standard_15 = 15%): 23,000.00 x 0.15 = 3,450.00; 2,000.00 x 0.15 = 300.00 -> total VAT = 3,750.00. Both category ids exist in the FY2026-27 tables -> no unclassified_item. VDS: mushak_6_3_no = 'M63-E21-01' present -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, no missing_mushak_6_3. TDS: both lines are tds.supply_of_goods.s89, so they aggregate into ONE VAT-exclusive category base of 23,000.00 + 2,000.00 = 25,000.00; flat 5% applied once = 1,250.00; has_return_submission_proof = true -> no 1.5x uplift. LEDGER: none -> no advances, prior payments, retention (retention_pct = 0) or penalties, and no advance_* INFO flags. NET = approved_base 25,000.00 + VAT 3,750.00 - VDS 0.00 - TDS 1,250.00 - 0.00 advances - 0.00 retention - 0.00 penalties - 0.00 prior payments = 27,500.00. DUPLICATE - THE NEGATIVE BEING PROBED: invoice no 'MCB-2269' is unique across the set -> no duplicate_exact. vs BILL-E15 (25,000.00, 2026-08-05) amount diff 0.00% <= 1% PASSES and 0 days <= 7 PASSES, but signature {MSR-16MM, BND-WIRE-20} vs {CEM-OPC-50} intersect = 0, union = 3 -> Jaccard 0.00 < 0.50 -> the third AND-condition FAILS -> NO duplicate_fuzzy. Same rescue vs BILL-E18 (24,760.00, 2026-07-29): 0.96% <= 1% and exactly 7 days <= 7 both pass, disjoint signature fails -> no flag. vs E17 (0.60%, 3 days) signature fails -> no flag. vs E19 2.50% amount out of band and disjoint signature; vs E20 10 days out of band and disjoint signature; vs E16 16.00% and 40 days and disjoint signature. RECOMMENDATION: no BLOCKER, no REVIEW exception, no price or qty adjustment -> CLEAR, net payable 27,500.00.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E22",
+      "title": "Mixed VAT categories in one bill (15% + 10% + exempt) — totals must reconcile",
+      "purpose": "Probes per-line VAT category resolution and the reconciliation of a mixed-rate VAT total. A pipeline that applies one blanket rate (e.g. 15% on the whole base) or that silently drops the exempt line from the base will produce a wrong VAT total and/or a wrong TDS base. Also confirms that vat.exempt yields 0.00 VAT but the line is still paid and still counts toward the VAT-exclusive TDS base.",
+      "supplier": {
+        "id": "SUP-E22",
+        "name": "Meghna Building Materials Ltd.",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E22",
+        "order_date": "2026-07-06",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CEM-OPC-50",
+            "description": "Ordinary Portland Cement, 50 kg bag",
+            "uom": "bag",
+            "qty": "30",
+            "unit_price_tk": "550.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "PKG-JUTE-25",
+            "description": "Jute packaging sack, 25 kg capacity",
+            "uom": "pcs",
+            "qty": "200",
+            "unit_price_tk": "45.00",
+            "vat_category_id": "vat.reduced_10",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 3,
+            "product_code": "STA-BOOK-LOG",
+            "description": "Printed hardbound site logbook, 200 pages",
+            "uom": "pcs",
+            "qty": "50",
+            "unit_price_tk": "120.00",
+            "vat_category_id": "vat.exempt",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E22-01",
+          "grn_date": "2026-07-14",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "30",
+              "qty_accepted": "30",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "200",
+              "qty_accepted": "200",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 3,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E22",
+        "supplier_invoice_no": "MBM-2607-118",
+        "invoice_date": "2026-07-16",
+        "mushak_6_3_no": "MU63-2026-07-0442",
+        "claimed_total_tk": "31500.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "OPC cement 50 kg bag",
+            "product_code": "CEM-OPC-50",
+            "qty": "30",
+            "unit_price_tk": "550.00",
+            "amount_tk": "16500.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Jute sack 25 kg",
+            "product_code": "PKG-JUTE-25",
+            "qty": "200",
+            "unit_price_tk": "45.00",
+            "amount_tk": "9000.00"
+          },
+          {
+            "line_no": 3,
+            "description": "Site logbook, hardbound 200 pages",
+            "product_code": "STA-BOOK-LOG",
+            "qty": "50",
+            "unit_price_tk": "120.00",
+            "amount_tk": "6000.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "33300.00",
+        "approved_base_tk": "31500.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "unclassified_item",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "missing_grn",
+          "unmapped_line"
+        ],
+        "arithmetic": "INTEGRITY: L1 30 x 550.00 = 16500.00 OK; L2 200 x 45.00 = 9000.00 OK; L3 50 x 120.00 = 6000.00 OK. Sum = 31500.00 = claimed_total_tk 31500.00 OK -> no line_amount_mismatch, no invalid_bill.\nGATES: supplier SUP-E22 status active (no supplier_on_hold / supplier_blacklisted); PO-E22 status open (no po_not_open); GRN-E22-01 exists covering all 3 PO lines (no missing_grn); only bill in the case, so no duplicate_exact / duplicate_fuzzy. No BLOCKER -> amounts are computed.\nSTEP 1 MATCH: every bill line carries a product_code; CEM-OPC-50 -> PO L1, PKG-JUTE-25 -> PO L2, STA-BOOK-LOG -> PO L3. Deterministic code match, no Node A, no unmapped_line / mapping_low_confidence / ambiguous_mapping / proposal_mapping_suspect.\nSTEP 2 PER LINE:\n  L1 billed 30 x 550.00 = 16500.00; billed price 550.00 == PO 550.00 -> approved_unit_price 550.00, no price_over_po / price_under_po. allowed_qty = min(PO 30, GRN accepted 30) = 30; approved_qty = min(30, 30) = 30 (no qty_over_grn). approved_amount = 30 x 550.00 = 16500.00.\n  L2 billed 200 x 45.00 = 9000.00; price == PO 45.00. allowed_qty = min(200, 200) = 200; approved_qty = 200. approved_amount = 200 x 45.00 = 9000.00.\n  L3 billed 50 x 120.00 = 6000.00; price == PO 120.00. allowed_qty = min(50, 50) = 50; approved_qty = 50. approved_amount = 50 x 120.00 = 6000.00.\n  No line was cut on price or qty -> zero adjustments.\nSTEP 3 BASE: approved_base = 16500.00 + 9000.00 + 6000.00 = 31500.00.\nSTEP 4 TAXES:\n  VAT per line, per its own PO category (all three ids exist in the FY2026-27 tables -> no unclassified_item):\n    L1 vat.standard_15 -> 16500.00 x 0.15 = 2475.00\n    L2 vat.reduced_10  -> 9000.00 x 0.10 = 900.00\n    L3 vat.exempt      -> 6000.00 x 0.00 = 0.00\n    total_VAT = 2475.00 + 900.00 + 0.00 = 3375.00.\n    RECONCILE: a blanket 15% would give 31500.00 x 0.15 = 4725.00 (1350.00 too high); dropping the exempt line from the base entirely would give base 25500.00 and TDS 1275.00. Only the mixed-rate total 3375.00 on a full 31500.00 base is correct.\n  VDS: mushak_6_3_no = MU63-2026-07-0442 is PRESENT -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and no missing_mushak_6_3.\n  TDS: all 3 lines are tds.supply_of_goods.s89 -> one aggregated category. Base is VAT-EXCLUSIVE and includes the exempt line: 16500.00 + 9000.00 + 6000.00 = 31500.00. has_return_submission_proof = true -> no x1.5 uplift, rate 0.05. TDS = 31500.00 x 0.05 = 1575.00.\nSTEP 5 NET: 31500.00 (base) + 3375.00 (VAT) - 0.00 (VDS) - 1575.00 (TDS) - 0.00 (advances, ledger empty) - 0.00 (retention, retention_pct = 0) - 0.00 (penalties) - 0.00 (prior payments) = 33300.00.\nSTEP 6 RECOMMENDATION: no BLOCKER, no REVIEW exception, no price or qty adjustment -> CLEAR.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E23",
+      "title": "Supplier without return-submission proof — TDS uplifted x1.5 (5% -> 7.5%)",
+      "purpose": "Probes the has_return_submission_proof = false uplift on tds.supply_of_goods.s89. The uplift must multiply the RATE (0.05 x 1.5 = 0.075) applied once to the aggregated VAT-exclusive base — not the computed TDS-plus-VAT, and not per line. A pipeline that forgets the uplift under-withholds by 680.00 Tk; one that applies the uplift to a VAT-inclusive base over-withholds.",
+      "supplier": {
+        "id": "SUP-E23",
+        "name": "Rupsha Steel & Wire Traders",
+        "has_return_submission_proof": false,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E23",
+        "order_date": "2026-07-09",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "ROD-MS-16",
+            "description": "MS deformed rod, 16 mm, 60-grade",
+            "uom": "kg",
+            "qty": "250",
+            "unit_price_tk": "92.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "WIR-BND-01",
+            "description": "GI binding wire coil, 20 SWG",
+            "uom": "kg",
+            "qty": "40",
+            "unit_price_tk": "105.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E23-01",
+          "grn_date": "2026-07-19",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "250",
+              "qty_accepted": "250",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "40",
+              "qty_accepted": "40",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E23",
+        "supplier_invoice_no": "RSW-0726-0091",
+        "invoice_date": "2026-07-21",
+        "mushak_6_3_no": "MU63-2026-07-0517",
+        "claimed_total_tk": "27200.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "MS deformed rod 16 mm",
+            "product_code": "ROD-MS-16",
+            "qty": "250",
+            "unit_price_tk": "92.00",
+            "amount_tk": "23000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "GI binding wire coil 20 SWG",
+            "product_code": "WIR-BND-01",
+            "qty": "40",
+            "unit_price_tk": "105.00",
+            "amount_tk": "4200.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "29240.00",
+        "approved_base_tk": "27200.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "missing_mushak_6_3",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "unclassified_item",
+          "missing_grn"
+        ],
+        "arithmetic": "STEP 0 BILL INTEGRITY: L1 250 x 92.00 = 23000.00 == amount_tk; L2 40 x 105.00 = 4200.00 == amount_tk; 23000.00 + 4200.00 = 27200.00 == claimed_total_tk. Consistent -> no line_amount_mismatch, no invalid_bill.\nSTEP 1 MATCH: both bill lines carry product codes present on the PO — ROD-MS-16 -> PO line 1, WIR-BND-01 -> PO line 2. No null product_code, so Node A is not involved and no unmapped_line / mapping_low_confidence / ambiguous_mapping can fire.\nSTEP 2 PER LINE:\n  L1 billed 250 x 92.00 = 23000.00; billed price == PO 92.00 -> neither price_over_po nor price_under_po. allowed_qty = min(PO 250, GRN accepted 250) = 250; approved_qty = min(250, 250) = 250 -> no qty_over_grn. approved_amount = 250 x 92.00 = 23000.00.\n  L2 billed 40 x 105.00 = 4200.00; billed price == PO 105.00 -> no adjustment. allowed_qty = min(PO 40, GRN accepted 40) = 40; approved_qty = min(40, 40) = 40. approved_amount = 40 x 105.00 = 4200.00.\nSTEP 3 BASE: approved_base = 23000.00 + 4200.00 = 27200.00 (== claimed_total; nothing was cut).\nSTEP 4 TAXES:\n  VAT L1 = 23000.00 x 0.15 = 3450.00; VAT L2 = 4200.00 x 0.15 = 630.00; total_VAT = 3450.00 + 630.00 = 4080.00. Both vat/tds category ids exist in the FY2026-27 tables -> no unclassified_item.\n  VDS: mushak_6_3_no = MU63-2026-07-0517 PRESENT -> vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 does NOT fire.\n  TDS: single category tds.supply_of_goods.s89, aggregated across both lines on the VAT-EXCLUSIVE base = 23000.00 + 4200.00 = 27200.00.\n    base rate = 0.05 (flat, s89 applies to all amounts).\n    supplier.has_return_submission_proof = FALSE -> uplift x1.5 on the RATE -> effective rate = 0.05 x 1.5 = 0.075.\n    TDS = 27200.00 x 0.075 = 2040.00, applied ONCE to the aggregate (not per line).\n    CROSS-CHECK: un-uplifted TDS = 27200.00 x 0.05 = 1360.00; the uplift adds 1360.00 x 0.5 = 680.00; 1360.00 + 680.00 = 2040.00. Consistent.\n    NOTE: the base is VAT-EXCLUSIVE. Applying the uplifted rate to a VAT-inclusive base (31280.00 x 0.075 = 2346.00) would be WRONG.\nSTEP 5 NET: 27200.00 + 4080.00 (VAT) - 0.00 (VDS) - 2040.00 (TDS) - 0.00 (ledger_entries is empty: no advance, no prior payment, no penalty; retention_pct = 0) = 29240.00.\nSTEP 6 RECOMMENDATION: supplier status active (no supplier_on_hold / supplier_blacklisted), PO status open (no po_not_open), a GRN exists covering both PO lines (no missing_grn), no other bill shares this supplier_invoice_no and no fuzzy-duplicate candidate exists -> no BLOCKER, so amounts ARE computed and net_payable is non-null. No REVIEW-severity exception fired. No price or qty adjustment was made. -> CLEAR. (Missing return-submission proof is a rate modifier, not an exception code.)",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E24",
+      "title": "Missing mushak 6.3 — VDS 7.5% withheld and missing_mushak_6_3 raised (REVIEW_REQUIRED)",
+      "purpose": "Probes the VDS branch. With mushak_6_3_no = null the pipeline must switch from vds.standard_goods (no_deduction) to vds.standard_goods.missing_mushak, withhold 7.5% of the approved base, AND raise missing_mushak_6_3 which is REVIEW severity. Two independent failure modes are caught: (i) withholding VDS but forgetting the exception (would report CLEAR), (ii) raising the exception but still setting VDS = 0 (would over-pay by 1305.00). REVIEW is not a BLOCKER, so amounts MUST still be computed.",
+      "supplier": {
+        "id": "SUP-E24",
+        "name": "Karnaphuli Pipe & Fittings Co.",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E24",
+        "order_date": "2026-07-12",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "PIP-GI-25",
+            "description": "GI pipe 25 mm, medium grade, 6 m length",
+            "uom": "pcs",
+            "qty": "25",
+            "unit_price_tk": "480.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "FIT-ELB-25",
+            "description": "GI elbow 25 mm, 90 degree",
+            "uom": "pcs",
+            "qty": "150",
+            "unit_price_tk": "36.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E24-01",
+          "grn_date": "2026-07-22",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "25",
+              "qty_accepted": "25",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "150",
+              "qty_accepted": "150",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E24",
+        "supplier_invoice_no": "KPF-INV-2026-338",
+        "invoice_date": "2026-07-25",
+        "mushak_6_3_no": null,
+        "claimed_total_tk": "17400.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "GI pipe 25 mm x 6 m",
+            "product_code": "PIP-GI-25",
+            "qty": "25",
+            "unit_price_tk": "480.00",
+            "amount_tk": "12000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "GI elbow 25 mm 90 deg",
+            "product_code": "FIT-ELB-25",
+            "qty": "150",
+            "unit_price_tk": "36.00",
+            "amount_tk": "5400.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "REVIEW_REQUIRED",
+        "net_payable_tk": "17835.00",
+        "approved_base_tk": "17400.00",
+        "must_raise_codes": [
+          "missing_mushak_6_3"
+        ],
+        "must_not_raise_codes": [
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "unclassified_item",
+          "missing_grn",
+          "invalid_bill"
+        ],
+        "arithmetic": "STEP 0 FIXTURE CONSISTENCY: L1 25 x 480.00 = 12000.00 (matches amount_tk); L2 150 x 36.00 = 5400.00 (matches amount_tk); 12000.00 + 5400.00 = 17400.00 = claimed_total_tk -> no invalid_bill / line_amount_mismatch.\nSTEP 1 MATCH: both bill lines carry product_codes present on the PO (PIP-GI-25 -> PO line 1, FIT-ELB-25 -> PO line 2); deterministic code match, Node A not involved.\nSTEP 2 PER LINE:\n  L1 billed 25 x 480.00 = 12000.00; billed price == PO 480.00 -> no price_over_po, no price_under_po; approved_unit_price = 480.00. allowed_qty = min(PO 25, GRN accepted 25) = 25; approved_qty = min(25, 25) = 25 -> no qty_over_grn; approved_amount = 25 x 480.00 = 12000.00.\n  L2 billed 150 x 36.00 = 5400.00; billed price == PO 36.00 -> no price flags; approved_unit_price = 36.00. allowed_qty = min(PO 150, GRN accepted 150) = 150; approved_qty = min(150, 150) = 150 -> no qty_over_grn; approved_amount = 150 x 36.00 = 5400.00.\nSTEP 3 BASE: approved_base = 12000.00 + 5400.00 = 17400.00 (== claimed_total, no adjustment made anywhere).\nSTEP 4 TAXES:\n  VAT (both lines vat.standard_15 = 15%, a category that exists -> no unclassified_item): L1 = 12000.00 x 0.15 = 1800.00; L2 = 5400.00 x 0.15 = 810.00; total_VAT = 2610.00.\n  VDS: mushak_6_3_no is NULL -> rule vds.standard_goods.missing_mushak -> deduct 7.5% of approved base AND raise missing_mushak_6_3 (REVIEW). VDS = 17400.00 x 0.075 = 1305.00.\n  TDS: one category only, tds.supply_of_goods.s89 (exists), aggregated VAT-EXCLUSIVE base = 12000.00 + 5400.00 = 17400.00. has_return_submission_proof = true -> NO x1.5 uplift -> flat rate 0.05. TDS = 17400.00 x 0.05 = 870.00.\n  NOTE: VDS does not reduce the TDS base; both are taken off the same approved_base 17400.00.\nSTEP 5 NET (ledger empty: no advance, no prior payment, retention_pct = 0, no penalty):\n  17400.00 + 2610.00 = 20010.00; 20010.00 - 1305.00 (VDS) = 18705.00; 18705.00 - 870.00 (TDS) = 17835.00. NET PAYABLE = 17835.00.\nSTEP 6 RECOMMENDATION: no BLOCKER (GRN exists for both PO lines, PO status open, supplier active, no duplicate, bill totals internally consistent). One REVIEW exception (missing_mushak_6_3) -> REVIEW_REQUIRED. REVIEW does not short-circuit, so amounts ARE computed: net_payable_tk = 17835.00, not null. No price/qty adjustment occurred, so CLEAR_WITH_ADJUSTMENTS is not in play; the REVIEW outranks CLEAR either way.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E25",
+      "title": "Advance smaller than the payable — offset in full, no INFO flag, CLEAR",
+      "purpose": "Probes the happy-path netting order: the advance is deducted AFTER VAT is added and VDS/TDS are withheld, and because the advance (5000.00) is smaller than the running payable (21780.00) it is offset in full with nothing left open, so NO advance_* INFO flag should fire. Catches pipelines that offset the advance against the bare base, that cap the offset unnecessarily, or that flag a fully-consumed advance as partially offset. The supplier_only ledger row must be ignored (it is not tied to this PO).",
+      "supplier": {
+        "id": "SUP-E25",
+        "name": "Bengal Cables & Conductors Ltd.",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E25",
+        "order_date": "2026-07-02",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CBL-CU-4C6",
+            "description": "Copper armoured cable, 4 core x 6 sq mm",
+            "uom": "metre",
+            "qty": "120",
+            "unit_price_tk": "165.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E25-01",
+          "grn_date": "2026-07-13",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "120",
+              "qty_accepted": "120",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E25",
+        "supplier_invoice_no": "BCC-2026-0774",
+        "invoice_date": "2026-07-15",
+        "mushak_6_3_no": "MU63-2026-07-0603",
+        "claimed_total_tk": "19800.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Copper armoured cable 4C x 6 sq mm",
+            "product_code": "CBL-CU-4C6",
+            "qty": "120",
+            "unit_price_tk": "165.00",
+            "amount_tk": "19800.00"
+          }
+        ]
+      },
+      "ledger_entries": [
+        {
+          "entry_type": "advance",
+          "amount_tk": "5000.00",
+          "entry_date": "2026-07-03",
+          "ref": "ADV-E25-01",
+          "scope": "this_po"
+        },
+        {
+          "entry_type": "advance",
+          "amount_tk": "9000.00",
+          "entry_date": "2026-05-19",
+          "ref": "ADV-OTHER-2211",
+          "scope": "supplier_only"
+        }
+      ],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "16780.00",
+        "approved_base_tk": "19800.00",
+        "must_raise_codes": [],
+        "must_not_raise_codes": [
+          "advance_partially_offset",
+          "advance_not_fully_offset",
+          "missing_mushak_6_3",
+          "price_over_po",
+          "qty_over_grn",
+          "unclassified_item"
+        ],
+        "arithmetic": "STEP 0 FIXTURE INTEGRITY: line 1 amount 120 x 165.00 = 19800.00 = stated amount_tk; sum of lines 19800.00 = claimed_total_tk 19800.00. Supplier active, PO status open, a GRN exists -> no BLOCKER (no missing_grn, no supplier_on_hold/blacklisted, no po_not_open, no duplicate).\nSTEP 1 MATCH: bill line 1 matched to PO line 1 by product_code CBL-CU-4C6 (no null product_code, so Node A is not involved).\nSTEP 2 PER LINE: billed_amount = 120 x 165.00 = 19800.00; billed unit price 165.00 == PO unit price 165.00 -> neither price_over_po nor price_under_po. allowed_qty = min(PO qty 120, cumulative GRN qty_accepted 120) = 120; approved_qty = min(billed 120, allowed 120) = 120 -> no qty_over_grn. approved_unit_price = 165.00. approved_amount = 120 x 165.00 = 19800.00.\nSTEP 3 BASE: approved_base = 19800.00 (== claimed_total, so no line_amount_mismatch).\nSTEP 4 TAXES:\n  VAT line 1 (vat.standard_15 = 15%) = 19800.00 x 0.15 = 2970.00. Total VAT = 2970.00.\n  VDS: mushak_6_3_no = MU63-2026-07-0603 is PRESENT -> rule vds.standard_goods, action no_deduction -> VDS = 0.00, and missing_mushak_6_3 does NOT fire.\n  TDS: single category tds.supply_of_goods.s89, aggregated VAT-EXCLUSIVE base = 19800.00; flat 5%; has_return_submission_proof = true so NO x1.5 uplift: 19800.00 x 0.05 = 990.00.\nSTEP 5 NET (advance applied LAST, after VAT is added and VDS/TDS withheld):\n  running payable before advances = 19800.00 + 2970.00 - 0.00 (VDS) - 990.00 (TDS) = 21780.00.\n  Ledger: ADV-E25-01 5000.00 scope this_po applies; ADV-OTHER-2211 9000.00 scope supplier_only is NOT tied to PO-E25 and is IGNORED.\n  advance_max_offset_pct = 1.00 -> full offset capped at the running payable: min(5000.00, 21780.00) = 5000.00. Advance fully consumed, remainder open = 5000.00 - 5000.00 = 0.00 -> NO advance_partially_offset / advance_not_fully_offset.\n  retention (retention_pct = 0) = 0.00; penalties = 0.00; prior payments = 0.00.\n  NET = 21780.00 - 5000.00 - 0.00 - 0.00 - 0.00 = 16780.00 (positive, no negative clamp needed).\nSTEP 6 RECOMMENDATION: no BLOCKER, no REVIEW, no price or qty adjustment (approved amounts equal billed amounts) -> CLEAR.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E26",
+      "title": "Advance larger than the payable — offset capped at zero, advance_partially_offset (INFO), net 0.00",
+      "purpose": "Probes the offset cap. The 12000.00 advance exceeds the 8250.00 running payable, so the offset must stop at the payable, net must be exactly 0.00 (never negative, never a refund), the 3750.00 remainder stays open on the ledger, and advance_partially_offset (INFO) fires. Because INFO cannot escalate on its own and there is no price/qty adjustment, the recommendation must still be CLEAR — catching pipelines that treat any INFO flag as REVIEW, and pipelines that emit a negative net payable of -3750.00.",
+      "supplier": {
+        "id": "SUP-E26",
+        "name": "Padma Chemical Supplies",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E26",
+        "order_date": "2026-07-05",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "CHM-HYPO-35",
+            "description": "Sodium hypochlorite solution, 35 kg drum",
+            "uom": "drum",
+            "qty": "6",
+            "unit_price_tk": "1250.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E26-01",
+          "grn_date": "2026-07-18",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "6",
+              "qty_accepted": "6",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E26",
+        "supplier_invoice_no": "PCS-INV-1902",
+        "invoice_date": "2026-07-20",
+        "mushak_6_3_no": "MU63-2026-07-0688",
+        "claimed_total_tk": "7500.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Sodium hypochlorite 35 kg drum",
+            "product_code": "CHM-HYPO-35",
+            "qty": "6",
+            "unit_price_tk": "1250.00",
+            "amount_tk": "7500.00"
+          }
+        ]
+      },
+      "ledger_entries": [
+        {
+          "entry_type": "advance",
+          "amount_tk": "12000.00",
+          "entry_date": "2026-07-06",
+          "ref": "ADV-E26-01",
+          "scope": "this_po"
+        }
+      ],
+      "expectations": {
+        "recommendation": "CLEAR",
+        "net_payable_tk": "0.00",
+        "approved_base_tk": "7500.00",
+        "must_raise_codes": [
+          "advance_partially_offset"
+        ],
+        "must_not_raise_codes": [
+          "missing_mushak_6_3",
+          "price_over_po",
+          "qty_over_grn",
+          "unclassified_item",
+          "missing_grn",
+          "invalid_bill"
+        ],
+        "arithmetic": "STEP 0 FIXTURE INTEGRITY: line 1 amount 6 x 1250.00 = 7500.00 == amount_tk; sum of lines 7500.00 == claimed_total_tk 7500.00 -> no line_amount_mismatch, no invalid_bill.\nSTEP 1 MATCH: bill line 1 matched to PO line 1 by product_code CHM-HYPO-35 (deterministic, no Node A needed).\nSTEP 2 PER LINE: billed 6 x 1250.00 = 7500.00; billed price 1250.00 == PO 1250.00 -> no price_over_po and no price_under_po. allowed_qty = min(PO 6, cumulative GRN qty_accepted 6) = 6; approved_qty = min(billed 6, allowed 6) = 6 -> no qty_over_grn. approved_amount = 6 x 1250.00 = 7500.00.\nSTEP 3 BASE: approved_base = 7500.00 (== claimed_total).\nSTEP 4 TAXES:\n  VAT (vat.standard_15) = 7500.00 x 0.15 = 1125.00.\n  VDS: mushak_6_3_no PRESENT (MU63-2026-07-0688) -> rule vds.standard_goods, action no_deduction -> VDS = 0.00; missing_mushak_6_3 does NOT fire.\n  TDS: one category only (tds.supply_of_goods.s89), aggregated VAT-exclusive base 7500.00; has_return_submission_proof = true so NO x1.5 uplift: 7500.00 x 0.05 = 375.00.\nSTEP 5 NET:\n  running payable before advances = 7500.00 + 1125.00 - 0.00 (VDS) - 375.00 (TDS) = 8250.00.\n  advance on this PO = 12000.00; advance_max_offset_pct = 1.00 so the ceiling is the whole running payable, and the offset is capped there (net can never go below zero):\n    offset_applied = min(12000.00, 8250.00) = 8250.00.\n    NET = 8250.00 - 8250.00 = 0.00.\n    remainder open on the ledger = 12000.00 - 8250.00 = 3750.00 (carried forward against future bills on PO-E26; NOT refunded, NOT a negative payable).\n  retention_pct = 0, no penalties, no prior payments -> nothing further deducted.\n  Because the advance was only PARTLY consumed (0 < offset 8250.00 < advance 12000.00), the flag is advance_partially_offset (INFO) — not advance_not_fully_offset, which is reserved for an advance that could be offset by nothing at all.\nSTEP 6 RECOMMENDATION: no BLOCKER (GRN exists, supplier active, PO open, no duplicate invoice), no REVIEW. advance_partially_offset is INFO and INFO cannot escalate on its own. Billed price and qty both equal the PO / GRN allowance, so there is NO price or qty adjustment -> not CLEAR_WITH_ADJUSTMENTS -> CLEAR, with net_payable 0.00.",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E27",
+      "title": "BLOCKER: supplier on hold — no amounts computed at all, net_payable null",
+      "purpose": "Probes the BLOCKER short-circuit. Everything else about this bill is clean (codes match, GRN fully accepts, prices equal the PO, mushak present), so a pipeline that ignores supplier.status would happily compute 21500.00 base / 3225.00 VAT / 1075.00 TDS and return CLEAR. The correct behaviour is supplier_on_hold -> BLOCKED with approved_base_tk and net_payable_tk BOTH null and NO tax computed. Also checks the hold vs blacklist distinction: supplier_blacklisted must NOT be raised.",
+      "supplier": {
+        "id": "SUP-E27",
+        "name": "Titas Safety Solutions",
+        "has_return_submission_proof": true,
+        "status": "hold"
+      },
+      "po": {
+        "id": "PO-E27",
+        "order_date": "2026-07-08",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "SAF-HELM-IND",
+            "description": "Industrial safety helmet with chin strap",
+            "uom": "pcs",
+            "qty": "40",
+            "unit_price_tk": "320.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "SAF-GLV-CUT",
+            "description": "Cut-resistant hand gloves, level 5",
+            "uom": "pair",
+            "qty": "60",
+            "unit_price_tk": "145.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E27-01",
+          "grn_date": "2026-07-20",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "40",
+              "qty_accepted": "40",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "60",
+              "qty_accepted": "60",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E27",
+        "supplier_invoice_no": "TSS-2026-0451",
+        "invoice_date": "2026-07-23",
+        "mushak_6_3_no": "MU63-2026-07-0721",
+        "claimed_total_tk": "21500.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "Industrial safety helmet",
+            "product_code": "SAF-HELM-IND",
+            "qty": "40",
+            "unit_price_tk": "320.00",
+            "amount_tk": "12800.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Cut-resistant gloves level 5",
+            "product_code": "SAF-GLV-CUT",
+            "qty": "60",
+            "unit_price_tk": "145.00",
+            "amount_tk": "8700.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "BLOCKED",
+        "net_payable_tk": null,
+        "approved_base_tk": null,
+        "must_raise_codes": [
+          "supplier_on_hold"
+        ],
+        "must_not_raise_codes": [
+          "supplier_blacklisted",
+          "missing_grn",
+          "duplicate_exact",
+          "po_not_open",
+          "price_over_po",
+          "qty_over_grn",
+          "missing_mushak_6_3",
+          "unclassified_item"
+        ],
+        "arithmetic": "FIXTURE CONSISTENCY: L1 40 x 320.00 = 12800.00 = amount_tk; L2 60 x 145.00 = 8700.00 = amount_tk; 12800.00 + 8700.00 = 21500.00 = claimed_total_tk. Internally consistent.\nSTEP 0 BLOCKER SCAN: supplier SUP-E27 status = 'hold' -> exception supplier_on_hold, severity BLOCKER. A BLOCKER short-circuits the whole computation: matching may run, but NO amounts are produced.\n  approved_base_tk = null. total VAT = not computed. VDS = not computed. TDS = not computed. net_payable_tk = null.\nWHAT A CORRECT PIPELINE MUST NOT DO (this is the trap): every other input is clean, so an implementation that skips the supplier-status gate would compute and report the following, which is the WRONG answer for this case -\n  L1 40 x 320.00 = 12800.00; L2 60 x 145.00 = 8700.00; base 21500.00; VAT 21500.00 x 0.15 = 3225.00; VDS 0.00 (mushak MU63-2026-07-0721 present -> vds.standard_goods, no_deduction); TDS: single category tds.supply_of_goods.s89, aggregated VAT-exclusive base 21500.00 x 0.05 = 1075.00 (has_return_submission_proof = true, so NO x1.5 uplift); net 21500.00 + 3225.00 - 0.00 - 1075.00 - 0 advances - 0 retention - 0 penalties - 0 prior payments = 23650.00, recommendation CLEAR.\n  Those figures are shown ONLY to define the failure mode. The expected output has net_payable_tk = null and approved_base_tk = null.\nSTEP 6 RECOMMENDATION: any BLOCKER -> BLOCKED. Severity note: the supplier is on HOLD, not blacklisted, so supplier_on_hold is the correct code and supplier_blacklisted must not be raised. PO status is 'open' so po_not_open must not be raised, and GRN-E27-01 exists (covering both PO lines) so missing_grn must not be raised. Billed prices equal PO prices (no price_over_po / price_under_po) and billed qty equals min(PO qty, GRN accepted) on both lines (no qty_over_grn); mushak present (no missing_mushak_6_3); both vat/tds category ids exist in the FY2026-27 tables (no unclassified_item).",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    },
+    {
+      "case_id": "E28",
+      "title": "Unclassified item — unknown VAT category id: no VAT on that line, still paid, TDS still on the full base",
+      "purpose": "Probes the unclassified_item path. PO line 2 carries vat_category_id 'vat.does_not_exist', which is absent from the FY2026-27 tables. The rules loader must not invent a rate or silently fall back to 15%; the line gets NO VAT (0.00) but is STILL PAID in the approved base, TDS still applies to the FULL approved base including that line, and unclassified_item (REVIEW) drives REVIEW_REQUIRED. Catches three failure modes: defaulting the unknown id to 15% (VAT 3840.00 instead of 2550.00), excluding the line from the base (base 17000.00, TDS 850.00), and reporting CLEAR because the amounts happened to compute.",
+      "supplier": {
+        "id": "SUP-E28",
+        "name": "Bijoy Stationers & Office Supply",
+        "has_return_submission_proof": true,
+        "status": "active"
+      },
+      "po": {
+        "id": "PO-E28",
+        "order_date": "2026-07-10",
+        "status": "open",
+        "lines": [
+          {
+            "line_no": 1,
+            "product_code": "STA-PPR-A4",
+            "description": "A4 offset paper, 80 gsm, 500-sheet ream",
+            "uom": "ream",
+            "qty": "50",
+            "unit_price_tk": "340.00",
+            "vat_category_id": "vat.standard_15",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          },
+          {
+            "line_no": 2,
+            "product_code": "STA-TNR-05",
+            "description": "Laser printer toner cartridge, compatible",
+            "uom": "pcs",
+            "qty": "4",
+            "unit_price_tk": "2150.00",
+            "vat_category_id": "vat.does_not_exist",
+            "tds_category_id": "tds.supply_of_goods.s89"
+          }
+        ]
+      },
+      "grns": [
+        {
+          "id": "GRN-E28-01",
+          "grn_date": "2026-07-21",
+          "lines": [
+            {
+              "po_line_no": 1,
+              "qty_received": "50",
+              "qty_accepted": "50",
+              "qty_rejected": "0"
+            },
+            {
+              "po_line_no": 2,
+              "qty_received": "4",
+              "qty_accepted": "4",
+              "qty_rejected": "0"
+            }
+          ]
+        }
+      ],
+      "bill": {
+        "id": "BILL-E28",
+        "supplier_invoice_no": "BSO-2026-2210",
+        "invoice_date": "2026-07-24",
+        "mushak_6_3_no": "MU63-2026-07-0755",
+        "claimed_total_tk": "25600.00",
+        "lines": [
+          {
+            "line_no": 1,
+            "description": "A4 offset paper 80 gsm ream",
+            "product_code": "STA-PPR-A4",
+            "qty": "50",
+            "unit_price_tk": "340.00",
+            "amount_tk": "17000.00"
+          },
+          {
+            "line_no": 2,
+            "description": "Toner cartridge (compatible)",
+            "product_code": "STA-TNR-05",
+            "qty": "4",
+            "unit_price_tk": "2150.00",
+            "amount_tk": "8600.00"
+          }
+        ]
+      },
+      "ledger_entries": [],
+      "expectations": {
+        "recommendation": "REVIEW_REQUIRED",
+        "net_payable_tk": "26870.00",
+        "approved_base_tk": "25600.00",
+        "must_raise_codes": [
+          "unclassified_item"
+        ],
+        "must_not_raise_codes": [
+          "missing_mushak_6_3",
+          "price_over_po",
+          "price_under_po",
+          "qty_over_grn",
+          "unmapped_line",
+          "missing_grn",
+          "invalid_bill"
+        ],
+        "arithmetic": "STEP 0 BILL INTEGRITY: L1 50 x 340.00 = 17000.00 (matches amount_tk); L2 4 x 2150.00 = 8600.00 (matches amount_tk); 17000.00 + 8600.00 = 25600.00 = claimed_total_tk -> no invalid_bill.\nSTEP 1 MATCH: both bill lines matched to PO lines 1 and 2 by product_code (no null codes, so Node A is not involved).\nSTEP 2 PER LINE:\n  L1 billed 50 x 340.00 = 17000.00; billed price == PO 340.00 -> no price_over_po / price_under_po. allowed_qty = min(PO 50, GRN accepted 50) = 50; approved_qty = min(50, 50) = 50 -> approved_amount = 50 x 340.00 = 17000.00.\n  L2 billed 4 x 2150.00 = 8600.00; billed price == PO 2150.00 -> no price adjustment. allowed_qty = min(PO 4, GRN accepted 4) = 4; approved_qty = min(4, 4) = 4 -> approved_amount = 4 x 2150.00 = 8600.00. The line IS approved and IS paid; only its VAT treatment is unresolved.\nSTEP 3 BASE: approved_base = 17000.00 + 8600.00 = 25600.00 (== claimed_total). The unclassified line stays IN the base.\nSTEP 4 TAXES:\n  VAT L1 vat.standard_15 -> 17000.00 x 0.15 = 2550.00.\n  VAT L2 vat_category_id = 'vat.does_not_exist' is NOT present in the FY2026-27 VAT table -> raise unclassified_item (REVIEW) and apply NO VAT to this line: VAT L2 = 0.00. No default rate may be substituted.\n  total_VAT = 2550.00 + 0.00 = 2550.00.\n  VDS: mushak_6_3_no = MU63-2026-07-0755 PRESENT -> vds.standard_goods / no_deduction -> VDS = 0.00, and no missing_mushak_6_3.\n  TDS: both lines carry tds.supply_of_goods.s89 (that id EXISTS, so the TDS side is fully classified). Aggregated VAT-exclusive base = the FULL approved base 17000.00 + 8600.00 = 25600.00, including the unclassified line. has_return_submission_proof = true -> no x1.5 uplift. TDS = 25600.00 x 0.05 = 1280.00.\nSTEP 5 NET: ledger_entries is empty -> no advances, prior payments or penalties; retention_pct = 0. 25600.00 + 2550.00 (VAT) - 0.00 (VDS) - 1280.00 (TDS) - 0.00 (advance/retention/penalty/prior) = 26870.00.\n  Running check: 25600.00 + 2550.00 = 28150.00; 28150.00 - 1280.00 = 26870.00.\nSTEP 6 RECOMMENDATION: no BLOCKER (GRN exists for both PO lines, supplier active, PO open, no duplicate). unclassified_item is REVIEW -> REVIEW_REQUIRED, with amounts still computed (net 26870.00, not null). No price/qty adjustment occurred, so CLEAR_WITH_ADJUSTMENTS does not apply even in the absence of the REVIEW.\nWRONG ANSWERS THIS CASE CATCHES: VAT 3840.00 (unknown id defaulted to 15%: 25600.00 x 0.15); base 17000.00 / TDS 850.00 (unclassified line dropped from the base); recommendation CLEAR (exception not raised).",
+        "node_a_difficulty": "none",
+        "node_a_ground_truth": {}
+      },
+      "ground_truth_verified": true
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}upload a bill{% endblock %}
+{% block content %}
+<h1>Upload a bill</h1>
+
+{% if error %}
+<p class="ratewarn"><strong>Could not read that file.</strong><br>{{ error }}</p>
+{% endif %}
+
+<p class="meta">
+  The file is only <em>read</em> here. Nothing is saved until you have seen the
+  values on the next screen and confirmed them.
+</p>
+
+<form class="decision" method="post" action="/upload" enctype="multipart/form-data">
+  <label>Bill file</label>
+  <input type="file" name="upload" required
+         accept=".csv,.json,.pdf,.png,.jpg,.jpeg,.webp">
+  <p class="meta">
+    <strong>CSV</strong> or <strong>JSON</strong> is read exactly as written.
+    A <strong>PDF, photo or scan</strong> has to be read by the AI, which can
+    misread it — you will be shown every value to check.
+  </p>
+
+  <label>
+    <input type="checkbox" name="use_llm" value="1">
+    Allow the AI to read a PDF / photo / scan
+  </label>
+
+  <label>Which purchase order is this bill for? <span class="meta">(required — the bill is checked against it)</span></label>
+  <select name="po_id" required>
+    <option value="">— choose a PO —</option>
+    {% for po in purchase_orders %}
+    <option value="{{ po.id }}">{{ po.id }} — supplier {{ po.supplier_id }} ({{ po.status.value }})</option>
+    {% endfor %}
+  </select>
+
+  <label>Supplier</label>
+  <select name="supplier_id" required>
+    <option value="">— choose a supplier —</option>
+    {% for s in suppliers %}
+    <option value="{{ s.id }}">{{ s.id }} — {{ s.name }}{% if s.status.value != 'active' %} ({{ s.status.value }}){% endif %}</option>
+    {% endfor %}
+  </select>
+
+  <label>Bill reference <span class="meta">(your own id for this bill, e.g. BILL-2026-014)</span></label>
+  <input type="text" name="bill_id" placeholder="BILL-2026-014">
+
+  <button type="submit">Read the file</button>
+</form>
+
+<h2>What the file should contain</h2>
+<p class="meta">A CSV needs a header row and one row per bill line:</p>
+<pre class="report">line_no,description,product_code,qty,unit_price_tk,amount_tk
+1,Pro X industrial unit,PRO-X,10,100.00,1000.00
+2,Pro Y industrial unit,PRO-Y,5,100.00,500.00</pre>
+<p class="meta">
+  <code>product_code</code> may be left blank — the AI will try to match those
+  lines to the purchase order, and anything it is unsure about goes to review
+  rather than being guessed. If <code>amount_tk</code> is missing it is computed
+  as quantity x unit price and flagged.
+</p>
+{% endblock %}

@@ -1,0 +1,51 @@
+# =============================================================================
+# VDS (VAT deducted at source) - FY2026-27
+#
+# STATUS: DRAFT. Read from the official PDFs in nbr_documents/ on 2026-08-26.
+# NOT confirmed by an accountant.
+#
+# SOURCES (both needed - either alone is misleading):
+#   BASE:      Utse Musok Kortan O Aday Bidhimala 2025 (VAT Deduction at Source
+#              & Collection Rules 2025), S.R.O. 182-Ain/2025/310-Mushak,
+#              27 May 2025 - still in force for FY2026-27.
+#   AMENDMENT: S.R.O. 140-Ain/2026/345-Mushak, 07 June 2026, effective
+#              1 July 2026 (amends Rules 3(1), 3(3), 3(5), 4(2) and 5).
+# There is NO standalone FY2026-27 "VDS Guideline" booklet; these rules are it.
+#
+# CONFIRMED: WE ARE A WITHHOLDING ENTITY. Rule 2(1)(kha) lists "kono limited
+# company" - ANY limited company, at any turnover, from incorporation. This
+# validates `we_are_withholding_entity: true` in policies.yaml.
+#
+# ⚠️ NOT MODELLED - THE SERVICES OVERRIDE. Rule 3(1) carries a table of ~44
+# SERVICE CODES (S001.10 hotel, S004.00 construction, S024.00 furniture, ...)
+# and its chapeau requires deduction at the tabled rate "musok chalanpotro
+# thakuk ba na thakuk abosshikbhabe" - MANDATORILY, WHETHER OR NOT A MUSHAK 6.3
+# EXISTS. For anything matching one of those service rows, a valid Mushak 6.3
+# does NOT stop the deduction. This engine models only the GOODS position below
+# and has no concept of service codes, so a SERVICE bill would currently be
+# under-deducted. Bills for the listed services must not be run through this
+# system until the service-code table is modelled. (Our fixtures are all goods.)
+# =============================================================================
+
+- id: vds.standard_goods
+  # Mushak 6.3 PRESENT -> no deduction at source, for GOODS.
+  source_doc: "DRAFT (UNVERIFIED) - VDS Rules 2025 (S.R.O. 182-Ain/2025/310-Mushak, 27 May 2025) Rule 5, clauses (ka) and (kha): no VAT is deducted at source where a manufacturer supplies goods through Form Mushak-6.3 mentioning the applicable rate, or a trader supplies goods through Form Mushak-6.3 mentioning the 15% rate. As amended for FY2026-27 by S.R.O. 140-Ain/2026/345-Mushak. nbr_documents/vds_rules_2025_base.pdf p.4-5. Extracted 2026-08-26. AWAITING ACCOUNTANT SIGN-OFF."
+  applies_if: {we_are_withholding_entity: true, mushak_6_3_present: true}
+  action: no_deduction
+
+- id: vds.standard_goods.missing_mushak
+  # Mushak 6.3 ABSENT -> deduct, and flag for review.
+  #
+  # 🔴 THE 7.5% RATE HERE IS NOT CONFIRMED. The extraction established the
+  # STRUCTURE (Rule 5 grants no-deduction only where a compliant Mushak 6.3 is
+  # produced, so its absence means deduction applies) but did NOT isolate a
+  # single goods rate for the no-invoice case - the tabled rates are
+  # service-code specific and range from 2% to 15%. 7.5% is carried over from
+  # the original placeholder and is a GUESS. It must be replaced with the rate
+  # the accountant identifies for the actual supply, or the bill routed to
+  # manual handling. The REVIEW severity below means no such bill is ever paid
+  # without a human looking at it.
+  source_doc: "DRAFT (UNVERIFIED - RATE IS A CARRIED-OVER GUESS, STRUCTURE ONLY IS SOURCED) - VDS Rules 2025 (S.R.O. 182-Ain/2025/310-Mushak) Rule 5 read a contrario: the no-deduction reliefs are conditional on a compliant Mushak-6.3, so deduction applies when none is produced. nbr_documents/vds_rules_2025_base.pdf p.4-5. The 7.5% figure is NOT from the document. AWAITING ACCOUNTANT SIGN-OFF."
+  applies_if: {we_are_withholding_entity: true, mushak_6_3_present: false}
+  action: {deduct_rate: "0.075"}
+  severity_if_triggered: REVIEW

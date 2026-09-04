@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}queue{% endblock %}
+{% block content %}
+<h1>Bills pending CFO review</h1>
+{% if rows %}
+<table>
+  <tr>
+    <th>Bill</th><th>Supplier</th><th>Invoice no</th><th>Date</th>
+    <th class="num">Claimed Tk</th><th class="num">Net payable Tk</th><th>Recommendation</th>
+  </tr>
+  {% for row in rows %}
+  <tr>
+    <td><a href="/review/{{ row.bill.id }}">{{ row.bill.id }}</a></td>
+    <td>{{ row.bill.supplier_id }}</td>
+    <td>{{ row.bill.supplier_invoice_no }}</td>
+    <td>{{ row.bill.invoice_date }}</td>
+    <td class="num">{{ row.claimed_tk }}</td>
+    <td class="num">{{ row.net_tk if row.net_tk is not none else "—" }}</td>
+    <td><span class="badge {{ row.recommendation }}">{{ row.recommendation }}</span></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No bills are pending review. Seed and check bills with the CLI, or POST to <code>/bills/&lt;id&gt;/check</code>.</p>
+{% endif %}
+{% endblock %}
