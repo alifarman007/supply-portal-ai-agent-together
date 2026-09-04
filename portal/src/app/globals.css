@@ -1,0 +1,333 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --font-sans: var(--font-jakarta), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --font-bn: var(--font-hind), var(--font-jakarta), sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "Menlo", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-brand: var(--brand-red);
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-600: var(--brand-red-600);
+  --color-brand-red-700: var(--brand-red-700);
+  --color-brand-red-900: var(--brand-red-900);
+  --color-brand-red-050: var(--brand-red-050);
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-cream-600: var(--brand-cream-600);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-sky: var(--brand-sky);
+
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-hairline: var(--border);
+
+  --radius: 1rem;
+  --radius-sm: calc(var(--radius) * 0.66);
+  --radius-md: calc(var(--radius) * 0.85);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Pulled from the Kazi Farms mark: signal red on a chrome-yellow field. */
+  --brand-red: #ee3124;
+  --brand-red-600: #d62317;
+  --brand-red-700: #b01c12;
+  --brand-red-900: #4a0d08;
+  --brand-red-050: #fef3f1;
+  --brand-yellow: #ffe81a;
+  /* Ivory tint the whole surface sits on — the yellow desaturated to near-white. */
+  --brand-cream: #fafaec;
+  --brand-cream-600: #c69a06;
+  /* Accent used for names/links in the header block. */
+  --brand-sky: #00aeef;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fafaec;
+  --bg-grad-a: #fbfbef;
+  --bg-grad-b: #f7f7e6;
+  /* Cards are opaque white on ivory — the contrast is the whole effect, so no
+     translucency here or the separation washes out. */
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-solid: #ffffff;
+  --text: #1c1b19;
+  --text-muted: #6f6b64;
+  --shadow: 0 1px 2px rgba(28, 27, 25, 0.04);
+  /* Only the login hero spotlight reads these now — not the app canvas. */
+  --glow-red: rgba(238, 49, 36, 0.06);
+  --glow-cream: rgba(255, 232, 26, 0.1);
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface-solid);
+  --card-foreground: var(--text);
+  --popover: var(--surface-solid);
+  --popover-foreground: var(--text);
+  --primary: var(--brand-red);
+  --primary-foreground: #ffffff;
+  --secondary: #f2f2e4;
+  --secondary-foreground: var(--text);
+  --muted: #f2f2e4;
+  --muted-foreground: var(--text-muted);
+  --accent: #f2f2e4;
+  --accent-foreground: var(--text);
+  --destructive: var(--danger);
+  --border: rgba(28, 27, 25, 0.08);
+  --input: rgba(28, 27, 25, 0.12);
+  --ring: rgba(238, 49, 36, 0.35);
+
+  --ok: #16a34a;
+  --warn: #ea9008;
+  --danger: #e0521f;
+  --info: #2f7fe4;
+
+  --chart-1: var(--brand-red);
+  --chart-2: #4ab84a;
+  --chart-3: #f5a623;
+  --chart-4: #4c8ff0;
+  --chart-5: #8b7ff0;
+
+  --sidebar: transparent;
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--brand-red);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f2f2e4;
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: rgba(28, 27, 25, 0.08);
+  --sidebar-ring: rgba(238, 49, 36, 0.35);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #191917;
+  --bg-grad-a: #1e1e1b;
+  --bg-grad-b: #141412;
+  --surface: #232320;
+  --surface-strong: #2a2a26;
+  --surface-solid: #232320;
+  --text: #f6f6ee;
+  --text-muted: #b0ada4;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --glow-red: rgba(238, 49, 36, 0.16);
+  --glow-cream: rgba(255, 232, 26, 0.08);
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface-solid);
+  --card-foreground: var(--text);
+  --popover: #2a2a26;
+  --popover-foreground: var(--text);
+  --primary: var(--brand-red);
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.08);
+  --secondary-foreground: var(--text);
+  --muted: rgba(255, 255, 255, 0.07);
+  --muted-foreground: var(--text-muted);
+  --accent: rgba(255, 255, 255, 0.1);
+  --accent-foreground: var(--text);
+  --destructive: #f87144;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: rgba(238, 49, 36, 0.5);
+
+  --ok: #3ecf6a;
+  --warn: #fbbf24;
+  --danger: #f87144;
+  --info: #5aa2f5;
+
+  --chart-1: #f5473a;
+  --chart-2: #5ecb5e;
+  --chart-3: #f7b03c;
+  --chart-4: #61a0f5;
+  --chart-5: #a397f5;
+
+  --sidebar: transparent;
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--brand-red);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+  --sidebar-ring: rgba(238, 49, 36, 0.5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/60;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply text-foreground antialiased;
+    min-height: 100dvh;
+    /* Flat fill on purpose. `background-attachment: fixed` here forced a
+       full-viewport repaint on every scroll frame, which made thin icon
+       strokes shimmer — and the new canvas is a solid ivory anyway. */
+    background-color: var(--bg);
+  }
+
+  [data-theme="dark"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input) transparent;
+  }
+  *::-webkit-scrollbar { width: 9px; height: 9px; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--input);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* Kept the `.glass` name so every existing surface picks this up, but the
+     treatment is now a flat card: opaque fill, hairline edge, no blur. */
+  .glass {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow);
+  }
+
+  .glass-raised {
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 12px 32px rgba(28, 27, 25, 0.1);
+  }
+
+  .hairline {
+    border-color: var(--border);
+  }
+
+  /* Wide tables scroll sideways, so the bar is part of the design rather than
+     an OS overlay that fades away — users need to see there is more to the
+     right. Forced visible on WebKit; Firefox gets the colours only. */
+  .table-scroll {
+    overflow-x: auto;
+    scrollbar-color: var(--brand-red) var(--muted);
+    scrollbar-width: thin;
+  }
+  .table-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: var(--muted);
+    border-radius: 999px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: var(--brand-red);
+    border-radius: 999px;
+  }
+
+  /* Pill rows (tabs, filter chips) that outgrow a phone. Unlike the tables the
+     bar is hidden here — a rule sitting under a pill group reads as a border on
+     the control itself. */
+  .tab-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Section label followed by a rule that eats the remaining width. */
+  .rule-label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+  .rule-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 28s linear infinite;
+  }
+}
+
+#app-root,
+main {
+  position: relative;
+  z-index: 1;
+}
