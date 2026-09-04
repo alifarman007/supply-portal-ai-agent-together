@@ -1,3 +1,20 @@
+> **SUPERSEDED — HISTORICAL ONLY. DO NOT FOLLOW THIS DOCUMENT.**
+>
+> This is the original build plan written before this portal existed. It is kept for
+> provenance only. It is wrong about this project in several ways that matter:
+>
+> - It names the wrong company ("Sysnova"). This portal is for **Kazi Farms**.
+> - It says Next.js 15. The portal is on **Next.js 16.2.9**, which has breaking changes
+>   (async `params`, `middleware` renamed to `proxy`). See the repo root `CLAUDE.md`.
+> - It references `/home/shariar-karim/dev/...`, a path that does not exist here.
+> - Its line "FastAPI + ERP integration comes in a later phase" refers to a DIFFERENT,
+>   never-built backend. It does **not** describe the Python agent in `agent/`.
+>
+> The authoritative documents are the repo root `PLAN.md` and `CLAUDE.md`, plus
+> `portal/API-CONTRACT.md` for the supplier-facing API shapes.
+
+---
+
 # Sysnova Supplier Portal — Frontend Implementation Plan
 
 ## Context
