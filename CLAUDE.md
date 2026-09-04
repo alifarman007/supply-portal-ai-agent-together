@@ -59,9 +59,23 @@ already made, and the build order.
   `closed` (the agent only checks `open`/`partially_billed`, so `closed` would block every
   real bill); and the VAT conversion is real money — 336,950 entered in the portal is
   293,000 ex-VAT, a 43,950 Tk overstatement if sent unconverted, with no exception raised.
-- **S2 — Submit-through: NEXT.** Wire the portal's bill form to the agent through
-  server-side route handlers. See `PLAN.md` §3.
-- **S3 — Bill-checking tabs, S4 — Release:** not started.
+- **S2 — Submit-through: DONE.** The portal's bill form now submits to the agent and
+  shows the real result. New: `portal/src/lib/billcheck/{types,client,mappers}.ts` and
+  `portal/src/app/api/billcheck/submit/route.ts` (the portal's first POST handler).
+  The bill form was rebuilt around **editable line items prefilled from the purchase
+  order** — it used to fabricate a single line reading "Bill against PO-...", which
+  carried nothing the checker could match against the order or the goods receipt.
+  Verified live: full delivery -> `CLEAR` 328,160.00; 60%-delivered order billed in
+  full -> `REVIEW_REQUIRED` with `qty_over_grn` on both lines and the payable cut to
+  168,000.00; undelivered order -> `BLOCKED` on `missing_grn`.
+  **This route deliberately has NO mock fallback**, unlike the iDempiere handlers next
+  door. Those are read-only, where showing demo data beats an error page. This one
+  reports what will be deducted from a supplier's payment, and falling back to the flat
+  3%/7.5% in `format/tax.ts` would produce a confident wrong number that nobody could
+  distinguish from a real one.
+- **S3 — Bill-checking tabs: NEXT.** Read-only internal view of a checked bill. See
+  `PLAN.md` §3.
+- **S4 — Release:** not started.
 
 ### What each half already does
 
@@ -71,7 +85,7 @@ Bilingual (English/Bangla), dark mode, RBAC-flavoured nav. **All data is in-memo
 (`portal/src/lib/mock/`) except one live integration: iDempiere ERP purchase orders, read
 server-side with a mock fallback when the host is unreachable.
 
-`agent/` — 11 commits, **306 tests passing, ruff clean**. Phases 0–4 and 6 complete:
+`agent/` — **318 tests passing, ruff clean**. Phases 0–4 and 6 complete:
 deterministic engines (matching incl. 3-way, VAT, VDS, TDS, netting, duplicates, policy,
 Mushak 6.3 validation), FY2026-27 NBR rate tables with page-level citations, LLM nodes
 A/B/C/E with a numeric guard, full audit log with offline replay, FastAPI + Jinja CFO

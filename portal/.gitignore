@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the template must be committed, or nobody knows which variables exist.
+# It holds names and blank values only - never a real key.
+!.env.example
 
 # vercel
 .vercel

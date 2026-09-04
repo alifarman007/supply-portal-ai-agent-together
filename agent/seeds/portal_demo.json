@@ -27,7 +27,7 @@
      "product_code": "poi-001-1",
      "description": "Corrugated Carton Box (30×20×15 cm)",
      "uom": "pcs",
-     "qty": "5E+3",
+     "qty": "5000",
      "unit_price_tk": "45.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -37,7 +37,7 @@
      "product_code": "poi-001-2",
      "description": "Stretch Wrap Film (500mm × 300m roll)",
      "uom": "roll",
-     "qty": "1E+2",
+     "qty": "100",
      "unit_price_tk": "680.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -55,7 +55,7 @@
      "product_code": "poi-002-1",
      "description": "BOPP Laminated Woven Bag (50 kg capacity)",
      "uom": "pcs",
-     "qty": "2E+3",
+     "qty": "2000",
      "unit_price_tk": "120.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -65,7 +65,7 @@
      "product_code": "poi-002-2",
      "description": "Kraft Paper Bag (Multi-wall, 5-ply)",
      "uom": "pcs",
-     "qty": "3E+3",
+     "qty": "3000",
      "unit_price_tk": "85.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -83,7 +83,7 @@
      "product_code": "poi-003-1",
      "description": "Bubble Wrap Roll (1.2m × 50m)",
      "uom": "roll",
-     "qty": "2E+2",
+     "qty": "200",
      "unit_price_tk": "950.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -93,7 +93,7 @@
      "product_code": "poi-003-2",
      "description": "Foam Corner Protector Set",
      "uom": "set",
-     "qty": "1E+3",
+     "qty": "1000",
      "unit_price_tk": "60.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -111,7 +111,7 @@
      "product_code": "poi-004-1",
      "description": "Thermal Transfer Label (100×150 mm)",
      "uom": "ream",
-     "qty": "5E+2",
+     "qty": "500",
      "unit_price_tk": "350.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -121,7 +121,7 @@
      "product_code": "poi-004-2",
      "description": "Cello Tape (48mm × 65m, 6-pack)",
      "uom": "box",
-     "qty": "2E+2",
+     "qty": "200",
      "unit_price_tk": "420.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -139,7 +139,7 @@
      "product_code": "poi-005-1",
      "description": "Corrugated Carton Box (30×20×15 cm)",
      "uom": "pcs",
-     "qty": "8E+3",
+     "qty": "8000",
      "unit_price_tk": "45.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -157,7 +157,7 @@
      "product_code": "poi-006-1",
      "description": "Moisture-Proof Poly Bag (Large)",
      "uom": "box",
-     "qty": "3E+2",
+     "qty": "300",
      "unit_price_tk": "220.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -167,7 +167,7 @@
      "product_code": "poi-006-2",
      "description": "PVC Shrink Wrap Film (19 micron)",
      "uom": "kg",
-     "qty": "5E+2",
+     "qty": "500",
      "unit_price_tk": "180.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -185,7 +185,7 @@
      "product_code": "poi-007-1",
      "description": "Kraft Paper Bag (Multi-wall, 5-ply)",
      "uom": "pcs",
-     "qty": "5E+3",
+     "qty": "5000",
      "unit_price_tk": "85.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -203,7 +203,7 @@
      "product_code": "poi-008-1",
      "description": "Corrugated Carton Box (30×20×15 cm)",
      "uom": "pcs",
-     "qty": "1E+4",
+     "qty": "10000",
      "unit_price_tk": "45.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -213,7 +213,7 @@
      "product_code": "poi-008-2",
      "description": "Stretch Wrap Film (500mm × 300m roll)",
      "uom": "roll",
-     "qty": "1.5E+2",
+     "qty": "150",
      "unit_price_tk": "680.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -223,7 +223,7 @@
      "product_code": "poi-008-3",
      "description": "Cello Tape (48mm × 65m, 6-pack)",
      "uom": "box",
-     "qty": "1E+2",
+     "qty": "100",
      "unit_price_tk": "420.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -241,7 +241,7 @@
      "product_code": "poi-009-1",
      "description": "Bubble Wrap Roll (1.2m × 50m)",
      "uom": "roll",
-     "qty": "3E+2",
+     "qty": "300",
      "unit_price_tk": "950.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -259,7 +259,7 @@
      "product_code": "poi-010-1",
      "description": "Thermal Transfer Label (100×150 mm)",
      "uom": "ream",
-     "qty": "8E+2",
+     "qty": "800",
      "unit_price_tk": "350.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -269,7 +269,7 @@
      "product_code": "poi-010-2",
      "description": "Foam Corner Protector Set",
      "uom": "set",
-     "qty": "5E+2",
+     "qty": "500",
      "unit_price_tk": "60.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -287,7 +287,7 @@
      "product_code": "poi-011-1",
      "description": "BOPP Laminated Woven Bag (50 kg capacity)",
      "uom": "pcs",
-     "qty": "1.5E+3",
+     "qty": "1500",
      "unit_price_tk": "120.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -297,7 +297,7 @@
      "product_code": "poi-011-2",
      "description": "Moisture-Proof Poly Bag (Large)",
      "uom": "box",
-     "qty": "2E+2",
+     "qty": "200",
      "unit_price_tk": "220.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -315,7 +315,7 @@
      "product_code": "poi-012-1",
      "description": "PVC Shrink Wrap Film (19 micron)",
      "uom": "kg",
-     "qty": "1E+3",
+     "qty": "1000",
      "unit_price_tk": "180.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -333,7 +333,7 @@
      "product_code": "poi-013-1",
      "description": "Corrugated Carton Box (30×20×15 cm)",
      "uom": "pcs",
-     "qty": "2E+3",
+     "qty": "2000",
      "unit_price_tk": "45.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -351,7 +351,7 @@
      "product_code": "poi-014-1",
      "description": "Kraft Paper Bag (Multi-wall, 5-ply)",
      "uom": "pcs",
-     "qty": "1E+4",
+     "qty": "10000",
      "unit_price_tk": "85.00",
      "vat_category_id": "vat.standard_15",
      "tds_category_id": "tds.goods.s89.serial_17"
@@ -367,14 +367,14 @@
    "lines": [
     {
      "po_line_no": 1,
-     "qty_received": "5E+3",
-     "qty_accepted": "5E+3",
+     "qty_received": "5000",
+     "qty_accepted": "5000",
      "qty_rejected": "0"
     },
     {
      "po_line_no": 2,
-     "qty_received": "1E+2",
-     "qty_accepted": "1E+2",
+     "qty_received": "100",
+     "qty_accepted": "100",
      "qty_rejected": "0"
     }
    ]
@@ -386,14 +386,14 @@
    "lines": [
     {
      "po_line_no": 1,
-     "qty_received": "2E+3",
-     "qty_accepted": "2E+3",
+     "qty_received": "2000",
+     "qty_accepted": "2000",
      "qty_rejected": "0"
     },
     {
      "po_line_no": 2,
-     "qty_received": "3E+3",
-     "qty_accepted": "3E+3",
+     "qty_received": "3000",
+     "qty_accepted": "3000",
      "qty_rejected": "0"
     }
    ]
@@ -405,14 +405,14 @@
    "lines": [
     {
      "po_line_no": 1,
-     "qty_received": "1.2E+2",
-     "qty_accepted": "1.2E+2",
+     "qty_received": "120",
+     "qty_accepted": "120",
      "qty_rejected": "0"
     },
     {
      "po_line_no": 2,
-     "qty_received": "6E+2",
-     "qty_accepted": "6E+2",
+     "qty_received": "600",
+     "qty_accepted": "600",
      "qty_rejected": "0"
     }
    ]
@@ -424,14 +424,14 @@
    "lines": [
     {
      "po_line_no": 1,
-     "qty_received": "3E+2",
-     "qty_accepted": "3E+2",
+     "qty_received": "300",
+     "qty_accepted": "300",
      "qty_rejected": "0"
     },
     {
      "po_line_no": 2,
-     "qty_received": "1.2E+2",
-     "qty_accepted": "1.2E+2",
+     "qty_received": "120",
+     "qty_accepted": "120",
      "qty_rejected": "0"
     }
    ]

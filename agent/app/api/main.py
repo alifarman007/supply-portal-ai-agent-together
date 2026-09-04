@@ -52,7 +52,7 @@ from app.models import (
     make_engine,
     make_session_factory,
 )
-from app.rules.loader import UNVERIFIED_MARKERS
+from app.rules.loader import UNVERIFIED_MARKERS, RulesError
 from app.seeding import bill_from_in
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -222,6 +222,16 @@ def create_app(
             outcome = check_bill(session, bill_id, llm=client)
         except BillNotCheckableError as err:
             raise HTTPException(409, str(err)) from err
+        except RulesError as err:
+            # Most often: the bill's invoice date falls in a fiscal year we hold no rule
+            # tables for. Saying so beats a bare 500, because the fix is obvious once the
+            # message names the year - either the date is wrong or the tables are missing.
+            raise HTTPException(
+                422,
+                f"Cannot check this bill: {err}. A bill is checked against the rules in "
+                f"force on its invoice date, so an invoice dated outside the loaded "
+                f"fiscal years has no rates to apply.",
+            ) from err
         content_type = request.headers.get("content-type", "")
         if content_type.startswith("application/x-www-form-urlencoded"):
             return RedirectResponse(f"/review/{bill_id}", status_code=303)

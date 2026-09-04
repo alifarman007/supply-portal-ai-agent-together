@@ -240,6 +240,40 @@ export const LABELS = {
   toast_bill_sent_review: { en: "has been sent for review.", bn: "পর্যালোচনার জন্য পাঠানো হয়েছে।" },
   toast_bill_failed: { en: "Failed to submit bill", bn: "বিল জমা দিতে ব্যর্থ হয়েছে" },
 
+  // ---- Bill lines + checking result (supplier-facing, so bilingual) ----
+  bill_lines_title: { en: "What you are billing for", bn: "আপনি যা বিল করছেন" },
+  bill_lines_hint: {
+    en: "Filled in from the order. Change a quantity if you are billing for a partial delivery.",
+    bn: "অর্ডার থেকে পূরণ করা হয়েছে। আংশিক ডেলিভারির বিল করলে পরিমাণ পরিবর্তন করুন।",
+  },
+  bill_total_ex_vat: { en: "Bill total (before VAT)", bn: "বিলের মোট (ভ্যাটের আগে)" },
+  submit_and_check_btn: { en: "Submit and check", bn: "জমা দিন ও যাচাই করুন" },
+  checking_in_progress: {
+    en: "Checking against the order, goods receipt and NBR tax rules…",
+    bn: "অর্ডার, পণ্য প্রাপ্তি ও এনবিআর কর বিধির সাথে যাচাই করা হচ্ছে…",
+  },
+  check_result_title: { en: "Checking result", bn: "যাচাইয়ের ফলাফল" },
+  check_net_payable: { en: "Net payable to you", bn: "আপনাকে প্রদেয় নিট পরিমাণ" },
+  check_rec_clear: { en: "Cleared", bn: "অনুমোদিত" },
+  check_rec_adjusted: { en: "Cleared with adjustments", bn: "সমন্বয়সহ অনুমোদিত" },
+  check_rec_review: { en: "Needs review", bn: "পর্যালোচনা প্রয়োজন" },
+  check_rec_blocked: { en: "Blocked", bn: "আটকে আছে" },
+  check_findings: { en: "Findings", bn: "পর্যবেক্ষণ" },
+  check_no_findings: { en: "No issues found.", bn: "কোনো সমস্যা পাওয়া যায়নি।" },
+  check_awaiting_cfo: {
+    en: "This bill is now with the accounts team for approval.",
+    bn: "বিলটি এখন অনুমোদনের জন্য হিসাব বিভাগে রয়েছে।",
+  },
+  check_rates_note: {
+    en: "Deductions are computed from the FY2026-27 NBR rules, which are still awaiting sign-off by an accountant.",
+    bn: "কর্তন ২০২৬-২৭ অর্থবছরের এনবিআর বিধি অনুযায়ী গণনা করা হয়েছে, যা এখনো হিসাবরক্ষকের অনুমোদনের অপেক্ষায়।",
+  },
+  check_unavailable_title: { en: "Bill checking is unavailable", bn: "বিল যাচাই সেবা বন্ধ আছে" },
+  check_nothing_saved: {
+    en: "Nothing has been saved. Please try again once it is back.",
+    bn: "কিছুই সংরক্ষণ করা হয়নি। সেবা ফিরে এলে আবার চেষ্টা করুন।",
+  },
+
   // ---- Payments ----
   payment_history_title: { en: "Payment History", bn: "পেমেন্টের ইতিহাস" },
   payment_subtitle: { en: "Track all payments received from Kazi Farms Group", bn: "কাজী ফার্মস গ্রুপ থেকে প্রাপ্ত সকল পেমেন্ট ট্র্যাক করুন" },

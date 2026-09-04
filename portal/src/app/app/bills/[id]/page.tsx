@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Info, Loader2, Paperclip } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Info, Loader2, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Widget } from "@/components/common/Widget";
@@ -12,15 +12,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePurchaseOrder, useCreateInvoice } from "@/lib/query/hooks";
+import { usePurchaseOrder } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate, DEMO_NOW } from "@/lib/format/date";
-import { VAT_RATE, AIT_RATE, calcVAT, calcAIT } from "@/lib/format/tax";
-import { useLabels } from "@/lib/i18n/labels";
+import { VAT_RATE } from "@/lib/format/tax";
+import { useLabels, type LabelKey } from "@/lib/i18n/labels";
 import type { PurchaseOrder } from "@/lib/mock/types";
+import {
+  billIdFor,
+  draftLinesFromPo,
+  draftLinesTotal,
+  lineAmount,
+  moneyToNumber,
+  toAgentBill,
+  type DraftBillLine,
+} from "@/lib/billcheck/mappers";
+import type { AgentCheckResult, Recommendation } from "@/lib/billcheck/types";
 
 /** Bills fall due 30 days after submission, per the standard PO terms. */
 const PAYMENT_TERM_DAYS = 30;
+
+/**
+ * The supplier this portal is logged in as. The portal has no real authentication yet
+ * (see the repo root CLAUDE.md), so there is one demo supplier, and it matches the one
+ * seeded into the agent by scripts/generate_portal_demo_seed.py.
+ */
+const SUPPLIER_ID = "SP-2024-001";
 
 export default function SubmitBillPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -59,60 +76,102 @@ function SubmitBillLoader({ id }: { id: string }) {
   return <SubmitBillForm po={po} />;
 }
 
+const RECOMMENDATION_LABEL: Record<Recommendation, LabelKey> = {
+  CLEAR: "check_rec_clear",
+  CLEAR_WITH_ADJUSTMENTS: "check_rec_adjusted",
+  REVIEW_REQUIRED: "check_rec_review",
+  BLOCKED: "check_rec_blocked",
+};
+
+const RECOMMENDATION_TONE: Record<Recommendation, string> = {
+  CLEAR: "bg-ok/10 text-ok",
+  CLEAR_WITH_ADJUSTMENTS: "bg-warn/10 text-warn",
+  REVIEW_REQUIRED: "bg-warn/10 text-warn",
+  BLOCKED: "bg-destructive/10 text-destructive",
+};
+
 function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const router = useRouter();
   const { t } = useLabels();
-  const createInvoice = useCreateInvoice();
 
-  const [amount, setAmount] = useState<number>(po.grandTotal);
-  const [vatChallanSubmitted, setVatChallanSubmitted] = useState(false);
+  // The checker cannot three-way-match a lump sum against a purchase order and a goods
+  // receipt, and it cannot pick a tax rate without knowing what was bought. So the bill
+  // is built from real lines rather than the single "Bill against PO-..." placeholder
+  // line this form used to fabricate.
+  const [lines, setLines] = useState<DraftBillLine[]>(() => draftLinesFromPo(po));
+  const [vatChallanSubmitted, setVatChallanSubmitted] = useState(true);
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<AgentCheckResult | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
 
   const dueDate = new Date(DEMO_NOW);
   dueDate.setDate(dueDate.getDate() + PAYMENT_TERM_DAYS);
 
-  // The amount entered is the order value being billed — subtotal plus VAT,
-  // the same convention the purchase order's grand total uses. Everything
-  // below is derived from it so the supplier sees the deductions up front.
-  const subtotal = Math.round(amount / (1 + VAT_RATE));
-  const vat = calcVAT(subtotal);
-  const ait = calcAIT(subtotal);
-  const netPayable = subtotal + vat - ait;
+  // Purchase-order prices are ex-VAT (every mock order has subtotal + vatAmount ===
+  // grandTotal), which is exactly the base the checker expects. There is deliberately no
+  // division by 1.15 on this screen any more: that conversion belonged to the old single
+  // VAT-inclusive amount field, and getting it wrong overstated the bill by 15% with no
+  // error raised. See vatInclusiveToExVat in lib/billcheck/mappers.ts.
+  const exVatTotal = useMemo(() => draftLinesTotal(lines), [lines]);
+  const previewVat = exVatTotal * VAT_RATE;
+
+  const setQuantity = (lineNo: number, quantity: number) =>
+    setLines((current) =>
+      current.map((line) =>
+        line.lineNo === lineNo ? { ...line, quantity: Math.max(0, quantity) } : line,
+      ),
+    );
 
   const onSubmit = async () => {
-    if (amount <= 0) {
+    const billable = lines.filter((line) => line.quantity > 0);
+    if (billable.length === 0) {
       toast.error(t("toast_enter_amount"));
       return;
     }
-    if (amount > po.grandTotal) {
-      toast.error(t("toast_bill_exceed"), {
-        description: `${t("toast_order_worth")} ${formatBDT(po.grandTotal)}.`,
-      });
-      return;
-    }
+
+    setSubmitting(true);
+    setFailure(null);
+    setResult(null);
+
+    const payload = toAgentBill({
+      billId: billIdFor(po, 1),
+      supplierId: SUPPLIER_ID,
+      po,
+      supplierInvoiceNo: `INV-${po.poNumber}`,
+      // The REAL date, not DEMO_NOW. The checker applies the tax rules in force on the
+      // invoice date, and DEMO_NOW is 30 June 2026 — the last day of FY2025-26, a year
+      // we hold no rule tables for. Beyond that technicality it is simply true: the bill
+      // is being submitted now, whatever date the rest of the demo data pretends it is.
+      invoiceDate: new Date().toISOString().slice(0, 10),
+      mushakNo: vatChallanSubmitted ? `M63-${po.poNumber}` : null,
+      lines: billable,
+    });
 
     try {
-      const invoice = await createInvoice.mutateAsync({
-        poId: po.id,
-        poNumber: po.poNumber,
-        items: [
-          {
-            description: `Bill against ${po.poNumber}`,
-            unit: "lot",
-            quantity: 1,
-            unitPrice: subtotal,
-          },
-        ],
-        remarks: vatChallanSubmitted
-          ? "VAT challan (Mushak 6.3) confirmed as submitted."
-          : "Submitted without VAT challan confirmation.",
+      const response = await fetch("/api/billcheck/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      toast.success(t("toast_bill_submitted"), {
-        description: `${invoice.invoiceNumber} ${t("toast_bill_sent_review")}`,
-      });
-      router.push("/app/bills");
-    } catch {
+      const body = await response.json();
+
+      if (!response.ok) {
+        // Deliberately NO fallback to the flat rates in lib/format/tax.ts. A confident
+        // wrong number about a supplier's payment is worse than an honest failure.
+        setFailure(body?.error?.message ?? t("toast_bill_failed"));
+        toast.error(t("check_unavailable_title"));
+        return;
+      }
+
+      setResult(body as AgentCheckResult);
+      toast.success(t("toast_bill_submitted"));
+    } catch (err) {
+      console.error("[billcheck] submit failed", err);
+      setFailure(t("toast_bill_failed"));
       toast.error(t("toast_bill_failed"));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -145,39 +204,65 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
           </label>
         </div>
 
-        <div className="mt-5">
-          <FieldLabel htmlFor="bill-amount">{t("total_amount_bdt")}</FieldLabel>
-          <Input
-            id="bill-amount"
-            type="number"
-            min={0}
-            max={po.grandTotal}
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            className="h-11 rounded-xl"
-          />
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t("order_value_hint")} {formatBDT(po.grandTotal)}. {t("bill_for_less_hint")}
-          </p>
+        <div className="mt-6">
+          <FieldLabel>{t("bill_lines_title")}</FieldLabel>
+          <p className="mb-2.5 text-xs text-muted-foreground">{t("bill_lines_hint")}</p>
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full min-w-[38rem] text-sm">
+              <thead className="bg-muted/50 text-xs text-muted-foreground uppercase">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">{t("col_description")}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("col_unit")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("col_qty")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("col_unit_price")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("col_amount")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line) => (
+                  <tr key={line.lineNo} className="border-t border-border">
+                    <td className="px-3 py-2 text-foreground">{line.description}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{line.unit}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={line.quantity}
+                        onChange={(e) => setQuantity(line.lineNo, Number(e.target.value))}
+                        className="ml-auto h-9 w-24 rounded-lg text-right"
+                        aria-label={`${t("col_qty")} — ${line.description}`}
+                      />
+                    </td>
+                    <td className="tnum px-3 py-2 text-right text-muted-foreground">
+                      {formatBDT(line.unitPrice)}
+                    </td>
+                    <td className="tnum px-3 py-2 text-right font-medium text-foreground">
+                      {formatBDT(lineAmount(line))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border bg-muted/30">
+                  <td colSpan={4} className="px-3 py-2 text-right font-semibold">
+                    {t("bill_total_ex_vat")}
+                  </td>
+                  <td className="tnum px-3 py-2 text-right font-semibold text-foreground">
+                    {formatBDT(exVatTotal)}
+                  </td>
+                </tr>
+                <tr className="border-t border-border">
+                  <td colSpan={4} className="px-3 py-2 text-right text-muted-foreground">
+                    {t("col_vat")} ({VAT_RATE * 100}%)
+                  </td>
+                  <td className="tnum px-3 py-2 text-right text-muted-foreground">
+                    {formatBDT(previewVat)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-
-        {/* Deductions surprise suppliers otherwise — the amount billed is not
-            the amount received. */}
-        <dl className="mt-5 space-y-2 rounded-xl bg-muted/40 p-4 text-sm">
-          <Line label={t("lbl_subtotal")} value={formatBDT(subtotal)} />
-          <Line label={`${t("col_vat")} (${VAT_RATE * 100}%)`} value={formatBDT(vat)} />
-          <Line
-            label={`${t("ait_deducted_lbl")} (${AIT_RATE * 100}%)`}
-            value={`− ${formatBDT(ait)}`}
-            valueClassName="text-warn"
-          />
-          <Line
-            label={t("net_payable_to_you")}
-            value={formatBDT(netPayable)}
-            className="border-t border-border pt-2 font-semibold text-foreground"
-            valueClassName="text-ok"
-          />
-        </dl>
 
         <div className="mt-5">
           <FieldLabel htmlFor="bill-attachment">{t("invoice_attachment_lbl")}</FieldLabel>
@@ -209,17 +294,105 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
           </span>
         </div>
 
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button variant="outline" onClick={() => router.push("/app/bills")}>
             {t("cancel")}
           </Button>
-          <Button onClick={onSubmit} disabled={createInvoice.isPending} className="gap-2">
-            {createInvoice.isPending && <Loader2 className="size-4 animate-spin" />}
-            {t("submit_bill_btn")}
+          <Button onClick={onSubmit} disabled={submitting} className="gap-2">
+            {submitting && <Loader2 className="size-4 animate-spin" />}
+            {t("submit_and_check_btn")}
           </Button>
+          {submitting && (
+            <span className="text-xs text-muted-foreground">{t("checking_in_progress")}</span>
+          )}
         </div>
       </Widget>
+
+      {failure && (
+        <Widget title={t("check_unavailable_title")}>
+          <div className="flex items-start gap-2.5 rounded-xl bg-destructive/10 p-3.5 text-sm text-destructive">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <div>
+              <p>{failure}</p>
+              <p className="mt-1 opacity-80">{t("check_nothing_saved")}</p>
+            </div>
+          </div>
+        </Widget>
+      )}
+
+      {result && <CheckResult result={result} />}
     </div>
+  );
+}
+
+/**
+ * What the checker concluded.
+ *
+ * Every figure here comes from the agent, computed in Decimal against cited FY2026-27
+ * rules. Nothing on this panel is recalculated in JavaScript — the numbers are rendered
+ * exactly as the agent produced them.
+ */
+function CheckResult({ result }: { result: AgentCheckResult }) {
+  const { t } = useLabels();
+  const net = moneyToNumber(result.net_payable_tk);
+  const findings = result.exceptions ?? [];
+
+  return (
+    <Widget title={t("check_result_title")}>
+      <div className="flex flex-wrap items-center gap-3">
+        <span
+          className={`rounded-full px-3 py-1 text-sm font-semibold ${RECOMMENDATION_TONE[result.recommendation]}`}
+        >
+          {t(RECOMMENDATION_LABEL[result.recommendation])}
+        </span>
+        {result.net_payable_tk !== null && (
+          <span className="text-sm text-muted-foreground">
+            {t("check_net_payable")}:{" "}
+            <span className="tnum font-semibold text-foreground">{formatBDT(net)}</span>
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-2 text-sm font-medium text-foreground">{t("check_findings")}</p>
+        {findings.length === 0 ? (
+          <p className="flex items-center gap-2 text-sm text-ok">
+            <CheckCircle2 className="size-4" /> {t("check_no_findings")}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {findings.map((finding, index) => (
+              <li
+                key={`${finding.code}-${index}`}
+                className="rounded-xl border border-border px-3 py-2 text-sm"
+              >
+                <span
+                  className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    finding.severity === "BLOCKER"
+                      ? "bg-destructive/10 text-destructive"
+                      : finding.severity === "REVIEW"
+                        ? "bg-warn/10 text-warn"
+                        : "bg-info/10 text-info"
+                  }`}
+                >
+                  {finding.severity}
+                </span>
+                <span className="text-foreground">{finding.message}</span>
+                {finding.rule_id && (
+                  <span className="ml-2 text-xs text-muted-foreground">({finding.rule_id})</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-warn/10 p-3.5 text-xs text-warn">
+        <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+        {t("check_rates_note")}
+      </p>
+      <p className="mt-2 text-xs text-muted-foreground">{t("check_awaiting_cfo")}</p>
+    </Widget>
   );
 }
 
@@ -247,25 +420,6 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
       <div className="flex h-11 items-center rounded-xl border border-input bg-muted/50 px-3 text-sm text-muted-foreground">
         {value}
       </div>
-    </div>
-  );
-}
-
-function Line({
-  label,
-  value,
-  className = "",
-  valueClassName = "",
-}: {
-  label: string;
-  value: string;
-  className?: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div className={`flex items-baseline justify-between gap-4 ${className}`}>
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={`tnum whitespace-nowrap ${valueClassName}`}>{value}</dd>
     </div>
   );
 }

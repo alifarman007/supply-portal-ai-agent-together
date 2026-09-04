@@ -148,7 +148,7 @@ Proved before a line of React was written, exactly as intended.
 4 POs whose goods actually arrived have a GRN — billing the others returns the
 `missing_grn` BLOCKER, which is the correct answer and demonstrates both paths.
 
-### S2 — Submit-through ⬅ NEXT
+### S2 — Submit-through ✅ DONE
 
 - `portal/src/lib/billcheck/{client,types,mappers}.ts` — typed client, wire types, and the
   mapping layer (ids, statuses, money).
@@ -159,10 +159,25 @@ Proved before a line of React was written, exactly as intended.
 - **The VAT conversion, named and tested.** See §5 — this is a silent 15% error if missed.
 - **No mock fallback on any money-bearing call.** See §4.
 
-**Exit:** submit a bill in the portal, see a real check result come back, and see the bill
-in the agent's queue.
+**Exit — PASSED**, verified live against both servers through the portal's own route
+handler:
 
-### S3 — Bill-checking tabs (read-only)
+| Scenario | Result |
+|---|---|
+| PO-2026-0001, goods fully received, billed in full | `CLEAR`, net **328,160.00** |
+| PO-2026-0015, only 60% received, billed in full | `REVIEW_REQUIRED`, `qty_over_grn` on **both** lines, payable cut to **168,000.00** |
+| PO-2026-0041, issued, nothing received | `BLOCKED`, `missing_grn` |
+
+Pinned by `agent/tests/golden/test_portal_contract.py` (12 tests), which needs neither
+server running — the payloads are exactly what `mappers.ts` emits.
+
+Two real bugs surfaced during this step and were fixed: the seed generator wrote
+quantities in scientific notation (`Decimal.normalize()` turns 5000 into `5E+3`), and the
+portal's frozen `DEMO_NOW` of 30 June 2026 is the last day of FY2025-26 — a year with no
+rule tables — so every submitted bill produced an opaque 500. Bills now carry the real
+submission date, and the agent answers a missing-fiscal-year with a 422 that names it.
+
+### S3 — Bill-checking tabs (read-only) ⬅ NEXT
 
 - Agent: a `?format=json` branch on the review detail route. Cheap — the handler already
   assembles `breakdown`, `exceptions`, `rates_applied` (with citations and an `unverified`

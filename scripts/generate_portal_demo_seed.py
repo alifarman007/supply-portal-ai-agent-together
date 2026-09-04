@@ -155,8 +155,20 @@ def parse_supplier(text: str) -> dict:
     }
 
 
+def quantity(value: Decimal | str) -> str:
+    """Quantity as a plain decimal string: "5000", "120", "2.5".
+
+    `Decimal.normalize()` alone is a trap here: it renders round numbers in scientific
+    notation, so 5000 becomes "5E+3" and 200 becomes "2E+2". Those parse back correctly,
+    but writing them into a seed file makes it unreadable and invites a downstream reader
+    that is less forgiving than Decimal. `format(d, "f")` keeps the trailing-zero trim
+    without ever switching to exponent form.
+    """
+    return format(Decimal(value).normalize(), "f")
+
+
 def build(orders: list[dict], supplier: dict) -> dict:
-    trimmed = lambda q: str(Decimal(q).normalize())  # noqa: E731 - "5000" not "5000.0"
+    trimmed = quantity
 
     purchase_orders = []
     grns = []
