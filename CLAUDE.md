@@ -87,7 +87,11 @@ already made, and the build order.
   **Gated server-side by `BILLCHECK_INTERNAL`** — verified by turning it off: both API
   routes 404. `NEXT_PUBLIC_BILLCHECK_INTERNAL` only shows the sidebar link and is
   documented as cosmetic.
-- **S4 — Release: NEXT.** See `PLAN.md` §3.
+- **S4 — Release: DONE.** `scripts/dev.ps1` starts both halves with one command
+  (`-Reseed` to rebuild the database, `-Stop` to stop). README rewritten around what to
+  actually try. **Clean-clone verified**: a fresh clone of the pushed repo installs,
+  seeds, passes all 318 tests, is ruff clean, type-checks and builds — with no secret,
+  database, audit log or internal working paper anywhere in the tree or its history.
 
 
 ### What each half already does
@@ -146,6 +150,12 @@ Other agent commands: `list-bills`, `list-runs`, `check-bill <BILL-ID> [--llm]`,
 
 If the database schema looks stale, delete `agent/billcheck.db` and re-run `seed` — but
 stop the server first, or Windows will hold the file lock and the delete silently fails.
+
+**Windows path length:** `npm run build` fails with a Turbopack panic
+("path length ... exceeds max length of filesystem") if the repo sits under a deep path.
+Turbopack writes long generated chunk names into `.next/`, and Windows' 260-character
+limit does them in. Keep the clone somewhere short like `C:\Python_Projects\`. This is
+not a repo problem — the same commit builds fine from a short path.
 
 ### Environment variables — which file, which side
 

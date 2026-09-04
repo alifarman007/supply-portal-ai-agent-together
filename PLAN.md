@@ -202,11 +202,16 @@ INTERNAL` only hides the sidebar link and is explicitly documented as cosmetic �
 portal's four roles are all supplier roles the viewer picks from a menu, so nav
 visibility could never have been the control.
 
-### S4 — Release ⬅ NEXT
+### S4 — Release ✅ DONE
 
-`npx tsc --noEmit` clean, `npm run build` succeeds, `ruff check .` clean, `pytest` passes,
-one contract test proving a portal-shaped payload round-trips, README a stranger can
-follow, tagged commit.
+All met. `scripts/dev.ps1` runs both halves with one command. A fresh clone of the
+pushed repo was verified end to end: installs, seeds, **318 tests pass**, ruff clean,
+`tsc --noEmit` clean, `npm run build` succeeds with all five new routes, and no secret
+or internal document appears anywhere in the tree or its history.
+
+One Windows gotcha found and documented: Turbopack panics on `npm run build` if the
+repo sits under a deep path, because its generated chunk names exceed the 260-character
+limit. Keep the clone somewhere short.
 
 ### Later (not scheduled)
 
