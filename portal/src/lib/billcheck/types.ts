@@ -157,6 +157,21 @@ export interface Adjustment {
   rule_id: string;
 }
 
+/**
+ * One line of the agent's own arithmetic, in the order it applied it.
+ *
+ * This is the authoritative ledger from the approved base down to the net payable. The
+ * portal renders it verbatim and never recomputes a total from the parts: the agent works
+ * in Decimal paisa, JavaScript works in doubles, and a total assembled here could
+ * disagree with the one the CFO approves.
+ */
+export interface NettingRow {
+  label: string;
+  amount: MoneyString;
+  rule_id: string | null;
+  ref: string | null;
+}
+
 export interface Breakdown {
   gross_claimed: MoneyString;
   approved_base: MoneyString;
@@ -170,6 +185,10 @@ export interface Breakdown {
   advance_adjusted?: MoneyString;
   retention_held?: MoneyString;
   other_deductions?: unknown;
+  prior_payments_offset?: MoneyString;
+  net_payable?: MoneyString;
+  /** How the agent got from the approved base to the net payable, in order. */
+  netting_order?: NettingRow[];
 }
 
 export interface ReviewDetail {

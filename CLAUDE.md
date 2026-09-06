@@ -106,6 +106,26 @@ already made, and the build order.
   `tax_category_proposed`, `llm_node_failed` and `report_numeric_guard_failed` — which
   would have been invisible to the supplier. **Add a new exception code to a step or
   the suite fails.**
+- **Tax figures removed from the bill form before checking — DONE.** The submit screen
+  used to print `VAT (15%)` from the hard-coded `VAT_RATE` in `format/tax.ts`, before
+  the checker had seen the bill. That asserts a rate the portal does not know: the
+  FY2026-27 schedule has 15% / 10% / 7.5% / 5% / exempt bands and which applies depends
+  on the line's `vat_category_id` in the agent's tables. It was right for packing
+  materials — which is what made it dangerous, since it would have been quietly wrong
+  for the first reduced-rate item. The form now shows only the supplier's own ex-VAT
+  total; every tax figure arrives from the agent with its rule id and citation.
+  Pinned by `test_the_bill_form_asserts_no_tax_rate_of_its_own`.
+  The result panel renders the agent's own `breakdown.netting_order` **verbatim** and
+  never recomputes a total in JavaScript — the agent works in Decimal paisa, JS in
+  doubles, and a total assembled in the browser could disagree with the one the CFO
+  approves. It also separates the **invoice** (supply value + VAT) from the **payment**
+  (invoice − VDS − TDS), because those are different numbers and conflating them is how
+  a supplier gets surprised; TDS is labelled as a claimable credit, not a cost.
+  ⚠️ **The same flat rates are still live on other screens** and were left alone as out
+  of scope: `purchase-orders/page.tsx` and `purchase-orders/[id]/page.tsx` (VDS 7.5% /
+  TDS 3%, and the detail page hard-codes those percentages in the LABEL beside an amount
+  that may have come from the ERP at a different rate), `invoices/new/page.tsx`,
+  `tenders/[id]/bid/page.tsx` and `lib/mock/api.ts`. Same fix applies when they matter.
 - **S4 — Release: DONE.** `scripts/dev.ps1` starts both halves with one command
   (`-Reseed` to rebuild the database, `-Stop` to stop). README rewritten around what to
   actually try. **Clean-clone verified**: a fresh clone of the pushed repo installs,
@@ -121,7 +141,7 @@ Bilingual (English/Bangla), dark mode, RBAC-flavoured nav. **All data is in-memo
 (`portal/src/lib/mock/`) except one live integration: iDempiere ERP purchase orders, read
 server-side with a mock fallback when the host is unreachable.
 
-`agent/` — **323 tests passing, ruff clean**. Phases 0–4 and 6 complete:
+`agent/` — **324 tests passing, ruff clean**. Phases 0–4 and 6 complete:
 deterministic engines (matching incl. 3-way, VAT, VDS, TDS, netting, duplicates, policy,
 Mushak 6.3 validation), FY2026-27 NBR rate tables with page-level citations, LLM nodes
 A/B/C/E with a numeric guard, full audit log with offline replay, FastAPI + Jinja CFO

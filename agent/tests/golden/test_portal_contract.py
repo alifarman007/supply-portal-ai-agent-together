@@ -246,3 +246,35 @@ def test_the_golden_fixtures_are_untouched_by_the_portal_seed(session):
     """The portal universe is additive; it must not displace the S1-S12 fixtures."""
     assert session.get(Bill, "BILL-S1") is not None
     assert session.get(Bill, "BILL-S2") is not None
+
+
+# --- 5. no tax rate may be asserted by the portal before the check runs ---------------
+
+BILL_FORM = (
+    Path(__file__).resolve().parents[3]
+    / "portal" / "src" / "app" / "app" / "bills" / "[id]" / "page.tsx"
+)
+
+
+@pytest.mark.skipif(not BILL_FORM.exists(), reason="portal/ is not present in this checkout")
+def test_the_bill_form_asserts_no_tax_rate_of_its_own():
+    """The submit form must not compute or display a tax rate before the check runs.
+
+    It used to print "VAT (15%)" from a hard-coded constant. That asserts a rate the
+    portal does not know: the FY2026-27 schedule has 15%, 10%, 7.5%, 5% and exempt bands,
+    and which applies depends on the product's category in the rule tables here. It was
+    right for packaging materials, which is what made it dangerous - it would have been
+    quietly wrong for the first reduced-rate item, and a supplier reading a confident
+    percentage has no way to know it was a guess.
+
+    Every tax figure on that screen now comes from the agent, with its rule id and
+    citation. This test fails if a rate constant returns.
+    """
+    source = BILL_FORM.read_text(encoding="utf-8")
+    banned = ["VAT_RATE", "AIT_RATE", "VDS_RATE", "TDS_RATE", "calcVAT", "calcAIT"]
+    found = [name for name in banned if name in source]
+    assert not found, (
+        f"{BILL_FORM.name} references {found}. The bill form must not compute a tax rate "
+        "itself — every tax figure comes from the checker, which knows the product's "
+        "category and can cite the gazette."
+    )

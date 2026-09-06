@@ -2,7 +2,7 @@
 
 import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Info, Loader2, Paperclip } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Info, Loader2, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Widget } from "@/components/common/Widget";
@@ -15,20 +15,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePurchaseOrder } from "@/lib/query/hooks";
 import { formatBDT } from "@/lib/format/money";
 import { formatDate, DEMO_NOW } from "@/lib/format/date";
-import { VAT_RATE } from "@/lib/format/tax";
-import { useLabels, type LabelKey } from "@/lib/i18n/labels";
+import { useLabels } from "@/lib/i18n/labels";
 import type { PurchaseOrder } from "@/lib/mock/types";
 import {
   billIdFor,
   draftLinesFromPo,
   draftLinesTotal,
   lineAmount,
-  moneyToNumber,
   toAgentBill,
   type DraftBillLine,
 } from "@/lib/billcheck/mappers";
-import type { AgentCheckResult, Recommendation } from "@/lib/billcheck/types";
 import { CheckProgress, type CheckOutcome } from "@/components/billcheck/CheckProgress";
+import { CheckResultPanel } from "@/components/billcheck/CheckResultPanel";
 
 /** Bills fall due 30 days after submission, per the standard PO terms. */
 const PAYMENT_TERM_DAYS = 30;
@@ -77,20 +75,6 @@ function SubmitBillLoader({ id }: { id: string }) {
   return <SubmitBillForm po={po} />;
 }
 
-const RECOMMENDATION_LABEL: Record<Recommendation, LabelKey> = {
-  CLEAR: "check_rec_clear",
-  CLEAR_WITH_ADJUSTMENTS: "check_rec_adjusted",
-  REVIEW_REQUIRED: "check_rec_review",
-  BLOCKED: "check_rec_blocked",
-};
-
-const RECOMMENDATION_TONE: Record<Recommendation, string> = {
-  CLEAR: "bg-ok/10 text-ok",
-  CLEAR_WITH_ADJUSTMENTS: "bg-warn/10 text-warn",
-  REVIEW_REQUIRED: "bg-warn/10 text-warn",
-  BLOCKED: "bg-destructive/10 text-destructive",
-};
-
 function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const router = useRouter();
   const { t } = useLabels();
@@ -103,7 +87,6 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const [vatChallanSubmitted, setVatChallanSubmitted] = useState(true);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<AgentCheckResult | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   // The progress screen owns the moment between pressing the button and having an
   // answer. `outcome` stays null until the answer lands, which is what makes the last
@@ -118,13 +101,17 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const dueDate = new Date(DEMO_NOW);
   dueDate.setDate(dueDate.getDate() + PAYMENT_TERM_DAYS);
 
-  // Purchase-order prices are ex-VAT (every mock order has subtotal + vatAmount ===
-  // grandTotal), which is exactly the base the checker expects. There is deliberately no
-  // division by 1.15 on this screen any more: that conversion belonged to the old single
-  // VAT-inclusive amount field, and getting it wrong overstated the bill by 15% with no
-  // error raised. See vatInclusiveToExVat in lib/billcheck/mappers.ts.
+  // The ex-VAT total, and NOTHING ELSE, before the check runs.
+  //
+  // This screen used to print "VAT (15%)" from a hard-coded constant. That asserted a rate
+  // the portal does not know: the FY2026-27 schedule has 15%, 10%, 7.5%, 5% and exempt
+  // bands, and which one applies depends on the product's category in the agent's rule
+  // tables. It happened to be right for packaging materials, which is exactly what makes
+  // it dangerous — it would have been quietly wrong for the first reduced-rate item.
+  //
+  // The supplier's own line amounts are theirs to see. Every tax figure now comes from the
+  // checker, with the rule id and gazette citation attached.
   const exVatTotal = useMemo(() => draftLinesTotal(lines), [lines]);
-  const previewVat = exVatTotal * VAT_RATE;
 
   const setQuantity = (lineNo: number, quantity: number) =>
     setLines((current) =>
@@ -142,7 +129,6 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
 
     setSubmitting(true);
     setFailure(null);
-    setResult(null);
     setOutcome(null);
     setProgressError(null);
     setChecking(true);
@@ -180,7 +166,6 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         return;
       }
 
-      setResult(body as AgentCheckResult);
       setOutcome({
         recommendation: body.recommendation,
         net_payable_tk: body.net_payable_tk,
@@ -274,17 +259,13 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
                     {formatBDT(exVatTotal)}
                   </td>
                 </tr>
-                <tr className="border-t border-border">
-                  <td colSpan={4} className="px-3 py-2 text-right text-muted-foreground">
-                    {t("col_vat")} ({VAT_RATE * 100}%)
-                  </td>
-                  <td className="tnum px-3 py-2 text-right text-muted-foreground">
-                    {formatBDT(previewVat)}
-                  </td>
-                </tr>
               </tfoot>
             </table>
           </div>
+          <p className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+            <Info className="mt-0.5 size-3.5 shrink-0" />
+            {t("tax_after_check_hint")}
+          </p>
         </div>
 
         <div className="mt-5">
@@ -343,7 +324,13 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         </Widget>
       )}
 
-      {result && <CheckResult result={result} />}
+      {outcome?.detail && (
+        <CheckResultPanel
+          detail={outcome.detail}
+          poNumber={po.poNumber}
+          elapsedMs={outcome.elapsedMs}
+        />
+      )}
 
       <CheckProgress
         key={runKey}
@@ -354,77 +341,6 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         onClose={() => setChecking(false)}
       />
     </div>
-  );
-}
-
-/**
- * What the checker concluded.
- *
- * Every figure here comes from the agent, computed in Decimal against cited FY2026-27
- * rules. Nothing on this panel is recalculated in JavaScript — the numbers are rendered
- * exactly as the agent produced them.
- */
-function CheckResult({ result }: { result: AgentCheckResult }) {
-  const { t } = useLabels();
-  const net = moneyToNumber(result.net_payable_tk);
-  const findings = result.exceptions ?? [];
-
-  return (
-    <Widget title={t("check_result_title")}>
-      <div className="flex flex-wrap items-center gap-3">
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-semibold ${RECOMMENDATION_TONE[result.recommendation]}`}
-        >
-          {t(RECOMMENDATION_LABEL[result.recommendation])}
-        </span>
-        {result.net_payable_tk !== null && (
-          <span className="text-sm text-muted-foreground">
-            {t("check_net_payable")}:{" "}
-            <span className="tnum font-semibold text-foreground">{formatBDT(net)}</span>
-          </span>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <p className="mb-2 text-sm font-medium text-foreground">{t("check_findings")}</p>
-        {findings.length === 0 ? (
-          <p className="flex items-center gap-2 text-sm text-ok">
-            <CheckCircle2 className="size-4" /> {t("check_no_findings")}
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {findings.map((finding, index) => (
-              <li
-                key={`${finding.code}-${index}`}
-                className="rounded-xl border border-border px-3 py-2 text-sm"
-              >
-                <span
-                  className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    finding.severity === "BLOCKER"
-                      ? "bg-destructive/10 text-destructive"
-                      : finding.severity === "REVIEW"
-                        ? "bg-warn/10 text-warn"
-                        : "bg-info/10 text-info"
-                  }`}
-                >
-                  {finding.severity}
-                </span>
-                <span className="text-foreground">{finding.message}</span>
-                {finding.rule_id && (
-                  <span className="ml-2 text-xs text-muted-foreground">({finding.rule_id})</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-warn/10 p-3.5 text-xs text-warn">
-        <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-        {t("check_rates_note")}
-      </p>
-      <p className="mt-2 text-xs text-muted-foreground">{t("check_awaiting_cfo")}</p>
-    </Widget>
   );
 }
 

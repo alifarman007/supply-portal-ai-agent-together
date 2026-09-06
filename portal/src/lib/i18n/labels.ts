@@ -249,6 +249,10 @@ export const LABELS = {
     bn: "অর্ডার থেকে পূরণ করা হয়েছে। আংশিক ডেলিভারির বিল করলে পরিমাণ পরিবর্তন করুন।",
   },
   bill_total_ex_vat: { en: "Bill total (before VAT)", bn: "বিলের মোট (ভ্যাটের আগে)" },
+  tax_after_check_hint: {
+    en: "VAT and any withholding are worked out by the checker when you submit, from the NBR rate that applies to these products — so they are not shown here.",
+    bn: "ভ্যাট ও উৎসে কর্তন জমা দেওয়ার পর যাচাইকারী গণনা করবে, এই পণ্যের জন্য প্রযোজ্য এনবিআর হার অনুযায়ী — তাই এখানে দেখানো হয়নি।",
+  },
   submit_and_check_btn: { en: "Submit and check", bn: "জমা দিন ও যাচাই করুন" },
   checking_in_progress: {
     en: "Checking against the order, goods receipt and NBR tax rules…",
