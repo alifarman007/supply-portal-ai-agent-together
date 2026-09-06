@@ -82,8 +82,9 @@ cd portal;  npm run lint;  npx tsc --noEmit;  npm run build
 cd agent;   python -m uv run ruff check .;  python -m uv run pytest
 ```
 
-The agent has 318 tests, including `tests/golden/test_portal_contract.py`, which pins the
-contract between the two halves without either server running. The portal has no test
+The agent has 324 tests, including `tests/golden/test_portal_contract.py` (the contract
+between the two halves) and `test_progress_steps.py` (every exception code must appear on
+the supplier's screen). Neither needs a server running. The portal has no test
 suite yet — `tsc --noEmit` and a successful build are its gate.
 
 ## Two things worth knowing
@@ -93,7 +94,7 @@ integer paisa and refuses a float outright; a JavaScript `number` is a double an
 represent 0.1 exactly. So amounts and quantities cross the wire as strings, and the portal
 parses them only to display them.
 
-**The tax rates are not signed off yet.** The FY2026-27 NBR tables in
+**The tax rates are not signed off yet — this is the one thing blocking real use.** The FY2026-27 NBR tables in
 `agent/app/rules/fy2026_27/` were extracted from the official gazettes and carry
 page-level citations, but no accountant has confirmed them. Everything computed from them
 is badged **NOT CONFIRMED** in the UI, with the source named, so a rate can be checked

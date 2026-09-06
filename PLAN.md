@@ -14,7 +14,7 @@ Two working systems that were built separately and are being joined into one pro
 | What it is | Kazi Farms Supplier Portal | Accounts Bill Checking AI Agent |
 | Who uses it | **Suppliers** (external) | **Accounts + CFO** (internal) |
 | Stack | Next.js 16.2.9, React 19, TypeScript 5, Tailwind 4, shadcn/ui | Python 3.11+, FastAPI, SQLAlchemy, SQLite, Pydantic v2 |
-| State today | Working UI, data is in-memory mocks + one live ERP read | Working end-to-end, 306 tests passing |
+| State today | Working UI, data is in-memory mocks + one live ERP read | Working end-to-end, 324 tests passing |
 | Origin | github.com/shawon9324/kazifarms-supplier-portal | github.com/alifarman007/supply-portal-and-erp-ai-agent |
 
 Both histories were merged with `git subtree`, so every original commit and author is
@@ -90,7 +90,7 @@ in the portal.
 
 | Decision | Choice | Why |
 |---|---|---|
-| Repo shape | Monorepo, `portal/` + `agent/`, HTTP between them | Two toolchains (npm vs uv), two test regimes. Rewriting the agent in TypeScript would throw away 306 tests, the Decimal money engine, cited rate tables, audit/replay — and JS `number` is a float, exactly what the money engine forbids. |
+| Repo shape | Monorepo, `portal/` + `agent/`, HTTP between them | Two toolchains (npm vs uv), two test regimes. Rewriting the agent in TypeScript would throw away 324 tests, the Decimal money engine, cited rate tables, audit/replay — and JS `number` is a float, exactly what the money engine forbids. |
 | Direction | **Portal calls agent. Agent never calls portal.** | One-way keeps the agent standalone and testable. The treasury webhook is the agent's only outbound call and is unchanged. |
 | Transport | Next.js **server-side** route handlers proxy to the agent | The agent has no auth and no CORS. `BILLCHECK_BASE_URL` is server-only, never `NEXT_PUBLIC_`. Copies the existing iDempiere pattern. |
 | First upload path | **The typed bill form**, not PDF reading | The form is the backbone; PDF extraction feeds the same screen later, and free-tier Gemini is only ~20 reads/day. |
@@ -205,13 +205,20 @@ visibility could never have been the control.
 ### S4 — Release ✅ DONE
 
 All met. `scripts/dev.ps1` runs both halves with one command. A fresh clone of the
-pushed repo was verified end to end: installs, seeds, **318 tests pass**, ruff clean,
+pushed repo was verified end to end: installs, seeds, **all tests pass** (318 at the time, 324 now), ruff clean,
 `tsc --noEmit` clean, `npm run build` succeeds with all five new routes, and no secret
 or internal document appears anywhere in the tree or its history.
 
 One Windows gotcha found and documented: Turbopack panics on `npm run build` if the
 repo sits under a deep path, because its generated chunk names exceed the 260-character
 limit. Keep the clone somewhere short.
+
+### Where the work continues
+
+S0-S4 are all done and the end-to-end flow works. The prioritised list of what to pick
+up next lives in **`CLAUDE.md` under "What to do next"** — it is kept there so a fresh
+session finds it in the first file it reads. The blocker is accountant sign-off on the
+tax rates (§7 below).
 
 ### Later (not scheduled)
 

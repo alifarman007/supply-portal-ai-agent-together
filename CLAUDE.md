@@ -33,120 +33,141 @@ already made, and the build order.
 
 ---
 
-## Current status
+## Where this is now
 
-- **S0 — Merge and document: DONE.** Both repos merged with `git subtree` (full history,
-  both authors preserved — 25 commits). Root docs written. Stale plan retired to
-  `portal/docs/legacy/`. No secret in the merged history (verified: `.env`,
-  `application_example/`, `audit_log/`, `billcheck.db` all absent; no key-shaped string in
-  any commit).
-  Verified after the merge: agent `306 passed, 1 skipped`, `ruff` clean, `seed` loads 14
-  bills; portal `npm install` OK (422 Next docs unpacked), `npx tsc --noEmit` **clean**.
-  Baseline `npm run lint` is **not** clean and was not clean before the merge either —
-  1 pre-existing error (`src/components/common/ReportTable.tsx:64`, setState inside an
-  effect) and 9 unused-variable warnings, all inherited from upstream. Left alone
-  deliberately: they are upstream's code, not ours. Treat `tsc --noEmit` as the type gate
-  and do not let the lint count grow.
-- **S1 — Data spine: DONE.** The agent now knows the portal's purchase orders.
-  `scripts/generate_portal_demo_seed.py` generates `agent/seeds/portal_demo.json` from
-  `portal/src/lib/mock/db.ts` (and refuses to write if the parse fails the source file's
-  own arithmetic); `python -m app.cli seed --portal` loads it *alongside* the golden
-  S1-S12 fixtures rather than replacing them. Proved over real HTTP by
-  `scripts/verify_portal_roundtrip.py`: portal-shaped bill -> `201` -> check -> `CLEAR`,
-  net **328,160.00 Tk**, 0 exceptions, TDS from `tds.goods.s89.serial_17` (3%, packing
-  materials) with its citation.
-  Two things this pinned down: the portal's `fulfilled` maps to the agent's `open`, NOT
-  `closed` (the agent only checks `open`/`partially_billed`, so `closed` would block every
-  real bill); and the VAT conversion is real money — 336,950 entered in the portal is
-  293,000 ex-VAT, a 43,950 Tk overstatement if sent unconverted, with no exception raised.
-- **S2 — Submit-through: DONE.** The portal's bill form now submits to the agent and
-  shows the real result. New: `portal/src/lib/billcheck/{types,client,mappers}.ts` and
-  `portal/src/app/api/billcheck/submit/route.ts` (the portal's first POST handler).
-  The bill form was rebuilt around **editable line items prefilled from the purchase
-  order** — it used to fabricate a single line reading "Bill against PO-...", which
-  carried nothing the checker could match against the order or the goods receipt.
-  Verified live: full delivery -> `CLEAR` 328,160.00; 60%-delivered order billed in
-  full -> `REVIEW_REQUIRED` with `qty_over_grn` on both lines and the payable cut to
-  168,000.00; undelivered order -> `BLOCKED` on `missing_grn`.
-  **This route deliberately has NO mock fallback**, unlike the iDempiere handlers next
-  door. Those are read-only, where showing demo data beats an error page. This one
-  reports what will be deducted from a supplier's payment, and falling back to the flat
-  3%/7.5% in `format/tax.ts` would produce a confident wrong number that nobody could
-  distinguish from a real one.
-- **S3 — Bill-checking tabs: DONE.** `/app/billcheck` (queue) and `/app/billcheck/{billId}`
-  with three tabs — Summary (lines billed vs approved, adjustments, the checker's
-  narrative, run metadata), Tax rates (every applied rate with rule id, base, amount,
-  full citation and a NOT CONFIRMED badge), Findings (severity-badged exceptions).
-  Fed by two new agent endpoints: `GET /review?format=json` and
-  `GET /review/{id}?format=json`, which reuse the SAME assembled data the Jinja pages
-  render rather than a parallel implementation — two views of one bill that could
-  disagree would be worse than one view.
-  **Read-only.** Approving writes a payment instruction, an outbox record and a treasury
-  webhook; the agent's own screen is already race-proof and CSRF-guarded, and the portal
-  has no authentication, so the page links out to approve instead of duplicating it.
-  **Gated server-side by `BILLCHECK_INTERNAL`** — verified by turning it off: both API
-  routes 404. `NEXT_PUBLIC_BILLCHECK_INTERNAL` only shows the sidebar link and is
-  documented as cosmetic.
-- **Checking progress screen — DONE.** Pressing *Submit and check* opens a checklist of
-  the eight checks the pipeline actually runs, each row filling in with what it really
-  found (`portal/src/lib/billcheck/steps.ts` + `components/billcheck/CheckProgress.tsx`).
-  **The reveal is paced, not simulated.** The deterministic check takes ~90 ms, so all
-  eight results would otherwise land in one frame; rows appear at reading speed while
-  the real answer, already in hand, fills them in, and the **true elapsed time** is
-  printed at the end rather than the animation's length. Do not add artificial delays.
-  Two honesty rules are enforced in code: a failed step shows its findings and NO
-  cheerful summary (it used to print "every billed quantity is covered by the goods
-  receipt" beside a blocker saying no goods receipt exists), and every step after a
-  blocker is marked **skipped**, because `_finalize_blocked` short-circuits the pipeline
-  and those steps never ran.
-  `agent/tests/golden/test_progress_steps.py` pins the mapping: every code in
-  `policies.yaml` must belong to exactly one row, no row may claim a code nothing
-  raises, and blockers must sit in the early rows. **It immediately caught six codes
-  with no row at all** — `missing_mushak_6_3`, two Mushak checks,
-  `tax_category_proposed`, `llm_node_failed` and `report_numeric_guard_failed` — which
-  would have been invisible to the supplier. **Add a new exception code to a step or
-  the suite fails.**
-- **Tax figures removed from the bill form before checking — DONE.** The submit screen
-  used to print `VAT (15%)` from the hard-coded `VAT_RATE` in `format/tax.ts`, before
-  the checker had seen the bill. That asserts a rate the portal does not know: the
-  FY2026-27 schedule has 15% / 10% / 7.5% / 5% / exempt bands and which applies depends
-  on the line's `vat_category_id` in the agent's tables. It was right for packing
-  materials — which is what made it dangerous, since it would have been quietly wrong
-  for the first reduced-rate item. The form now shows only the supplier's own ex-VAT
-  total; every tax figure arrives from the agent with its rule id and citation.
-  Pinned by `test_the_bill_form_asserts_no_tax_rate_of_its_own`.
-  The result panel renders the agent's own `breakdown.netting_order` **verbatim** and
-  never recomputes a total in JavaScript — the agent works in Decimal paisa, JS in
-  doubles, and a total assembled in the browser could disagree with the one the CFO
-  approves. It also separates the **invoice** (supply value + VAT) from the **payment**
-  (invoice − VDS − TDS), because those are different numbers and conflating them is how
-  a supplier gets surprised; TDS is labelled as a claimable credit, not a cost.
-  ⚠️ **The same flat rates are still live on other screens** and were left alone as out
-  of scope: `purchase-orders/page.tsx` and `purchase-orders/[id]/page.tsx` (VDS 7.5% /
-  TDS 3%, and the detail page hard-codes those percentages in the LABEL beside an amount
-  that may have come from the ERP at a different rate), `invoices/new/page.tsx`,
-  `tenders/[id]/bid/page.tsx` and `lib/mock/api.ts`. Same fix applies when they matter.
-- **S4 — Release: DONE.** `scripts/dev.ps1` starts both halves with one command
-  (`-Reseed` to rebuild the database, `-Stop` to stop). README rewritten around what to
-  actually try. **Clean-clone verified**: a fresh clone of the pushed repo installs,
-  seeds, passes all 318 tests, is ruff clean, type-checks and builds — with no secret,
-  database, audit log or internal working paper anywhere in the tree or its history.
+**The end-to-end flow works.** A supplier submits a bill in the portal, the agent checks
+it against the purchase order, the goods receipt and the FY2026-27 NBR tax rules, and the
+result comes back into the portal — with a live checklist while it runs and the internal
+bill-checking screens afterwards.
 
+### See it in two minutes
+
+```powershell
+.\scripts\dev.ps1 -Reseed
+```
+
+Then open http://localhost:3000/app/bills and **scroll to the bottom of the list** — it is
+sorted newest-first and the newest orders have not been delivered yet.
+
+| Try this order | What happens | Why |
+|---|---|---|
+| **PO-2026-0001** | ✅ Cleared, net **328,160.00** | Fully delivered, billed correctly |
+| **PO-2026-0008** | ✅ Cleared, net **554,400.00** | Fully delivered, billed correctly |
+| **PO-2026-0015** | ⚠️ Needs review, cut to **168,000.00** | Only 120 of 200 units arrived; billing all 200 is caught on both lines |
+| **PO-2026-0041** | ⛔ Blocked | Nothing has been received against it — `missing_grn` |
+
+Only **4 of the 14** demo orders have a goods receipt, so the rest correctly block. Then
+open http://localhost:3000/app/billcheck for the internal view (needs
+`BILLCHECK_INTERNAL=true`).
+
+### What to do next
+
+Roughly in order of value.
+
+1. ⛔ **Get the tax rates signed off by an accountant.** This is the one real blocker and
+   it needs a person, not code. The FY2026-27 tables are extracted and cited to gazette
+   page level but are marked DRAFT, so every figure the system produces is badged NOT
+   CONFIRMED. Ask about the VAT base first — see `PLAN.md` §5 and §7. The rates are easiest
+   to check against a real bill on the *Tax rates* tab at `/app/billcheck/{billId}`.
+2. **The same flat-rate bug is still live on other screens.** The bill form was fixed;
+   `purchase-orders/page.tsx`, `purchase-orders/[id]/page.tsx`, `invoices/new/page.tsx`,
+   `tenders/[id]/bid/page.tsx` and `lib/mock/api.ts` still compute VAT/VDS/TDS from the
+   flat constants in `format/tax.ts`. The order detail page is worst: it hard-codes the
+   labels "(7.5%)" and "(3%)" beside amounts that may have come from the ERP at a different
+   rate. Same fix — take the figures from the agent, or show no rate at all.
+3. **The bill list does not know what has been delivered.** It marks every non-cancelled
+   order "Pending Bill = Yes", so a supplier can submit a bill that cannot possibly succeed
+   (which is most of the demo list). Only the agent knows about goods receipts. Surfacing
+   delivery status there would save the wasted round trip.
+4. **PDF / photo bill upload is built but not wired into the portal.** The agent reads a
+   scanned bill through Node E (`agent/app/ingest/extract.py`, live-verified: on a blank
+   form it returned empty fields and listed them as uncertain rather than inventing
+   values). The portal's attachment field currently does nothing with it. Note the ~20
+   requests/day free-tier cap before making it the default path.
+5. **Real authentication.** The portal has none (see Known limitations). Until it does,
+   CFO approval stays on the agent's own screen and the internal section stays behind
+   `BILLCHECK_INTERNAL`. This is the prerequisite for moving approval into the portal.
+6. **Wire the Mushak 6.3 validator into the pipeline.** `agent/app/engines/mushak.py` is
+   built and tested from two real Kazi Farms invoices, but `Bill` still stores only
+   `mushak_6_3_no` as a string, so nothing calls it. It needs a data-model change and a
+   source for the invoice lines — the PDF path above would provide one.
+7. **The portal has no test suite.** `tsc --noEmit` and a successful build are its only
+   gate. A first test around `lib/billcheck/mappers.ts` would be the highest-value start.
+
+Not scheduled, but written down so they are not rediscovered the hard way: BPMN
+orchestration, a real `ErpGateway` replacing the mock, and background/async LLM enrichment
+(which needs SQLite WAL first — see `PLAN.md` §6).
 
 ### What each half already does
 
-`portal/` — 14 commits, working UI. Dashboard, tenders, bids, purchase orders, bill
-submission, payments, invoices, compliance documents, reports, notifications, profile.
-Bilingual (English/Bangla), dark mode, RBAC-flavoured nav. **All data is in-memory mocks**
-(`portal/src/lib/mock/`) except one live integration: iDempiere ERP purchase orders, read
-server-side with a mock fallback when the host is unreachable.
+`portal/` — working UI. Dashboard, tenders, bids, purchase orders, bill submission,
+payments, invoices, compliance documents, reports, notifications, profile. Bilingual
+(English/Bangla), dark mode. **All data is in-memory mocks** (`portal/src/lib/mock/`)
+except two live integrations: iDempiere ERP purchase orders (read server-side, mock
+fallback when unreachable) and the bill checking agent.
 
-`agent/` — **324 tests passing, ruff clean**. Phases 0–4 and 6 complete:
-deterministic engines (matching incl. 3-way, VAT, VDS, TDS, netting, duplicates, policy,
-Mushak 6.3 validation), FY2026-27 NBR rate tables with page-level citations, LLM nodes
-A/B/C/E with a numeric guard, full audit log with offline replay, FastAPI + Jinja CFO
-review UI, treasury payment-instruction outbox, and a 28-case eval harness scoring 28/28
-deterministic. Phase 5 (accountant sign-off on the tax tables) is the one open item.
+`agent/` — **324 tests passing, ruff clean**. Deterministic engines (matching incl. 3-way,
+VAT, VDS, TDS, netting, duplicates, policy, Mushak 6.3 validation), FY2026-27 NBR rate
+tables with page-level citations, LLM nodes A/B/C/E with a numeric guard, full audit log
+with offline replay, FastAPI + Jinja CFO review UI, treasury payment-instruction outbox,
+and a 28-case eval harness scoring 28/28 deterministic.
+
+---
+
+## Build log
+
+What was done and, more usefully, what was learned doing it.
+
+- **S0 — Merged.** Both repos joined with `git subtree`, full history and both authors
+  preserved. No secret in the merged tree or its history (`.env`, `application_example/`,
+  `audit_log/`, `billcheck.db` all absent; no key-shaped string in any commit).
+  Baseline `npm run lint` is **not** clean and was not before the merge either — 1 error
+  (`components/common/ReportTable.tsx:64`, setState in an effect) and 9 unused-variable
+  warnings, all inherited from upstream. Left alone deliberately. Treat `tsc --noEmit` as
+  the type gate and do not let the lint count grow.
+- **S1 — Data spine.** `scripts/generate_portal_demo_seed.py` generates
+  `agent/seeds/portal_demo.json` from `portal/src/lib/mock/db.ts`, refusing to write if the
+  parse fails the source file's own arithmetic. `python -m app.cli seed --portal` loads it
+  *alongside* the golden S1-S12 fixtures. Two traps pinned here: the portal's `fulfilled`
+  maps to the agent's `open`, **not** `closed` (the agent only checks `open` /
+  `partially_billed`, so `closed` would block every real bill); and the portal's demo date
+  of 30 June 2026 is the last day of FY2025-26, a year with no rule tables — bills carry
+  the real submission date instead.
+- **S2 — Submit-through.** The bill form was rebuilt around **editable line items prefilled
+  from the order**; it used to fabricate one line reading "Bill against PO-...", which
+  carried nothing the checker could match. The submit route has **no mock fallback**,
+  unlike the iDempiere handlers beside it: those are read-only, where demo data beats an
+  error page, but this one reports what will be deducted from a payment, and falling back
+  to the flat rates would produce a confident wrong number nobody could distinguish from a
+  real one.
+- **S3 — Internal screens.** `/app/billcheck` and `/app/billcheck/{billId}` with Summary /
+  Tax rates / Findings tabs, fed by `GET /review?format=json` and
+  `GET /review/{id}?format=json` — the *same* assembled data the Jinja pages render, not a
+  parallel implementation. Read-only; approval stays on the agent's screen, which is
+  already race-proof and CSRF-guarded. **Gated server-side by `BILLCHECK_INTERNAL`**,
+  verified by turning it off (both routes 404). `NEXT_PUBLIC_BILLCHECK_INTERNAL` only shows
+  the sidebar link and is cosmetic — the portal's four roles are all *supplier* roles the
+  viewer picks from a menu, so nav visibility was never access control.
+- **Progress checklist.** Eight rows matching the real pipeline steps, each showing what it
+  actually found. **The reveal is paced, not simulated** — the deterministic check takes
+  ~90 ms, so all eight results would otherwise land in one frame; the true elapsed time is
+  printed at the end. **Do not add artificial delays.** Two honesty rules are enforced in
+  code: a failed step shows its findings and no cheerful summary (it used to print "every
+  billed quantity is covered by the goods receipt" beside a blocker saying no goods receipt
+  exists), and every step after a blocker is marked **skipped**, because
+  `_finalize_blocked` short-circuits the pipeline and those steps never ran.
+  `agent/tests/golden/test_progress_steps.py` pins the mapping and immediately caught
+  **six exception codes with no row at all**, including `missing_mushak_6_3` — the very
+  thing that decides whether VDS is deducted. **Add a new exception code to a step or the
+  suite fails.**
+- **Tax removed from the form before checking.** The submit screen printed `VAT (15%)` from
+  a hard-coded constant before the checker had seen the bill. That asserts a rate the
+  portal does not know — the schedule has 15/10/7.5/5/exempt bands keyed to the line's
+  category. It was right for packing materials, which is what made it dangerous. The result
+  panel now renders the agent's own `breakdown.netting_order` **verbatim** and never
+  recomputes a total in JavaScript, and separates the **invoice** (supply value + VAT) from
+  the **payment** (invoice − VDS − TDS), with TDS labelled as a claimable credit rather
+  than a cost. Pinned by `test_the_bill_form_asserts_no_tax_rate_of_its_own`.
 
 ---
 
@@ -181,7 +202,7 @@ Copy-Item .env.example .env            # then fill in GEMINI_API_KEY
 python -m uv run python -m app.cli seed        # create tables + load golden fixtures S1-S12
 python -m uv run python -m app.cli serve       # -> http://127.0.0.1:8000/review
 python -m uv run ruff check .
-python -m uv run pytest                        # 306 tests
+python -m uv run pytest                        # 324 tests
 ```
 
 Other agent commands: `list-bills`, `list-runs`, `check-bill <BILL-ID> [--llm]`,
