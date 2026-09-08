@@ -239,6 +239,40 @@ export const LABELS = {
   toast_bill_exceed: { en: "Bill amount cannot exceed the order value.", bn: "বিলের পরিমাণ অর্ডার মূল্যের বেশি হতে পারবে না।" },
   toast_order_worth: { en: "This order is worth", bn: "এই অর্ডারের মূল্য" },
   toast_bill_submitted: { en: "Bill submitted", bn: "বিল জমা দেওয়া হয়েছে" },
+
+  // ERP bill submission (iDempiere API §4). The check runs first; these describe
+  // the second step, which records the bill in the ERP.
+  erp_recording: { en: "Recording in the ERP…", bn: "ইআরপিতে সংরক্ষণ করা হচ্ছে…" },
+  erp_recorded_title: { en: "Recorded in the ERP", bn: "ইআরপিতে সংরক্ষিত হয়েছে" },
+  erp_recorded_ref: { en: "Bill checking reference", bn: "বিল যাচাই রেফারেন্স" },
+  erp_recorded_amount: { en: "Amount sent to the ERP", bn: "ইআরপিতে পাঠানো পরিমাণ" },
+  erp_not_recorded_title: { en: "Not recorded in the ERP", bn: "ইআরপিতে সংরক্ষিত হয়নি" },
+  erp_skipped_blocked: {
+    en: "The check found a blocker, so nothing was sent to the ERP.",
+    bn: "যাচাইয়ে বাধা পাওয়া গেছে, তাই ইআরপিতে কিছু পাঠানো হয়নি।",
+  },
+  erp_already_submitted: {
+    en: "This bill had already been submitted, so it was re-checked rather than sent to the ERP again. Check the ERP before submitting it a second time.",
+    bn: "এই বিলটি আগেই জমা দেওয়া হয়েছিল, তাই এটি পুনরায় যাচাই করা হয়েছে — ইআরপিতে আবার পাঠানো হয়নি। দ্বিতীয়বার জমা দেওয়ার আগে ইআরপি দেখে নিন।",
+  },
+  erp_checked_not_recorded: {
+    en: "The bill was checked, but recording it in the ERP failed. The check result above still stands.",
+    bn: "বিলটি যাচাই হয়েছে, কিন্তু ইআরপিতে সংরক্ষণ ব্যর্থ হয়েছে। উপরের যাচাই ফলাফল বহাল আছে।",
+  },
+  toast_erp_recorded: { en: "Recorded in the ERP", bn: "ইআরপিতে সংরক্ষিত হয়েছে" },
+  toast_erp_failed: { en: "ERP recording failed", bn: "ইআরপিতে সংরক্ষণ ব্যর্থ হয়েছে" },
+
+  // Attachment validation, checked in the browser before upload.
+  attach_too_large: {
+    en: "That file is too large. The limit is 5 MB.",
+    bn: "ফাইলটি অনেক বড়। সর্বোচ্চ সীমা ৫ এমবি।",
+  },
+  attach_empty: { en: "That file is empty.", bn: "ফাইলটি খালি।" },
+  attach_unsupported: {
+    en: "Only PDF, PNG, JPG and GIF files can be attached.",
+    bn: "কেবল পিডিএফ, পিএনজি, জেপিজি ও জিআইএফ ফাইল সংযুক্ত করা যাবে।",
+  },
+  attach_unreadable: { en: "That file could not be read.", bn: "ফাইলটি পড়া যায়নি।" },
   toast_bill_sent_review: { en: "has been sent for review.", bn: "পর্যালোচনার জন্য পাঠানো হয়েছে।" },
   toast_bill_failed: { en: "Failed to submit bill", bn: "বিল জমা দিতে ব্যর্থ হয়েছে" },
 
@@ -285,6 +319,29 @@ export const LABELS = {
   payment_subtitle: { en: "Track all payments received from Kazi Farms Group", bn: "কাজী ফার্মস গ্রুপ থেকে প্রাপ্ত সকল পেমেন্ট ট্র্যাক করুন" },
   export_btn: { en: "Export", bn: "এক্সপোর্ট" },
   toast_csv_soon: { en: "CSV export coming soon.", bn: "সিএসভি এক্সপোর্ট শীঘ্রই আসছে।" },
+
+  // Supplier payment (iDempiere API §5). Internal/treasury action: the whole
+  // section is hidden unless BILLCHECK_INTERNAL is set server-side, because
+  // paying a supplier is not something a supplier does.
+  pay_record_action: { en: "Record payment", bn: "পেমেন্ট রেকর্ড করুন" },
+  pay_dialog_title: { en: "Record a payment in the ERP", bn: "ইআরপিতে পেমেন্ট রেকর্ড করুন" },
+  pay_dialog_intro: {
+    en: "This creates a supplier payment record in the ERP. It cannot be undone from the portal.",
+    bn: "এটি ইআরপিতে একটি সরবরাহকারী পেমেন্ট রেকর্ড তৈরি করে। পোর্টাল থেকে এটি বাতিল করা যাবে না।",
+  },
+  pay_invoice_no: { en: "Invoice number", bn: "চালান নম্বর" },
+  pay_date: { en: "Payment date", bn: "পেমেন্টের তারিখ" },
+  pay_bank_name: { en: "Bank name", bn: "ব্যাংকের নাম" },
+  pay_bank_acct: { en: "Bank account number", bn: "ব্যাংক হিসাব নম্বর" },
+  pay_net_amount: { en: "Net amount paid", bn: "পরিশোধিত নিট পরিমাণ" },
+  pay_tender_type: { en: "Payment method", bn: "পেমেন্ট পদ্ধতি" },
+  pay_description: { en: "Description", bn: "বিবরণ" },
+  pay_submit: { en: "Record payment", bn: "পেমেন্ট রেকর্ড করুন" },
+  pay_cancel: { en: "Cancel", bn: "বাতিল" },
+  pay_recording: { en: "Recording…", bn: "রেকর্ড করা হচ্ছে…" },
+  toast_pay_recorded: { en: "Payment recorded", bn: "পেমেন্ট রেকর্ড হয়েছে" },
+  toast_pay_failed: { en: "Payment was not recorded", bn: "পেমেন্ট রেকর্ড হয়নি" },
+  pay_erp_ref: { en: "ERP payment document", bn: "ইআরপি পেমেন্ট নথি" },
   total_gross: { en: "Total Gross", bn: "মোট গ্রস" },
   total_deductions: { en: "Total Deductions", bn: "মোট কর্তন" },
   net_received: { en: "Net Received", bn: "নিট প্রাপ্ত" },

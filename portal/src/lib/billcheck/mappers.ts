@@ -180,3 +180,35 @@ export function toAgentBill(args: {
 export function billIdFor(po: PurchaseOrder, sequence: number): string {
   return `BILL-${po.poNumber}-${String(sequence).padStart(2, "0")}`;
 }
+
+/**
+ * The invoice total: supply value plus VAT, before any withholding.
+ *
+ * Derived from the agent's own `netting_order` by summing every positive row —
+ * the approved base and each VAT line — and ignoring the negative ones, which
+ * are the VDS and TDS the buyer withholds at payment time. On PO-2026-0001 that
+ * is 293,000 + 33,750 + 10,200 = 336,950, against a net payable of 328,160.
+ *
+ * It matters that this reads the agent's ledger rather than multiplying by 1.15.
+ * The portal does not know the VAT rate — the schedule has 15/10/7.5/5/exempt
+ * bands keyed to each line's category — and asserting one is the exact bug that
+ * `test_the_bill_form_asserts_no_tax_rate_of_its_own` exists to prevent. Here
+ * the figure is the checker's, and the portal only adds it up.
+ *
+ * Returns null when the check produced no ledger at all, which is what a BLOCKED
+ * bill looks like: `_finalize_blocked` short-circuits before computing anything.
+ */
+export function invoiceTotalFromCheck(detail: {
+  breakdown?: { netting_order?: { amount: MoneyString }[] } | null;
+  net_payable_tk?: MoneyString | null;
+} | null | undefined): number | null {
+  const ledger = detail?.breakdown?.netting_order;
+  if (!ledger?.length || detail?.net_payable_tk === null) return null;
+
+  const total = ledger
+    .map((row) => moneyToNumber(row.amount))
+    .filter((amount) => amount >= 0)
+    .reduce((sum, amount) => sum + amount, 0);
+
+  return total > 0 ? total : null;
+}

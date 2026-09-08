@@ -21,15 +21,51 @@ import {
   billIdFor,
   draftLinesFromPo,
   draftLinesTotal,
+  invoiceTotalFromCheck,
   lineAmount,
   toAgentBill,
   type DraftBillLine,
 } from "@/lib/billcheck/mappers";
 import { CheckProgress, type CheckOutcome } from "@/components/billcheck/CheckProgress";
 import { CheckResultPanel } from "@/components/billcheck/CheckResultPanel";
+import { ErpRequestError, submitBillToErp } from "@/lib/idempiere/api";
+import {
+  ATTACHMENT_ACCEPT,
+  AttachmentRejected,
+  fileToErpAttachment,
+} from "@/lib/idempiere/attachment";
+import { erpToday } from "@/lib/idempiere/mappers";
 
 /** Bills fall due 30 days after submission, per the standard PO terms. */
 const PAYMENT_TERM_DAYS = 30;
+
+/**
+ * The result of the ERP leg, which runs after the check.
+ *
+ * "skipped" is a real outcome, not an absence of one: when the checker returns a
+ * blocker the bill is deliberately never sent to the ERP, and the supplier is
+ * told that rather than left to infer it from silence.
+ */
+type ErpOutcome =
+  | { kind: "idle" }
+  | { kind: "sending" }
+  | { kind: "recorded"; billCheckingId: string; amount: number }
+  | { kind: "skipped" }
+  | { kind: "already_submitted" }
+  | { kind: "failed"; message: string };
+
+/**
+ * Response codes that mean "this deployment does not do ERP writes", as opposed
+ * to "the write was attempted and failed".
+ *
+ * They must render as nothing at all. The documented demo — `scripts/dev.ps1
+ * -Reseed` with no IDEMPIERE_* set — runs the agent and no ERP, and a supplier
+ * who submits a bill there should see the check result and no mention of a
+ * system that was never part of the picture. Treating an unconfigured ERP as a
+ * failure would put a red panel under every successful check in the default
+ * configuration.
+ */
+const ERP_NOT_APPLICABLE = new Set(["ERP_NOT_CONFIGURED", "ERP_WRITES_DISABLED"]);
 
 /**
  * The supplier this portal is logged in as. The portal has no real authentication yet
@@ -94,6 +130,10 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
   const [checking, setChecking] = useState(false);
   const [outcome, setOutcome] = useState<CheckOutcome | null>(null);
   const [progressError, setProgressError] = useState<string | null>(null);
+  // The ERP leg, tracked separately from the check. The two can disagree — a bill
+  // can check CLEAR and still fail to reach the ERP — and saying so precisely is
+  // more useful than collapsing both into one "submitted" flag.
+  const [erpState, setErpState] = useState<ErpOutcome>({ kind: "idle" });
   // Bumped per submission so the progress screen remounts fresh instead of being
   // reset from inside an effect.
   const [runKey, setRunKey] = useState(0);
@@ -131,8 +171,36 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
     setFailure(null);
     setOutcome(null);
     setProgressError(null);
+    setErpState({ kind: "idle" });
     setChecking(true);
     setRunKey((n) => n + 1);
+
+    // Encode the attachment before anything is submitted anywhere. It is the one
+    // step that can fail for a reason the supplier can fix in a second (wrong file
+    // type, too large), and finding that out after the bill has already been
+    // checked would mean either re-running the check or lodging it without the
+    // file. The ERP applies the same rules server-side; this just gets there first
+    // with a message in the supplier's own language.
+    let attachmentDataUri: string | undefined;
+    if (attachment) {
+      try {
+        attachmentDataUri = (await fileToErpAttachment(attachment)).dataUri;
+      } catch (err) {
+        const message =
+          err instanceof AttachmentRejected
+            ? err.reason.kind === "too_large"
+              ? t("attach_too_large")
+              : err.reason.kind === "empty"
+                ? t("attach_empty")
+                : t("attach_unsupported")
+            : t("attach_unreadable");
+        setFailure(message);
+        setChecking(false);
+        setSubmitting(false);
+        toast.error(message);
+        return;
+      }
+    }
 
     const payload = toAgentBill({
       billId: billIdFor(po, 1),
@@ -173,6 +241,85 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         elapsedMs: body.elapsedMs,
       });
       toast.success(t("toast_bill_submitted"));
+
+      // ---- Second step: record the bill in the ERP -------------------------
+      //
+      // A BLOCKED bill never gets here. The checker found something that makes
+      // the bill unpayable — no goods receipt, a closed purchase order — and
+      // writing it into the ERP anyway would put a record there that the whole
+      // check exists to prevent. `net_payable_tk` is null in exactly that case,
+      // because the pipeline short-circuits before computing anything.
+      if (body.recommendation === "BLOCKED") {
+        setErpState({ kind: "skipped" });
+        return;
+      }
+
+      // The VAT-inclusive invoice total: supply value plus VAT, before
+      // withholding. Taken from the checker's own ledger rather than computed
+      // here — the portal does not know which VAT band applies to a given line,
+      // and asserting one is the bug this form was rebuilt to remove.
+      const billAmount = invoiceTotalFromCheck(body.detail);
+      if (billAmount === null) {
+        setErpState({
+          kind: "failed",
+          message: t("erp_checked_not_recorded"),
+        });
+        return;
+      }
+
+      // API 4 has no idempotency key, so posting twice creates TWO Bill Checking
+      // records in the ERP. The bill id this form sends is deterministic
+      // (`BILL-{poNumber}-01`), so a second press is a re-check of the existing
+      // bill rather than a new one — the agent says so with `created: false`,
+      // and that flag is the only thing standing between a double-click and a
+      // duplicate ERP document.
+      //
+      // When the bill already existed and this session did not record it, the
+      // honest position is that we do not know whether the ERP already has it.
+      // Saying so beats silently duplicating or silently skipping.
+      if (body.created === false && erpState.kind !== "recorded") {
+        setErpState({ kind: "already_submitted" });
+        return;
+      }
+      if (body.created === false) {
+        return; // Already recorded in this session; leave that result on screen.
+      }
+
+      setErpState({ kind: "sending" });
+      try {
+        const erp = await submitBillToErp({
+          poDocNo: po.poNumber,
+          billSubmitDate: erpToday(),
+          billAmount,
+          billNo: `INV-${po.poNumber}`,
+          vatChallanSubmitted,
+          remarks: `Submitted from the supplier portal. Checked: ${body.recommendation}.`,
+          ...(attachmentDataUri ? { attachment: attachmentDataUri } : {}),
+        });
+        setErpState({
+          kind: "recorded",
+          billCheckingId: erp.billCheckingId,
+          amount: erp.amount,
+        });
+        toast.success(t("toast_erp_recorded"));
+      } catch (err) {
+        // An ERP that is simply not part of this deployment is not a failure.
+        // Say nothing rather than reporting the absence of an integration as a
+        // problem with the supplier's bill.
+        if (err instanceof ErpRequestError && ERP_NOT_APPLICABLE.has(err.code)) {
+          setErpState({ kind: "idle" });
+          return;
+        }
+        // The check already succeeded and its result is on screen and still
+        // valid. Only the ERP leg failed, and the message says so rather than
+        // implying the whole submission came apart.
+        console.error("[idempiere] bill submission failed", err);
+        setErpState({
+          kind: "failed",
+          message: err instanceof Error ? err.message : t("erp_checked_not_recorded"),
+        });
+        toast.error(t("toast_erp_failed"));
+      }
     } catch (err) {
       console.error("[billcheck] submit failed", err);
       setFailure(t("toast_bill_failed"));
@@ -281,7 +428,7 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
                 <input
                   id="bill-attachment"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg"
+                  accept={ATTACHMENT_ACCEPT}
                   className="sr-only"
                   onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
                 />
@@ -332,6 +479,8 @@ function SubmitBillForm({ po }: { po: PurchaseOrder }) {
         />
       )}
 
+      <ErpRecordPanel state={erpState} t={t} />
+
       <CheckProgress
         key={runKey}
         open={checking}
@@ -369,5 +518,86 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
         {value}
       </div>
     </div>
+  );
+}
+
+/**
+ * What happened on the ERP leg.
+ *
+ * Deliberately a separate panel from the check result rather than a line inside
+ * it. The two answer different questions — "is this bill correct?" and "is it
+ * recorded in the system of record?" — and a bill can genuinely be one without
+ * the other. Folding them together is how a supplier ends up believing a failed
+ * submission succeeded because the tax breakdown above it looked healthy.
+ */
+function ErpRecordPanel({
+  state,
+  t,
+}: {
+  state: ErpOutcome;
+  t: (key: Parameters<ReturnType<typeof useLabels>["t"]>[0]) => string;
+}) {
+  if (state.kind === "idle") return null;
+
+  if (state.kind === "sending") {
+    return (
+      <Widget>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          {t("erp_recording")}
+        </div>
+      </Widget>
+    );
+  }
+
+  if (state.kind === "recorded") {
+    return (
+      <Widget>
+        <div className="space-y-2">
+          <div className="text-sm font-semibold text-foreground">{t("erp_recorded_title")}</div>
+          <dl className="grid gap-1 text-sm sm:grid-cols-2">
+            <div className="flex justify-between gap-4 sm:justify-start">
+              <dt className="text-muted-foreground">{t("erp_recorded_ref")}</dt>
+              <dd className="tnum font-medium text-foreground sm:ml-2">{state.billCheckingId}</dd>
+            </div>
+            <div className="flex justify-between gap-4 sm:justify-start">
+              <dt className="text-muted-foreground">{t("erp_recorded_amount")}</dt>
+              <dd className="tnum font-medium text-foreground sm:ml-2">
+                {formatBDT(state.amount)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </Widget>
+    );
+  }
+
+  // "skipped" and "already_submitted" are informational, not failures: nothing
+  // went wrong, the bill simply was not sent this time and the supplier is
+  // being told why.
+  const informational = state.kind === "skipped" || state.kind === "already_submitted";
+  const body =
+    state.kind === "skipped"
+      ? t("erp_skipped_blocked")
+      : state.kind === "already_submitted"
+        ? t("erp_already_submitted")
+        : state.message;
+
+  return (
+    <Widget>
+      <div className="flex items-start gap-2">
+        {informational ? (
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        ) : (
+          <AlertTriangle className="text-warn mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        )}
+        <div className="space-y-1">
+          <div className="text-sm font-semibold text-foreground">
+            {t("erp_not_recorded_title")}
+          </div>
+          <p className="text-sm text-muted-foreground">{body}</p>
+        </div>
+      </div>
+    </Widget>
   );
 }

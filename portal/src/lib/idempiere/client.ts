@@ -1,7 +1,17 @@
 import { Agent } from "undici";
 import type { RawTokenResponse } from "./types";
 
-const BASE_URL = process.env.IDEMPIERE_BASE_URL ?? "";
+/**
+ * Read at call time, not at module scope.
+ *
+ * A module-scope capture is baked in at first evaluation, so setting
+ * IDEMPIERE_BASE_URL afterwards has no effect until the dev server restarts —
+ * and `isErpConfigured()` below, which does read per call, would then disagree
+ * with the URL actually being fetched. Same reasoning as billcheck/client.ts.
+ */
+function baseUrl(): string {
+  return process.env.IDEMPIERE_BASE_URL?.trim() ?? "";
+}
 
 // The UAT host presents a self-signed certificate, so verification is
 // disabled for this internal client only — it never runs in the browser.
@@ -26,8 +36,14 @@ function decodeJwtExpiry(token: string): number | null {
 // platform's own timeout.
 const CONNECT_TIMEOUT_MS = 5000;
 
+// Writes get longer. A bill submission may carry a base64 attachment of a few
+// megabytes, and the ERP decodes it, sniffs the real file type and commits a
+// record inside the request — none of which fits in the 5 s that is right for
+// a cheap read.
+const WRITE_TIMEOUT_MS = 30_000;
+
 async function fetchToken(): Promise<string> {
-  const res = await fetch(`${BASE_URL}/auth/tokens`, {
+  const res = await fetch(`${baseUrl()}/auth/tokens`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: AbortSignal.timeout(CONNECT_TIMEOUT_MS),
@@ -68,13 +84,23 @@ async function getToken(): Promise<string> {
 /**
  * Calls the iDempiere Supplier API with a valid bearer token, retrying once
  * with a freshly-issued token if the cached one was rejected.
+ *
+ * The 401 retry replays the request. That is safe here: a 401 means the ERP
+ * rejected the token before doing any work, so a write cannot have been
+ * committed by the attempt that produced it.
  */
-export async function idempiereFetch(path: string, init: RequestInit = {}): Promise<Response> {
+export async function idempiereFetch(
+  path: string,
+  init: RequestInit = {},
+  { timeoutMs = CONNECT_TIMEOUT_MS }: { timeoutMs?: number } = {},
+): Promise<Response> {
   const call = async (token: string) =>
-    fetch(`${BASE_URL}${path}`, {
+    fetch(`${baseUrl()}${path}`, {
       ...init,
       headers: { ...init.headers, Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(CONNECT_TIMEOUT_MS),
+      // Set after the spread on purpose: the caller picks the budget through
+      // `timeoutMs`, and a stale `signal` on `init` must not silently win.
+      signal: AbortSignal.timeout(timeoutMs),
       // @ts-expect-error -- dispatcher is an undici-specific fetch option, not in the DOM lib types
       dispatcher: insecureDispatcher,
     });
@@ -89,4 +115,105 @@ export async function idempiereFetch(path: string, init: RequestInit = {}): Prom
   }
 
   return res;
+}
+
+/** True when the ERP is configured at all. Reads env at call time, never at module scope. */
+export function isErpConfigured(): boolean {
+  return Boolean(process.env.IDEMPIERE_BASE_URL?.trim());
+}
+
+/**
+ * Writes are opt-in, separately from reads.
+ *
+ * Reading a purchase order from a UAT ERP is free; posting a bill or a payment
+ * creates a real record in it. A developer who fills in IDEMPIERE_* to see live
+ * purchase orders has not thereby asked to write to the company's ERP, so the
+ * two capabilities are separate switches — the same reasoning that puts the
+ * internal bill-checking screens behind BILLCHECK_INTERNAL.
+ */
+export function erpWritesEnabled(): boolean {
+  return process.env.IDEMPIERE_WRITES_ENABLED?.trim().toLowerCase() === "true";
+}
+
+/** Thrown when the ERP is unreachable, times out, or fails to authenticate. */
+export class ErpUnavailableError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "ErpUnavailableError";
+  }
+}
+
+/** Thrown when the ERP answered with `status: "error"` and told us why. */
+export class ErpRejectedError extends Error {
+  constructor(
+    message: string,
+    readonly httpStatus: number,
+  ) {
+    super(message);
+    this.name = "ErpRejectedError";
+  }
+}
+
+/**
+ * POST a JSON body to the ERP and unwrap its `{status, message}` envelope.
+ *
+ * The specification documents no HTTP status codes for the write endpoints, so
+ * `res.ok` proves nothing on its own — an error commonly arrives as HTTP 200
+ * with `status: "error"`. Both are funnelled into ErpRejectedError carrying the
+ * ERP's own message, because that message ("error 'billAmount' must be greater
+ * than zero") is far more useful in front of a user than "submission failed".
+ */
+export async function erpPostJson<TSuccess extends { status: string }>(
+  path: string,
+  body: unknown,
+): Promise<TSuccess> {
+  let res: Response;
+  try {
+    res = await idempiereFetch(
+      path,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+      { timeoutMs: WRITE_TIMEOUT_MS },
+    );
+  } catch (err) {
+    throw new ErpUnavailableError(`iDempiere POST ${path} failed`, { cause: err });
+  }
+
+  const text = await res.text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // A non-JSON body means a proxy, a login page or a stack trace — not the
+    // API. Treat it as the service being unavailable rather than a rejection,
+    // so the caller does not report a nonsense reason to the user.
+    throw new ErpUnavailableError(
+      `iDempiere POST ${path} returned ${res.status} with a non-JSON body: ${text.slice(0, 200)}`,
+    );
+  }
+
+  const envelope = parsed as { status?: string; message?: string };
+  if (envelope.status === "error" || !res.ok) {
+    throw new ErpRejectedError(
+      envelope.message?.trim() || `iDempiere rejected the request (HTTP ${res.status})`,
+      res.status,
+    );
+  }
+
+  // Require the success marker rather than inferring it from the absence of an
+  // error. A 200 with an unrecognised body — a proxy's JSON, a changed contract,
+  // a partial write — would otherwise be cast to TSuccess and read for fields
+  // that are not there, and the caller would report a submission reference of
+  // `undefined` as though it had succeeded.
+  if (envelope.status !== "success") {
+    throw new ErpUnavailableError(
+      `iDempiere POST ${path} returned HTTP ${res.status} with no status field: ` +
+        `${text.slice(0, 200)}`,
+    );
+  }
+
+  return parsed as TSuccess;
 }

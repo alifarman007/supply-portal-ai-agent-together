@@ -160,6 +160,35 @@ What was done and, more usefully, what was learned doing it.
   **six exception codes with no row at all**, including `missing_mushak_6_3` — the very
   thing that decides whether VDS is deducted. **Add a new exception code to a step or the
   suite fails.**
+- **ERP write endpoints wired in (iDempiere APIs §4 and §5).** The portal could previously
+  only *read* from the ERP. It can now submit a bill (`POST /supplier/bill-submission/add`)
+  and record a supplier payment (`POST /supplier/payment/add`), specified in
+  `Supplier_Portal_api_adding.pdf` — **gitignored, because it carries working UAT
+  credentials and live JWTs**. What was learned:
+  - **Submission is two steps, in order: check, then record.** The agent checks the bill
+    first; only a non-`BLOCKED` result is sent to the ERP. A blocked bill is never lodged,
+    and the screen says so rather than staying silent.
+  - **`billAmount` is the VAT-inclusive invoice total, and it comes from the agent's own
+    `netting_order`** (sum of the positive rows) via `invoiceTotalFromCheck`. Not from a
+    portal-side `× 1.15`: the portal does not know which VAT band a line falls in, and
+    asserting one is the bug the bill form was rebuilt to remove. Consequence worth
+    knowing: when the checker cuts quantities the ERP receives the **checked** figure, not
+    the supplier's claim — PO-2026-0015 sends 172,500, not 287,500.
+  - **API §4 has no idempotency key**, and the portal's bill id is deterministic
+    (`BILL-{poNumber}-01`), so a second Submit would create a *second* ERP document. The
+    agent's `created: false` is the only signal that distinguishes a re-check from a new
+    bill, and it is now read. It used to be returned and ignored.
+  - **A remote write cannot claim "nothing was saved" on a timeout.** The agent's route can,
+    because it is local. This one crosses a network: a dropped connection says nothing
+    about whether the ERP committed, so the message reports uncertainty and warns about
+    duplicates instead.
+  - **`Math.round(v * 100) / 100` is not ROUND_HALF_UP** — it rounds 8.165 down to 8.16 —
+    and `Number(v.toFixed(2))` is worse, getting 2.675, 1.115, 0.615 and 1.045 wrong too.
+    `roundHalfUp` in `idempiere/mappers.ts` rounds the decimal string instead.
+  - **`File.type` is derived from the filename**, so a PDF renamed `.png` would be rejected
+    by the ERP's content check after a full upload. `idempiere/attachment.ts` sniffs the
+    magic bytes and declares *that* MIME. Attachments are validated again server-side,
+    because a `"use client"` module is a convenience, not a control.
 - **Tax removed from the form before checking.** The submit screen printed `VAT (15%)` from
   a hard-coded constant before the checker had seen the bill. That asserts a rate the
   portal does not know — the schedule has 15/10/7.5/5/exempt bands keyed to the line's
@@ -225,6 +254,7 @@ not a repo problem — the same commit builds fine from a short path.
 | `LLM_PROVIDER`, `GEMINI_MODEL`, `MISTRAL_MODEL` | `agent/.env` | Model ids come only from env, never from code. |
 | `APP_DB_URL`, `TREASURY_WEBHOOK_URL` | `agent/.env` | |
 | `IDEMPIERE_*` | `portal/.env.local` | Unset ⇒ portal falls back to mock POs. |
+| `IDEMPIERE_WRITES_ENABLED` | `portal/.env.local` | **Separate switch for ERP writes.** Must be exactly `true`, or bill submission and supplier payment both 503 and nothing leaves the portal. Filling in `IDEMPIERE_*` to *read* live POs is not consent to *create* records in a shared UAT ERP. |
 | `BILLCHECK_BASE_URL` | `portal/.env.local` | **Server-only. Never `NEXT_PUBLIC_`** — the agent has no auth, so the browser must not reach it directly. |
 
 ### Free-tier reality

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, Download, Paperclip } from "lucide-react";
+import { Search, Download, Paperclip, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ReportTable, type ReportColumn } from "@/components/common/ReportTable";
@@ -14,6 +14,18 @@ import { formatBDT } from "@/lib/format/money";
 import { formatDate } from "@/lib/format/date";
 import { useLabels } from "@/lib/i18n/labels";
 import type { Invoice, PurchaseOrder } from "@/lib/mock/types";
+import { supplierProfile } from "@/lib/mock/db";
+import { RecordPaymentDialog } from "@/components/payments/RecordPaymentDialog";
+
+/**
+ * Whether to show the "Record payment" action.
+ *
+ * Cosmetic only, exactly like NEXT_PUBLIC_BILLCHECK_INTERNAL beside it: the real
+ * control is server-side in /api/idempiere/payment, which 404s unless
+ * BILLCHECK_INTERNAL is set. Hiding a button is not access control — this portal
+ * has no authentication and its roles are picked from a menu.
+ */
+const SHOW_RECORD_PAYMENT = process.env.NEXT_PUBLIC_BILLCHECK_INTERNAL === "true";
 
 /** A bill only counts as billed once it has actually been submitted. */
 const BILLED = ["submitted", "under_review", "approved", "paid"];
@@ -40,6 +52,7 @@ interface BilledPoRow {
 export default function PaymentsPage() {
   const { t } = useLabels();
   const [search, setSearch] = useState("");
+  const [recordingPayment, setRecordingPayment] = useState(false);
   const { data: payments, isLoading: paymentsLoading } = usePayments({});
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({});
   const { data: pos, isLoading: posLoading } = usePurchaseOrders({});
@@ -168,10 +181,29 @@ export default function PaymentsPage() {
         title={t("payment_history_title")}
         subtitle={t("payment_subtitle")}
         actions={
-          <Button variant="outline" onClick={() => toast.info(t("toast_csv_soon"))}>
-            <Download className="size-4" /> {t("export_btn")}
-          </Button>
+          <div className="flex items-center gap-2">
+            {SHOW_RECORD_PAYMENT && (
+              <Button onClick={() => setRecordingPayment(true)}>
+                <Banknote className="size-4" /> {t("pay_record_action")}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => toast.info(t("toast_csv_soon"))}>
+              <Download className="size-4" /> {t("export_btn")}
+            </Button>
+          </div>
         }
+      />
+
+      <RecordPaymentDialog
+        open={recordingPayment}
+        onOpenChange={setRecordingPayment}
+        defaults={{
+          // The supplier's own bank, from the profile rather than from a payment
+          // record — those store the account number MASKED ("****4521"), and a
+          // mask must never reach the ERP.
+          bankName: supplierProfile.bankName,
+          bankAcctNo: supplierProfile.accountNumber,
+        }}
       />
 
       {/* Summary Bar */}
