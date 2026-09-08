@@ -18,6 +18,12 @@ agent/application_example/
 agent/nbr_documents/*.pdf
 agent/nbr_documents/*.PDF
 
+# The iDempiere Supplier API specification. It carries WORKING UAT CREDENTIALS
+# (username + password), live JWT access and refresh tokens, and the internal host
+# address. The integration built from it is committed; the document is not. The
+# credentials belong in portal/.env.local, which is already ignored above.
+Supplier_Portal_api_adding.pdf
+
 # Local runtime data
 agent/billcheck.db
 agent/*.db
